@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.4.29">
+<meta name="app-version" content="1.4.3">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -811,7 +811,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.4.29';
+var APP_VERSION='1.4.3';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -1517,135 +1517,637 @@ render();
 </script>  
 
 <script>
-/* ===== ΗΧΟΣ v3: LIVE SEEK + NOTIFICATION RESUME ===== */
+/* ===== ΗΧΟΣ v4: ΑΝΘΕΚΤΙΚΟ SEEK + ΕΠΑΝΑΣΥΝΔΕΣΗ ΤΟΠΙΚΩΝ + ΜΟΝΙΜΗ ΑΠΟΘΗΚΕΥΣΗ ===== */
 var audDragging=false;
-function fmtSec(s){s=Math.floor(s||0);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+var audIsSeeking=false;
+var audSeekPending=null;
+var audPlayToken=0;
+var audStallTimer=0;
+var audRecoverAttempts=0;
+var audCurrentObjectURL=null;
+var AUD_RELINK_INPUT=null;
+var audPersistRequested=false;
+
+function audFmtTime(s){
+  s=Math.floor(Number(s)||0);
+  if(s<0)s=0;
+  return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+}
+function audHasDuration(){
+  return AUD_EL.duration && !isNaN(AUD_EL.duration) && AUD_EL.duration>0;
+}
+function audPctToSec(pct){
+  pct=parseFloat(pct);
+  if(isNaN(pct)||!audHasDuration())return 0;
+  return Math.max(0,Math.min(AUD_EL.duration,(pct/100)*AUD_EL.duration));
+}
+function audSecToPct(sec){
+  if(!audHasDuration())return 0;
+  return Math.max(0,Math.min(100,((Number(sec)||0)/AUD_EL.duration)*100));
+}
+function audSetSeekLabel(sec){
+  var cur=document.getElementById('audCur');
+  if(cur)cur.textContent=audFmtTime(sec);
+}
+function audSetDurLabel(){
+  var dur=document.getElementById('audDur');
+  if(dur)dur.textContent=audFmtTime(AUD_EL.duration||0);
+}
 function audUpdateSeek(){
   if(audDragging)return;
   var el=document.getElementById('audSeek');
   if(!el)return;
-  if(!AUD_EL.duration||isNaN(AUD_EL.duration)){el.value=0;return;}
-  el.value=(AUD_EL.currentTime/AUD_EL.duration)*100;
-  var cur=document.getElementById('audCur');
-  var dur=document.getElementById('audDur');
-  if(cur)cur.textContent=fmtSec(AUD_EL.currentTime);
-  if(dur)dur.textContent=fmtSec(AUD_EL.duration);
+  if(!audHasDuration()){
+    el.value=0;
+    audSetSeekLabel(0);
+    audSetDurLabel();
+    return;
+  }
+  el.value=audSecToPct(AUD_EL.currentTime);
+  audSetSeekLabel(AUD_EL.currentTime);
+  audSetDurLabel();
 }
-function audSeekLive(pct){
-  if(!AUD_EL.duration||isNaN(AUD_EL.duration))return;
-  var t=(pct/100)*AUD_EL.duration;
-  AUD_EL.currentTime=t;
-  var cur=document.getElementById('audCur');
-  if(cur)cur.textContent=fmtSec(t);
+function audClearStall(){
+  clearTimeout(audStallTimer);
+  audStallTimer=0;
 }
-function audSeekEnd(pct){
-  audDragging=false;
-  audSeekLive(pct);
-  if(!state.audio.playing){
-    state.audio.playing=true;
-    AUD_EL.play().catch(function(){});
-    saveState();
-    audInject();
+function audArmStall(token){
+  audClearStall();
+  audStallTimer=setTimeout(function(){
+    if(token!==audPlayToken)return;
+    if(state.audio.playing && AUD_EL.paused){
+      audRecover();
+    }
+  },2200);
+}
+function audRevokeCurrentObjectURL(){
+  if(audCurrentObjectURL){
+    try{URL.revokeObjectURL(audCurrentObjectURL);}catch(e){}
+    audCurrentObjectURL=null;
   }
 }
-setInterval(function(){if(state.audio.playing&&!audDragging)audUpdateSeek();},500);
+function audRequestPersist(){
+  if(audPersistRequested)return;
+  audPersistRequested=true;
+  try{
+    if(navigator.storage && navigator.storage.persisted && navigator.storage.persist){
+      navigator.storage.persisted().then(function(p){
+        if(!p){
+          navigator.storage.persist().catch(function(){});
+        }
+      }).catch(function(){});
+    }
+  }catch(e){}
+}
+audRequestPersist();
 
-/* Resume: δεν ξαναβάζουμε src αν το track είναι το ίδιο */
-var _atM3=audToggle;
+function audRecover(){
+  if(audRecoverAttempts>2){
+    audRecoverAttempts=0;
+    var tr0=audFindTrack();
+    if(tr0){
+      state.audio.playing=false;
+      saveState();
+      audPlayTrack(state.audio.curCat,tr0,false);
+    }
+    return;
+  }
+  audRecoverAttempts++;
+
+  var token=++audPlayToken;
+  var wasPlaying=state.audio.playing;
+  var t=AUD_EL.currentTime;
+  var url=AUD_EL.currentSrc || audCurrentObjectURL;
+
+  audIsSeeking=false;
+  audSeekPending=null;
+  audClearStall();
+
+  try{AUD_EL.pause();}catch(e){}
+
+  if(!url){
+    var tr=audFindTrack();
+    if(tr){
+      state.audio.playing=wasPlaying;
+      audPlayTrack(state.audio.curCat,tr,true);
+    }
+    return;
+  }
+
+  AUD_EL.src=url;
+  try{AUD_EL.load();}catch(e){}
+
+  function restore(){
+    if(token!==audPlayToken)return;
+    if(state.audio.curTrack!==audFindTrack()?.id && audFindTrack()){
+      // αποφυγή κατάστασης όπου το track άλλαξε κατά τη恢复
+    }
+    if(t>0 && audHasDuration() && t<AUD_EL.duration){
+      try{AUD_EL.currentTime=t;}catch(e){}
+    }
+    if(wasPlaying){
+      AUD_EL.play().then(function(){
+        if(token===audPlayToken){
+          state.audio.playing=true;
+          saveState();
+          audInject();
+          audClearStall();
+          audRecoverAttempts=0;
+          if(typeof audSetPlayback==='function')audSetPlayback('playing');
+        }
+      }).catch(function(){
+        if(token===audPlayToken){
+          state.audio.playing=false;
+          saveState();
+          audInject();
+          if(typeof audSetPlayback==='function')audSetPlayback('paused');
+          var tr=audFindTrack();
+          if(tr && tr.kind==='local')audOfferRelink(state.audio.curCat,tr.id);
+        }
+      });
+      audArmStall(token);
+    }
+  }
+
+  if(AUD_EL.readyState>=3)restore();
+  else AUD_EL.addEventListener('canplay',restore,{once:true});
+}
+
+function audDoSeek(sec){
+  if(!audHasDuration())return;
+  sec=Math.max(0,Math.min(AUD_EL.duration-0.02,Number(sec)||0));
+
+  if(audIsSeeking){
+    audSeekPending=sec;
+    audSetSeekLabel(sec);
+    return;
+  }
+
+  audIsSeeking=true;
+  var token=++audPlayToken;
+  audSetSeekLabel(sec);
+
+  try{AUD_EL.currentTime=sec;}catch(e){audIsSeeking=false;}
+
+  function onSeeked(){
+    audIsSeeking=false;
+
+    if(audSeekPending!=null){
+      var p=audSeekPending;
+      audSeekPending=null;
+      audDoSeek(p);
+      return;
+    }
+
+    if(state.audio.playing){
+      AUD_EL.play().then(function(){
+        if(token===audPlayToken){
+          audClearStall();
+          audRecoverAttempts=0;
+          if(typeof audSetPlayback==='function')audSetPlayback('playing');
+        }
+      }).catch(function(e){
+        if(token!==audPlayToken)return;
+        if(e && e.name==='AbortError'){
+          setTimeout(function(){
+            if(state.audio.playing){
+              AUD_EL.play().then(function(){
+                audClearStall();
+                audRecoverAttempts=0;
+                if(typeof audSetPlayback==='function')audSetPlayback('playing');
+              }).catch(function(){
+                audRecover();
+              });
+            }
+          },120);
+        }else{
+          audRecover();
+        }
+      });
+      audArmStall(token);
+    }else{
+      audClearStall();
+      if(typeof audSetPlayback==='function')audSetPlayback('paused');
+    }
+  }
+
+  if(AUD_EL.seeking){
+    AUD_EL.addEventListener('seeked',onSeeked,{once:true});
+  }else{
+    setTimeout(onSeeked,0);
+  }
+}
+
+function audSeekSeconds(sec){
+  if(!audHasDuration()){
+    var tr=audFindTrack();
+    if(tr){
+      state.audio.playing=true;
+      saveState();
+      audPlayTrack(state.audio.curCat,tr,true);
+    }
+    return;
+  }
+  audDoSeek(sec);
+}
+
+function audDragSeek(pct){
+  audDragging=true;
+  var sec=audPctToSec(pct);
+  audSetSeekLabel(sec);
+  var el=document.getElementById('audSeek');
+  if(el)el.value=pct;
+}
+
+function audReleaseSeek(pct){
+  audDragging=false;
+  var sec=audPctToSec(pct);
+  if(audHasDuration())audDoSeek(sec);
+  else audSeekSeconds(sec);
+}
+
+function audStartUrl(url,tr,catId,prevTime){
+  var a=state.audio;
+  AUD_EL.src=url;
+  AUD_EL.volume=a.volume;
+  AUD_EL.loop=a.loop;
+
+  var started=false;
+  function start(){
+    if(started)return;
+    started=true;
+
+    if(state.audio.curTrack!==tr.id || state.audio.curCat!==catId)return;
+
+    if(prevTime>0 && audHasDuration() && prevTime<AUD_EL.duration){
+      try{AUD_EL.currentTime=prevTime;}catch(e){}
+    }
+
+    if(!state.audio.playing){
+      saveState();
+      audInject();
+      return;
+    }
+
+    var token=++audPlayToken;
+    AUD_EL.play().then(function(){
+      if(token===audPlayToken){
+        state.audio.playing=true;
+        saveState();
+        audInject();
+        audClearStall();
+        audRecoverAttempts=0;
+        if(typeof audSetPlayback==='function')audSetPlayback('playing');
+      }
+    }).catch(function(e){
+      if(token!==audPlayToken)return;
+      if(e && e.name==='AbortError'){
+        setTimeout(function(){
+          if(state.audio.playing){
+            AUD_EL.play().then(function(){
+              audClearStall();
+              audRecoverAttempts=0;
+              if(typeof audSetPlayback==='function')audSetPlayback('playing');
+            }).catch(function(){
+              audRecover();
+            });
+          }
+        },120);
+      }else{
+        state.audio.playing=false;
+        saveState();
+        audInject();
+        if(typeof audSetPlayback==='function')audSetPlayback('paused');
+        if(tr && tr.kind==='local')audOfferRelink(catId,tr.id);
+        else audRecover();
+      }
+    });
+    audArmStall(token);
+  }
+
+  if(AUD_EL.readyState>=3)start();
+  else AUD_EL.addEventListener('canplay',start,{once:true});
+
+  saveState();
+  audInject();
+  audSetMedia(tr,catId);
+}
+
+function audOfferRelink(catId,trId){
+  var c=state.audio.categories.find(function(x){return x.id===catId;});
+  if(!c)return;
+  var t=c.tracks.find(function(x){return x.id===trId;});
+  if(!t)return;
+  if(confirm('Το τοπικό αρχείο "'+t.name+'" δεν βρέθηκε στη συσκευή. Επανασύνδεσέ το χωρίς να το σβήσεις;')){
+    audRelinkPrompt(catId,trId);
+  }
+}
+
+function audRelinkPrompt(catId,trId){
+  if(!AUD_RELINK_INPUT){
+    AUD_RELINK_INPUT=document.createElement('input');
+    AUD_RELINK_INPUT.type='file';
+    AUD_RELINK_INPUT.accept='audio/*';
+    AUD_RELINK_INPUT.style.display='none';
+    document.body.appendChild(AUD_RELINK_INPUT);
+    AUD_RELINK_INPUT.onchange=function(){
+      var file=AUD_RELINK_INPUT.files && AUD_RELINK_INPUT.files[0];
+      var cId=AUD_RELINK_INPUT.dataset.cat;
+      var tId=AUD_RELINK_INPUT.dataset.track;
+      AUD_RELINK_INPUT.value='';
+      if(!file||!cId||!tId)return;
+
+      var c=state.audio.categories.find(function(x){return x.id===cId;});
+      if(!c)return;
+      var t=c.tracks.find(function(x){return x.id===tId;});
+      if(!t)return;
+      if(!t.key){
+        showToast('Το αρχείο δεν έχει έγκυρο κλειδί αποθήκευσης. Διαγραφή και επαναπροσθήκη είναι αναγκαία.');
+        return;
+      }
+
+      audPut(t.key,file).then(function(){
+        showToast('Επανασυνδέθηκε: '+t.name);
+        audRequestPersist();
+        if(state.audio.curTrack===t.id){
+          if(state.audio.playing){
+            audPlayTrack(cId,t,true);
+          }else{
+            audInject();
+          }
+        }
+        if(typeof modalOpen!=='undefined' && modalOpen){
+          audReopen(function(){openCategorySheet(cId);});
+        }
+      }).catch(function(){
+        showToast('Αποτυχία επανασύνδεσης του αρχείου. Ίσως ο χώρος αποθήκευσης είναι πλήρης.');
+      });
+    };
+  }
+  AUD_RELINK_INPUT.dataset.cat=catId;
+  AUD_RELINK_INPUT.dataset.track=trId;
+  AUD_RELINK_INPUT.click();
+}
+
+var _apM7=audPlayTrack;
+audPlayTrack=function(catId,tr,preserveTime){
+  if(!tr){
+    _apM7(catId,tr);
+    return;
+  }
+
+  var a=state.audio;
+  if(a.volume<=0)a.volume=0.7;
+  a.curCat=catId;
+  a.curTrack=tr.id;
+  a.playing=true;
+
+  try{AUD_EL.pause();}catch(e){}
+
+  var prevTime=preserveTime?(AUD_EL.currentTime||0):0;
+  audRevokeCurrentObjectURL();
+  audRequestPersist();
+
+  if(tr.kind==='local'){
+    if(!tr.key){
+      a.playing=false;
+      saveState();
+      audInject();
+      showToast('Το τοπικό αρχείο δεν έχει έγκυρο κλειδί αποθήκευσης.');
+      return;
+    }
+    audGet(tr.key).then(function(b){
+      if(state.audio.curTrack!==tr.id || state.audio.curCat!==catId)return;
+      if(!b){
+        a.playing=false;
+        saveState();
+        audInject();
+        audOfferRelink(catId,tr.id);
+        return;
+      }
+      var u;
+      try{u=URL.createObjectURL(b);}catch(e){
+        a.playing=false;
+        saveState();
+        audInject();
+        audOfferRelink(catId,tr.id);
+        return;
+      }
+      audCurrentObjectURL=u;
+      audStartUrl(u,tr,catId,prevTime);
+    }).catch(function(){
+      if(state.audio.curTrack!==tr.id || state.audio.curCat!==catId)return;
+      a.playing=false;
+      saveState();
+      audInject();
+      audOfferRelink(catId,tr.id);
+    });
+    return;
+  }
+
+  if(tr.kind==='noise'){
+    if(!AUD_WAV[tr.id]){
+      AUD_WAV[tr.id]=URL.createObjectURL(makeNoiseWav(tr.id));
+    }
+    audStartUrl(AUD_WAV[tr.id],tr,catId,prevTime);
+    return;
+  }
+
+  audStartUrl(tr.url,tr,catId,prevTime);
+};
+
+var _atM5=audToggle;
 audToggle=function(){
   var a=state.audio;
+
   if(!a.playing){
     var t=audFindTrack();
-    if(t&&a.curTrack===t.id&&AUD_EL.currentTime>0&&!AUD_EL.ended){
-      a.playing=true;
-      AUD_EL.play().then(function(){audInject();}).catch(function(){
-        a.playing=false;audInject();
-      });
-      saveState();
-    }else if(t){
-      audPlayTrack(a.curCat,t);
-    }else if(a.categories.length&&a.categories[0].tracks.length){
-      audPlayTrack(a.categories[0].id,a.categories[0].tracks[0]);
+    if(!t){
+      if(a.categories.length && a.categories[0].tracks.length){
+        t=a.categories[0].tracks[0];
+        a.curCat=a.categories[0].id;
+      }else{
+        openAudioSheet();
+        return;
+      }
+    }
+
+    a.playing=true;
+    saveState();
+
+    if(AUD_EL.error || !AUD_EL.currentSrc || AUD_EL.readyState<2){
+      audPlayTrack(a.curCat,t,true);
     }else{
-      openAudioSheet();
+      var token=++audPlayToken;
+      AUD_EL.play().then(function(){
+        if(token===audPlayToken){
+          audClearStall();
+          audRecoverAttempts=0;
+          if(typeof audSetPlayback==='function')audSetPlayback('playing');
+        }
+      }).catch(function(e){
+        if(token!==audPlayToken)return;
+        if(e && e.name==='AbortError'){
+          setTimeout(function(){
+            if(state.audio.playing){
+              AUD_EL.play().then(function(){
+                audClearStall();
+                audRecoverAttempts=0;
+                if(typeof audSetPlayback==='function')audSetPlayback('playing');
+              }).catch(function(){
+                audRecover();
+              });
+            }
+          },120);
+        }else{
+          audRecover();
+        }
+      });
+      audArmStall(token);
     }
   }else{
     a.playing=false;
-    noiseStop();
-    AUD_EL.pause();
+    audClearStall();
+    try{AUD_EL.pause();}catch(e){}
     saveState();
+    if(typeof audSetPlayback==='function')audSetPlayback('paused');
   }
-  audSetPlayback(a.playing?'playing':'paused');
+
+  audInject();
 };
 
-/* Media session: seek + resume */
 audSetMedia=function(tr,catId){
   if(!('mediaSession' in navigator))return;
   try{
-    navigator.mediaSession.metadata=new MediaMetadata({title:tr.name,artist:audCatName(catId),album:'Ρυθμός'});
-    navigator.mediaSession.playbackState='playing';
-    navigator.mediaSession.setActionHandler('play',function(){audToggle();});
-    navigator.mediaSession.setActionHandler('pause',function(){audToggle();});
-    navigator.mediaSession.setActionHandler('previoustrack',function(){audPrev();});
-    navigator.mediaSession.setActionHandler('nexttrack',function(){audNext();});
+    navigator.mediaSession.metadata=new MediaMetadata({
+      title:tr.name,
+      artist:audCatName(catId),
+      album:'Ρυθμός'
+    });
+    navigator.mediaSession.playbackState=state.audio.playing?'playing':'paused';
+
+    navigator.mediaSession.setActionHandler('play',function(){
+      if(!state.audio.playing)audToggle();
+    });
+    navigator.mediaSession.setActionHandler('pause',function(){
+      if(state.audio.playing)audToggle();
+    });
+    navigator.mediaSession.setActionHandler('previoustrack',function(){
+      audPrev();
+    });
+    navigator.mediaSession.setActionHandler('nexttrack',function(){
+      audNext();
+    });
     navigator.mediaSession.setActionHandler('seekto',function(d){
-      if(d.seekTime!=null&&AUD_EL.duration&&!isNaN(AUD_EL.duration)){
-        AUD_EL.currentTime=Math.max(0,Math.min(AUD_EL.duration,d.seekTime));
-        if(!state.audio.playing){
-          state.audio.playing=true;
-          AUD_EL.play().catch(function(){});
-          saveState();
-          audInject();
-        }
-        audUpdateSeek();
+      if(d && d.seekTime!=null){
+        state.audio.playing=true;
+        saveState();
+        audSeekSeconds(d.seekTime);
+        audInject();
+        if(typeof audSetPlayback==='function')audSetPlayback('playing');
       }
     });
     navigator.mediaSession.setActionHandler('seekbackward',function(d){
-      var o=d.seekOffset||10;
-      AUD_EL.currentTime=Math.max(0,AUD_EL.currentTime-o);
-      if(!state.audio.playing){
-        state.audio.playing=true;
-        AUD_EL.play().catch(function(){});
-        saveState();
-        audInject();
-      }
-      audUpdateSeek();
+      var o=(d && d.seekOffset)||10;
+      state.audio.playing=true;
+      saveState();
+      audSeekSeconds((AUD_EL.currentTime||0)-o);
+      audInject();
+      if(typeof audSetPlayback==='function')audSetPlayback('playing');
     });
     navigator.mediaSession.setActionHandler('seekforward',function(d){
-      var o=d.seekOffset||10;
-      AUD_EL.currentTime=Math.min(AUD_EL.duration||0,AUD_EL.currentTime+o);
-      if(!state.audio.playing){
-        state.audio.playing=true;
-        AUD_EL.play().catch(function(){});
-        saveState();
-        audInject();
-      }
-      audUpdateSeek();
+      var o=(d && d.seekOffset)||10;
+      state.audio.playing=true;
+      saveState();
+      audSeekSeconds((AUD_EL.currentTime||0)+o);
+      audInject();
+      if(typeof audSetPlayback==='function')audSetPlayback('playing');
     });
   }catch(e){}
 };
 
-/* Progress bar: oninput για live feedback */
-var _oaS4=openAudioSheet;
+var _asa5=audStopAll;
+audStopAll=function(){
+  audRevokeCurrentObjectURL();
+  audIsSeeking=false;
+  audSeekPending=null;
+  audPlayToken++;
+  audClearStall();
+  _asa5();
+  if(typeof audSetPlayback==='function')audSetPlayback('paused');
+};
+
+if(!window.__audV4Bound){
+  window.__audV4Bound=true;
+  AUD_EL.addEventListener('playing',function(){
+    audClearStall();
+    audRecoverAttempts=0;
+    if(typeof audSetPlayback==='function')audSetPlayback('playing');
+  });
+  AUD_EL.addEventListener('pause',function(){
+    if(!audIsSeeking && typeof audSetPlayback==='function'){
+      audSetPlayback(state.audio.playing?'playing':'paused');
+    }
+  });
+  AUD_EL.addEventListener('error',function(){
+    if(state.audio.playing){
+      audRecover();
+    }
+  });
+  AUD_EL.addEventListener('stalled',function(){
+    if(state.audio.playing){
+      audArmStall(audPlayToken);
+    }
+  });
+  AUD_EL.addEventListener('waiting',function(){
+    if(state.audio.playing){
+      audArmStall(audPlayToken);
+    }
+  });
+  AUD_EL.addEventListener('loadedmetadata',function(){
+    audSetDurLabel();
+    audUpdateSeek();
+  });
+}
+
+if(!window.__audV4Ticker){
+  window.__audV4Ticker=true;
+  setInterval(function(){
+    if(state.audio.playing && !audDragging){
+      audUpdateSeek();
+    }
+  },350);
+}
+
+var _oaS6=openAudioSheet;
 openAudioSheet=function(){
-  _oaS4();
-  var bar=document.querySelector('#modalOverlay .aud-bar');
-  if(bar&&!document.getElementById('audSeek')){
-    var d=document.createElement('div');
-    d.style.cssText='margin:8px 0;width:100%';
-    d.innerHTML='<input type="range" id="audSeek" min="0" max="100" step="0.1" value="0" '
-      +'oninput="audDragging=true;audSeekLive(this.value)" '
-      +'onchange="audSeekEnd(this.value)" '
-      +'style="width:100%">'
-      +'<div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted)">'
-      +'<span id="audCur">0:00</span><span id="audDur">0:00</span></div>';
-    bar.parentNode.insertBefore(d,bar.nextSibling);
+  _oaS6();
+
+  var oldSeek=document.getElementById('audSeek');
+  if(oldSeek){
+    var oldWrap=oldSeek.parentElement;
+    if(oldWrap && oldWrap.parentElement && oldWrap.querySelector('#audCur')){
+      oldWrap.parentElement.removeChild(oldWrap);
+    }
   }
+
+  var bar=document.querySelector('#modalOverlay .aud-bar');
+  if(bar && bar.parentElement){
+    var d=document.createElement('div');
+    d.id='audSeekWrap';
+    d.style.cssText='margin:8px 0;width:100%';
+    d.innerHTML='<input type="range" id="audSeek" min="0" max="100" step="0.1" value="0" oninput="audDragSeek(this.value)" onchange="audReleaseSeek(this.value)" style="width:100%">'
+      +'<div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted)">'
+      +'<span id="audCur">0:00</span><span id="audDur">0:00</span>'
+      +'</div>';
+    bar.parentElement.insertBefore(d,bar.nextSibling);
+  }
+
   audUpdateSeek();
 };
 
 saveState();
-/* ===== ΤΕΛΟΣ ΗΧΟΥ v3 ===== */
+/* ===== ΤΕΛΟΣ ΗΧΟΥ v4 ===== */
 </script>
   
 </body>
