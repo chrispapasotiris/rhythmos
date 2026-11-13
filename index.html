@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.4.3">
+<meta name="app-version" content="1.4.3111">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -811,7 +811,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.4.3';
+var APP_VERSION='1.4.3111';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -1440,80 +1440,624 @@ render();
 </script>
 
 <script>
-/* ===== ΠΡΟΓΡΑΜΜΑ v7: ΕΠΟΜΕΝΗ ΘΕΣΗ + ΑΠΟΔΟΧΗ/ΑΠΟΡΡΙΨΗ ===== */
+/* ===== ΠΡΟΓΡΑΜΜΑ v8: ΑΝΑΒΟΛΗ + ΚΛΕΙΣΙΜΟ + ΥΠΕΡΒΑΣΗ ===== */
 state.slotStatus=state.slotStatus||{};
 state.slotAsk=state.slotAsk||{};
+state.slotRunning=state.slotRunning||null;
+
 function slotDateKey(){return getDailyPlanKey();}
-function slotStatusGet(slotId){var k=slotDateKey();return (state.slotStatus[k]&&state.slotStatus[k][slotId])||null;}
-function slotStatusSet(slotId,v){var k=slotDateKey();if(!state.slotStatus[k])state.slotStatus[k]={};state.slotStatus[k][slotId]=v;saveState();}
-function slotMinutesOf(s){var t=String(s.start).split(':').map(Number);return t[0]*60+t[1];}
-function slotEndMinutesOf(s){var t=String(s.end).split(':').map(Number);return t[0]*60+t[1];}
-function nowMinutes(){var d=new Date();return d.getHours()*60+d.getMinutes();}
+function slotStatusGet(id){
+  var k=slotDateKey();
+  return (state.slotStatus[k]&&state.slotStatus[k][id])||null;
+}
+function slotStatusSet(id,patch){
+  var k=slotDateKey();
+  if(!state.slotStatus[k])state.slotStatus[k]={};
+  var cur=state.slotStatus[k][id]||{};
+  for(var key in patch){
+    if(patch.hasOwnProperty(key))cur[key]=patch[key];
+  }
+  state.slotStatus[k][id]=cur;
+  saveState();
+}
+function slotParseHM(v){
+  var p=String(v||'0:0').split(':');
+  var h=parseInt(p[0],10)||0;
+  var m=parseInt(p[1],10)||0;
+  return h*60+m;
+}
+function slotFmtHM(min){
+  min=Math.max(0,Math.min(1439,Math.round(min)));
+  var h=Math.floor(min/60),m=min%60;
+  return (h<10?'0':'')+h+':'+(m<10?'0':'')+m;
+}
+function slotNowMin(){
+  var d=new Date();
+  return d.getHours()*60+d.getMinutes();
+}
+function slotEff(s){
+  var st=slotStatusGet(s.id)||{};
+  return {
+    start:st.start||s.start,
+    end:st.end||s.end,
+    count:st.postponeCount||0,
+    status:st.status||'pending',
+    overtime:!!st.overtime,
+    startedAt:st.startedAt||0,
+    lastAsk:st.lastAsk||0
+  };
+}
 function slotName(s){return scheduleActivityName(s.activityId);}
-function nextSlotToday(){var list=scheduleGetDay(mondayIndex());var n=nowMinutes();var best=null;for(var i=0;i<list.length;i++){var s=list[i];if(slotStatusGet(s.id)==='skipped')continue;var st=slotMinutesOf(s);if(st>n&&(!best||st<slotMinutesOf(best)))best=s;}return best;}
+function slotActivityParts(s){
+  var p=String(s.activityId).split(':');
+  return {type:p[0],id:p.slice(1).join(':')};
+}
+function slotRunningInfo(){
+  if(!state.slotRunning)return null;
+  var s=scheduleFind(state.slotRunning.slotId);
+  if(!s){state.slotRunning=null;return null;}
+  var st=slotStatusGet(s.id);
+  if(!st||(st.status!=='accepted'&&st.status!=='late')){
+    state.slotRunning=null;
+    return null;
+  }
+  return {s:s,st:st,eff:slotEff(s)};
+}
+function slotMarkDone(slotId,source){
+  var s=scheduleFind(slotId);
+  if(!s)return;
+  var st=slotStatusGet(slotId);
+  if(!st||st.status==='done'||st.status==='skipped')return;
+
+  var running=state.slotRunning&&state.slotRunning.slotId===slotId?state.slotRunning:null;
+  var end=Date.now();
+  var start=running?running.start:(st.startedAt||end);
+  var dur=0;
+
+  try{
+    if(running&&typeof totalMin==='function'){
+      dur=totalMin(running.type,running.id,start,end);
+    }else{
+      dur=Math.max(0,Math.round((end-start)/60000));
+    }
+  }catch(e){
+    dur=Math.max(0,Math.round((end-start)/60000));
+  }
+
+  slotStatusSet(slotId,{
+    status:'done',
+    endedAt:end,
+    actualDurMin:Math.round(dur),
+    overtime:false,
+    lastAsk:0
+  });
+
+  if(state.slotRunning&&state.slotRunning.slotId===slotId)state.slotRunning=null;
+  saveState();
+  if(source!=='silent')render();
+}
 function slotAccept(s){
-var late=nowMinutes()>slotMinutesOf(s);
-slotStatusSet(s.id,late?'late':'accepted');
-var p=String(s.activityId).split(':');var type=p[0];var id=p.slice(1).join(':');
-if(type==='course'){pomoSel={type:'course',id:id};startPomodoro();}
-else{doStart('fixed',id);}
-closeModal();
-render();
+  if(state.slotRunning){
+    showToast('Τρέχει ήδη θέση. Ολοκλήρωσέ την πρώτα.');
+    return;
+  }
+
+  var now=slotNowMin();
+  var eff=slotEff(s);
+  var late=now>slotParseHM(eff.start);
+  var parts=slotActivityParts(s);
+
+  slotStatusSet(s.id,{
+    status:late?'late':'accepted',
+    startedAt:Date.now(),
+    endedAt:0,
+    actualDurMin:0,
+    overtime:false,
+    lastAsk:0
+  });
+
+  state.slotRunning={
+    slotId:s.id,
+    type:parts.type,
+    id:parts.id,
+    start:Date.now()
+  };
+
+  closeModal();
+
+  if(parts.type==='course'){
+    if(typeof pomoSel!=='undefined')pomoSel={type:'course',id:parts.id};
+    if(typeof startPomodoro==='function')startPomodoro();
+    else if(typeof openPomodoroSetup==='function')openPomodoroSetup();
+  }else if(parts.type==='fixed'){
+    if(typeof doStart==='function')doStart('fixed',parts.id);
+  }
+
+  saveState();
+  render();
 }
-function slotDecline(s){slotStatusSet(s.id,'skipped');closeModal();showToast('Απορρίφθηκε: '+slotName(s));render();}
-function slotAskNow(s){
-var n=nowMinutes();var st=slotMinutesOf(s);var late=n>st;
-openModal({title:(late?'Έχει ξεκινήσει: ':'Σε '+Math.max(0,st-n)+' λεπτά: ')+slotName(s),
-message:slotName(s)+' · '+s.start+' – '+s.end+(late?' (εκπρόθεσμη έναρξη)':''),
-buttons:[
-{text:late?'Εκκίνηση τώρα':'Αποδοχή',class:'btn-primary',onClick:function(){slotAccept(s);}},
-{text:'Απόρριψη',class:'btn-ghost',onClick:function(){slotDecline(s);}}
-]});
-state.slotAsk[slotDateKey()+'|'+s.id]=Date.now();saveState();
+function slotDecline(s){
+  slotStatusSet(s.id,{status:'skipped',lastAsk:0});
+  if(state.slotRunning&&state.slotRunning.slotId===s.id)state.slotRunning=null;
+  closeModal();
+  showToast('Απορρίφθηκε: '+slotName(s));
+  render();
 }
-function slotTick(){
-if(modalOpen)return;
-if(P().phase)return;
-var ov=document.getElementById('focusOverlay');
-if(ov&&!ov.classList.contains('hidden'))return;
-var list=scheduleGetDay(mondayIndex());var n=nowMinutes();
-for(var i=0;i<list.length;i++){
-var s=list[i];var st=slotMinutesOf(s);var en=slotEndMinutesOf(s);
-var stt=slotStatusGet(s.id);
-if(stt==='skipped'||stt==='accepted'||stt==='late')continue;
-if(n<st-5)continue;
-if(n>en)continue;
-var k=slotDateKey()+'|'+s.id;var last=state.slotAsk[k]||0;
-if(Date.now()-last<5*60000)continue;
-slotAskNow(s);return;
+function slotPostpone15(s){
+  var st=slotStatusGet(s.id)||{};
+  var count=st.postponeCount||0;
+  if(count>=7){
+    showToast('Όριο αναβολών +15λ εξαντλήθηκε.');
+    return;
+  }
+
+  var eff=slotEff(s);
+  var sm=slotParseHM(eff.start);
+  var em=slotParseHM(eff.end);
+
+  if(st.status==='accepted'||st.status==='late'){
+    var newEnd=Math.min(1439,em+15);
+    slotStatusSet(s.id,{
+      end:slotFmtHM(newEnd),
+      postponeCount:count+1,
+      overtime:false,
+      lastAsk:Date.now()
+    });
+    showToast('Νέα λήξη: '+slotFmtHM(newEnd)+'.');
+  }else{
+    var newStart=Math.min(1438,sm+15);
+    var newEnd=Math.min(1439,Math.max(newStart+1,em+15));
+    slotStatusSet(s.id,{
+      status:'pending',
+      start:slotFmtHM(newStart),
+      end:slotFmtHM(newEnd),
+      postponeCount:count+1,
+      lastAsk:0
+    });
+    showToast('Αναβολή: '+slotFmtHM(newStart)+' – '+slotFmtHM(newEnd)+'.');
+  }
+
+  closeModal();
+  saveState();
+  render();
 }
+function slotContinueOvertime(s){
+  slotStatusSet(s.id,{overtime:true,lastAsk:Date.now()});
+  closeModal();
+  showToast('Συνέχεια με υπέρβαση.');
+  render();
 }
-setInterval(slotTick,20000);
+function slotFinishById(id){
+  var info=slotRunningInfo();
+  if(!info||info.s.id!==id){
+    var st=slotStatusGet(id);
+    if(st&&(st.status==='accepted'||st.status==='late'))slotMarkDone(id);
+    return;
+  }
+
+  try{
+    if(state.active)stopActive(false);
+  }catch(e){}
+
+  try{
+    if(typeof P==='function'&&P().phase)abortPomodoro(true);
+  }catch(e){}
+
+  slotMarkDone(id);
+  showToast('Ολοκληρώθηκε: '+slotName(info.s));
+}
+function slotCustomTime(s,mode){
+  var eff=slotEff(s);
+  var st=slotStatusGet(s.id)||{};
+  var body='<div class="field" style="display:flex;gap:8px">'
+    +'<div style="flex:1"><label>Έναρξη</label>'
+    +'<input type="time" id="slotCustomStart" value="'+eff.start+'"'+(mode==='end'?' disabled':'')+'></div>'
+    +'<div style="flex:1"><label>Λήξη</label>'
+    +'<input type="time" id="slotCustomEnd" value="'+eff.end+'"></div>'
+    +'</div>';
+
+  openModal({
+    title:mode==='end'?'Νέα λήξη':'Νέα ώρα για σήμερα',
+    body:body,
+    buttons:[
+      {text:'Άκυρο',class:'btn-ghost'},
+      {
+        text:'Αποθήκευση',
+        class:'btn-primary',
+        close:false,
+        onClick:function(){
+          var startEl=document.getElementById('slotCustomStart');
+          var endEl=document.getElementById('slotCustomEnd');
+          var sv=startEl&&!startEl.disabled?startEl.value:eff.start;
+          var ev=endEl?endEl.value:'';
+
+          if(!sv||!ev){
+            showToast('Συμπλήρωσε ώρες.');
+            return false;
+          }
+
+          var sm=slotParseHM(sv);
+          var em=slotParseHM(ev);
+          var now=slotNowMin();
+
+          if(em<=sm){
+            showToast('Η λήξη πρέπει να είναι μετά την έναρξη.');
+            return false;
+          }
+
+          if(mode==='end'&&em<=now){
+            showToast('Η νέα λήξη πρέπει να είναι μελλοντική.');
+            return false;
+          }
+
+          if(mode!=='end'&&em<=now){
+            slotStatusSet(s.id,{
+              status:'skipped',
+              start:sv,
+              end:ev,
+              lastAsk:0
+            });
+            closeModal();
+            showToast('Η νέα ώρα πέρασε: η θέση απορρίφθηκε.');
+            render();
+            return true;
+          }
+
+          slotStatusSet(s.id,{
+            status:mode==='end'?(st.status||'accepted'):'pending',
+            start:sv,
+            end:ev,
+            lastAsk:0
+          });
+
+          closeModal();
+          showToast('Ενημερώθηκε: '+sv+' – '+ev);
+          render();
+          return true;
+        }
+      }
+    ]
+  });
+}
 function slotAcceptById(id){var s=scheduleFind(id);if(s)slotAccept(s);}
 function slotDeclineById(id){var s=scheduleFind(id);if(s)slotDecline(s);}
+function slotPostpone15ById(id){var s=scheduleFind(id);if(s)slotPostpone15(s);}
+function slotCustomTimeById(id,mode){var s=scheduleFind(id);if(s)slotCustomTime(s,mode);}
+
+function slotAskPending(s){
+  var eff=slotEff(s);
+  var now=slotNowMin();
+  var sm=slotParseHM(eff.start);
+  var late=now>sm;
+  var title=late
+    ?'Εκπρόθεσμη έναρξη: '+slotName(s)
+    :'Σε '+Math.max(0,sm-now)+' λεπτά: '+slotName(s);
+  var message=slotName(s)+' · '+eff.start+' – '+eff.end
+    +(eff.count?' · αναβολές '+eff.count+'/7':'');
+
+  var buttons=[
+    {text:late?'Έναρξη τώρα':'Αποδοχή',class:'btn-primary',onClick:function(){slotAccept(s);}},
+    {text:'Απόρριψη',class:'btn-ghost',onClick:function(){slotDecline(s);}}
+  ];
+
+  if(eff.count<7){
+    buttons.push({text:'+15λ',class:'btn-warn',onClick:function(){slotPostpone15(s);}});
+  }
+
+  buttons.push({text:'Νέα ώρα',class:'btn-ghost',onClick:function(){slotCustomTime(s,'both');}});
+
+  slotStatusSet(s.id,{lastAsk:Date.now()});
+  openModal({title:title,message:message,buttons:buttons});
+}
+function slotAskCompletion(s){
+  var eff=slotEff(s);
+  var now=slotNowMin();
+  var em=slotParseHM(eff.end);
+  var extra=Math.max(0,now-em);
+  var title=extra>0
+    ?'Υπέρβαση '+extra+'λ: '+slotName(s)
+    :'Λήξη σε '+Math.max(0,em-now)+' λεπτά: '+slotName(s);
+  var message=slotName(s)+' · προγραμματισμένη λήξη '+eff.end
+    +(eff.count?' · αναβολές '+eff.count+'/7':'');
+
+  var buttons=[
+    {text:'Ναι, ολοκληρώθηκε',class:'btn-success',onClick:function(){slotFinishById(s.id);}},
+    {text:'Όχι, συνέχισε',class:'btn-ghost',onClick:function(){slotContinueOvertime(s);}}
+  ];
+
+  if(eff.count<7){
+    buttons.push({text:'+15λ',class:'btn-warn',onClick:function(){slotPostpone15(s);}});
+  }
+
+  buttons.push({text:'Νέα λήξη',class:'btn-ghost',onClick:function(){slotCustomTime(s,'end');}});
+
+  slotStatusSet(s.id,{lastAsk:Date.now()});
+  openModal({title:title,message:message,buttons:buttons});
+}
+
+function slotNextPending(){
+  var list=scheduleGetDay(mondayIndex());
+  var now=slotNowMin();
+  var best=null;
+  var bestStart=999999;
+
+  list.forEach(function(s){
+    var st=slotStatusGet(s.id);
+    if(st&&st.status!=='pending')return;
+    var eff=slotEff(s);
+    var sm=slotParseHM(eff.start);
+    if(sm>now&&sm<bestStart){
+      best=s;
+      bestStart=sm;
+    }
+  });
+
+  return best;
+}
+function slotLatePending(){
+  var list=scheduleGetDay(mondayIndex());
+  var now=slotNowMin();
+
+  for(var i=0;i<list.length;i++){
+    var s=list[i];
+    var st=slotStatusGet(s.id);
+    if(st&&st.status!=='pending')continue;
+    var eff=slotEff(s);
+    var sm=slotParseHM(eff.start);
+    var em=slotParseHM(eff.end);
+    if(sm<=now&&now<em)return s;
+  }
+
+  return null;
+}
+
+function slotRunningCardHTML(){
+  var info=slotRunningInfo();
+  if(!info)return '';
+
+  var s=info.s;
+  var eff=info.eff;
+  var now=slotNowMin();
+  var em=slotParseHM(eff.end);
+  var extra=Math.max(0,now-em);
+  var rem=Math.max(0,em-now);
+
+  var timeHtml=extra>0
+    ?'<strong class="text-danger">+ '+extra+'λ υπέρβαση</strong>'
+    :'<strong class="text-success">σε '+rem+'λ λήξη</strong>';
+
+  var actions='<div class="actions">'
+    +'<button class="btn btn-success" onclick="slotFinishById(\''+s.id+'\')">Ολοκλήρωση</button>';
+
+  if(eff.count<7){
+    actions+='<button class="btn btn-warn" onclick="slotPostpone15ById(\''+s.id+'\')">+15λ</button>';
+  }
+
+  actions+='<button class="btn btn-ghost" onclick="slotCustomTimeById(\''+s.id+'\',\'end\')">Νέα λήξη</button>'
+    +'</div>';
+
+  return '<div class="row"><div><h3>Τρέχουσα θέση</h3>'
+    +'<p class="muted">'+esc(slotName(s))+' · '+eff.start+' – '+eff.end+'</p>'
+    +'</div><div style="text-align:right" class="slot-live-time">'+timeHtml+'</div></div>'
+    +actions;
+}
+function slotPendingCardHTML(s,late){
+  var eff=slotEff(s);
+  var now=slotNowMin();
+  var sm=slotParseHM(eff.start);
+  var timeHtml=late
+    ?'<strong class="text-warn">εκκρεμεί απάντηση</strong>'
+    :'<strong class="text-success">σε '+Math.max(0,sm-now)+'λ</strong>';
+
+  var actions='<div class="actions">'
+    +'<button class="btn btn-primary" onclick="slotAcceptById(\''+s.id+'\')">'+(late?'Έναρξη τώρα':'Αποδοχή')+'</button>'
+    +'<button class="btn btn-ghost" onclick="slotDeclineById(\''+s.id+'\')">Απόρριψη</button>';
+
+  if(eff.count<7){
+    actions+='<button class="btn btn-warn" onclick="slotPostpone15ById(\''+s.id+'\')">+15λ</button>';
+  }
+
+  actions+='<button class="btn btn-ghost" onclick="slotCustomTimeById(\''+s.id+'\',\'both\')">Νέα ώρα</button>'
+    +'</div>';
+
+  return '<div class="row"><div><h3>'+(late?'Εκκρεμής θέση':'Επόμενη θέση')+'</h3>'
+    +'<p class="muted">'+esc(slotName(s))+' · '+eff.start+' – '+eff.end
+    +(eff.count?' · αναβολές '+eff.count+'/7':'')+'</p>'
+    +'</div><div style="text-align:right">'+timeHtml+'</div></div>'
+    +actions;
+}
 function nextCardHTML(){
-var s=nextSlotToday();
-if(!s)return '<div class="card" id="next-slot-card"><h3>Επόμενη θέση</h3><p class="muted">Καμία επόμενη θέση σήμερα.</p></div>';
-var n=nowMinutes();var st=slotMinutesOf(s);
-return '<div class="card" id="next-slot-card"><div class="row"><div><h3>Επόμενη θέση</h3><p class="muted">'+esc(slotName(s))+' · '+s.start+' – '+s.end+'</p></div><div style="text-align:right"><strong class="text-success">σε '+Math.max(0,st-n)+'λ</strong></div></div><div class="actions"><button class="btn btn-primary" onclick="slotAcceptById(\''+s.id+'\')">Έναρξη τώρα</button><button class="btn btn-ghost" onclick="slotDeclineById(\''+s.id+'\')">Απόρριψη</button></div></div>';
+  var running=slotRunningCardHTML();
+  if(running){
+    return '<div class="card" id="next-slot-card">'+running+'</div>';
+  }
+
+  var late=slotLatePending();
+  if(late){
+    return '<div class="card" id="next-slot-card">'+slotPendingCardHTML(late,true)+'</div>';
+  }
+
+  var next=slotNextPending();
+  if(!next){
+    return '<div class="card" id="next-slot-card"><h3>Επόμενη θέση</h3><p class="muted">Καμία επόμενη θέση σήμερα.</p></div>';
+  }
+
+  return '<div class="card" id="next-slot-card">'+slotPendingCardHTML(next,false)+'</div>';
 }
+
+function slotUpdateOvertimeUI(){
+  var info=slotRunningInfo();
+  var badgeText='';
+  var show=false;
+
+  if(info){
+    var now=slotNowMin();
+    var em=slotParseHM(info.eff.end);
+    var extra=Math.max(0,now-em);
+    if(extra>0){
+      badgeText='+'+extra+'λ';
+      show=true;
+    }
+  }
+
+  var dock=document.getElementById('runningDock');
+  if(dock){
+    var dockCard=dock.querySelector('.dock-card');
+    if(dockCard){
+      dockCard.style.position='relative';
+      var el=dockCard.querySelector('.slot-overtime-badge');
+      if(show){
+        if(!el){
+          el=document.createElement('div');
+          el.className='slot-overtime-badge';
+          el.style.cssText='position:absolute;top:-9px;right:12px;background:#ef4444;color:#fff;font:700 .72rem system-ui,sans-serif;padding:4px 8px;border-radius:999px;box-shadow:0 6px 16px rgba(239,68,68,.35);pointer-events:none';
+          dockCard.appendChild(el);
+        }
+        el.textContent=badgeText;
+        el.style.display='block';
+      }else if(el){
+        el.style.display='none';
+      }
+    }
+  }
+
+  var fo=document.getElementById('focusOverlay');
+  if(fo){
+    var fel=fo.querySelector('.slot-overtime-badge');
+    if(show){
+      if(!fel){
+        fel=document.createElement('div');
+        fel.className='slot-overtime-badge';
+        fel.style.cssText='position:absolute;top:18px;right:18px;background:#ef4444;color:#fff;font:700 .82rem system-ui,sans-serif;padding:7px 12px;border-radius:999px;box-shadow:0 8px 22px rgba(239,68,68,.38);pointer-events:none';
+        fo.appendChild(fel);
+      }
+      fel.textContent=badgeText;
+      fel.style.display='block';
+    }else if(fel){
+      fel.style.display='none';
+    }
+  }
+}
+
+function slotTick(){
+  if(modalOpen)return;
+
+  var ov=document.getElementById('focusOverlay');
+  if(ov&&!ov.classList.contains('hidden'))return;
+
+  if(state.sleep&&state.sleep.asleep)return;
+
+  if(state.slotRunning&&!scheduleFind(state.slotRunning.slotId)){
+    state.slotRunning=null;
+  }
+
+  if(state.slotRunning){
+    var hasActive=!!state.active;
+    var hasPomo=false;
+    try{hasPomo=typeof P==='function'&&!!P().phase;}catch(e){}
+    if(!hasActive&&!hasPomo&&Date.now()-state.slotRunning.start>5*60000){
+      slotMarkDone(state.slotRunning.slotId,'silent');
+    }
+  }
+
+  var now=slotNowMin();
+  var list=scheduleGetDay(mondayIndex());
+  var changed=false;
+
+  for(var i=0;i<list.length;i++){
+    var s=list[i];
+    var st=slotStatusGet(s.id)||{};
+    var eff=slotEff(s);
+    var sm=slotParseHM(eff.start);
+    var em=slotParseHM(eff.end);
+
+    if(st.status==='done'||st.status==='skipped')continue;
+
+    if(!st.status||st.status==='pending'){
+      if(now>=em){
+        slotStatusSet(s.id,{status:'skipped',lastAsk:0});
+        changed=true;
+        continue;
+      }
+
+      if(now>=sm-5){
+        var lastPending=st.lastAsk||0;
+        if(Date.now()-lastPending>5*60000){
+          slotAskPending(s);
+          return;
+        }
+      }
+    }else if(st.status==='accepted'||st.status==='late'){
+      if(now>=em-5){
+        var lastDone=st.lastAsk||0;
+        var interval=st.overtime?15*60000:5*60000;
+        if(Date.now()-lastDone>interval){
+          slotAskCompletion(s);
+          return;
+        }
+      }
+    }
+  }
+
+  if(changed)render();
+  slotUpdateOvertimeUI();
+}
+
 function nextSlotMount(){
-var main=document.querySelector('main');if(!main)return;
-var active=document.querySelector('.nav-btn.active');var label=active?active.textContent:'';
-if(label.indexOf('Ημέρα')<0)return;
-var html=nextCardHTML();
-var el=document.getElementById('next-slot-card');
-if(el){el.outerHTML=html;return;}
-var sched=document.getElementById('schedule-card');
-if(sched){sched.insertAdjacentHTML('beforebegin',html);}
-else{main.insertAdjacentHTML('beforeend',html);}
+  var main=document.querySelector('main');
+  if(!main)return;
+
+  var active=document.querySelector('.nav-btn.active');
+  var label=active?active.textContent:'';
+  if(label.indexOf('Ημέρα')<0)return;
+
+  var html=nextCardHTML();
+  var el=document.getElementById('next-slot-card');
+
+  if(el){
+    el.outerHTML=html;
+  }else{
+    var sched=document.getElementById('schedule-card');
+    if(sched){
+      sched.insertAdjacentHTML('beforebegin',html);
+    }else{
+      main.insertAdjacentHTML('beforeend',html);
+    }
+  }
+
+  slotUpdateOvertimeUI();
 }
-var _renderSchedule7=render;
-render=function(){_renderSchedule7();setTimeout(nextSlotMount,0);};
-setInterval(function(){var el=document.getElementById('next-slot-card');if(el){el.outerHTML=nextCardHTML();}},30000);
+
+var _stopActive8=stopActive;
+stopActive=function(auto){
+  var run=state.slotRunning;
+  _stopActive8(auto);
+  if(run)slotMarkDone(run.slotId,'stop');
+};
+
+var _abortPomo8=abortPomodoro;
+abortPomodoro=function(silent){
+  var run=state.slotRunning;
+  _abortPomo8(silent);
+  if(run)slotMarkDone(run.slotId,'abort');
+};
+
+var _renderSlot8=render;
+render=function(){
+  _renderSlot8();
+  setTimeout(nextSlotMount,0);
+};
+
+if(!window.__slotV8Timers){
+  window.__slotV8Timers=true;
+  setInterval(slotTick,15000);
+  setInterval(nextSlotMount,30000);
+  setInterval(slotUpdateOvertimeUI,5000);
+}
+
 saveState();
 render();
-/* ===== ΤΕΛΟΣ ΠΡΟΓΡΑΜΜΑΤΟΣ v7 ===== */
+/* ===== ΤΕΛΟΣ ΠΡΟΓΡΑΜΜΑΤΟΣ v8 ===== */
 </script>  
 
 <script>
