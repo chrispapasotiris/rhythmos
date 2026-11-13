@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.4.27">
+<meta name="app-version" content="1.4.28">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -811,7 +811,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.4.27';
+var APP_VERSION='1.4.28';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -1515,6 +1515,99 @@ saveState();
 render();
 /* ===== ΤΕΛΟΣ ΠΡΟΓΡΑΜΜΑΤΟΣ v7 ===== */
 </script>  
+
+<script>
+/* ===== ΗΧΟΣ v2: RESUME + SEEK BAR + MEDIA SESSION SEEK ===== */
+function fmtSec(s){s=Math.floor(s||0);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+function audUpdateSeek(){
+  var el=document.getElementById('audSeek');
+  if(!el)return;
+  if(!AUD_EL.duration||isNaN(AUD_EL.duration)){el.value=0;return;}
+  el.value=(AUD_EL.currentTime/AUD_EL.duration)*100;
+  var cur=document.getElementById('audCur');
+  var dur=document.getElementById('audDur');
+  if(cur)cur.textContent=fmtSec(AUD_EL.currentTime);
+  if(dur)dur.textContent=fmtSec(AUD_EL.duration);
+}
+function audSeekTo(pct){
+  if(!AUD_EL.duration||isNaN(AUD_EL.duration))return;
+  AUD_EL.currentTime=(pct/100)*AUD_EL.duration;
+  audUpdateSeek();
+}
+setInterval(function(){if(state.audio.playing)audUpdateSeek();},500);
+
+/* Διόρθωση resume: δεν ξαναβάζουμε src αν το track είναι το ίδιο και έχει currentTime */
+_atM=function(){
+  var a=state.audio;
+  if(!a.playing){
+    var t=audFindTrack();
+    if(t&&a.curTrack===t.id&&AUD_EL.currentTime>0&&!AUD_EL.ended){
+      a.playing=true;
+      AUD_EL.play().then(function(){audInject();}).catch(function(){
+        a.playing=false;audInject();
+      });
+      saveState();
+    }else if(t){
+      audPlayTrack(a.curCat,t);
+    }else if(a.categories.length&&a.categories[0].tracks.length){
+      audPlayTrack(a.categories[0].id,a.categories[0].tracks[0]);
+    }else{
+      openAudioSheet();
+    }
+  }else{
+    a.playing=false;
+    noiseStop();
+    AUD_EL.pause();
+    saveState();
+  }
+};
+
+/* Media session: προσθήκη seek handlers */
+audSetMedia=function(tr,catId){
+  if(!('mediaSession' in navigator))return;
+  try{
+    navigator.mediaSession.metadata=new MediaMetadata({title:tr.name,artist:audCatName(catId),album:'Ρυθμός'});
+    navigator.mediaSession.playbackState='playing';
+    navigator.mediaSession.setActionHandler('play',function(){audToggle();});
+    navigator.mediaSession.setActionHandler('pause',function(){audToggle();});
+    navigator.mediaSession.setActionHandler('previoustrack',function(){audPrev();});
+    navigator.mediaSession.setActionHandler('nexttrack',function(){audNext();});
+    navigator.mediaSession.setActionHandler('seekto',function(d){
+      if(d.seekTime!=null&&AUD_EL.duration&&!isNaN(AUD_EL.duration)){
+        AUD_EL.currentTime=Math.max(0,Math.min(AUD_EL.duration,d.seekTime));
+        audUpdateSeek();
+      }
+    });
+    navigator.mediaSession.setActionHandler('seekbackward',function(d){
+      var o=d.seekOffset||10;
+      AUD_EL.currentTime=Math.max(0,AUD_EL.currentTime-o);
+      audUpdateSeek();
+    });
+    navigator.mediaSession.setActionHandler('seekforward',function(d){
+      var o=d.seekOffset||10;
+      AUD_EL.currentTime=Math.min(AUD_EL.duration||0,AUD_EL.currentTime+o);
+      audUpdateSeek();
+    });
+  }catch(e){}
+};
+
+/* Progress bar στο audio sheet */
+var _oaS3=openAudioSheet;
+openAudioSheet=function(){
+  _oaS3();
+  var bar=document.querySelector('#modalOverlay .aud-bar');
+  if(bar&&!document.getElementById('audSeek')){
+    var d=document.createElement('div');
+    d.style.cssText='margin:8px 0;width:100%';
+    d.innerHTML='<input type="range" id="audSeek" min="0" max="100" step="0.1" value="0" onchange="audSeekTo(this.value)" style="width:100%"><div style="display:flex;justify-content:space-between;font-size:.72rem;color:var(--muted)"><span id="audCur">0:00</span><span id="audDur">0:00</span></div>';
+    bar.parentNode.insertBefore(d,bar.nextSibling);
+  }
+  audUpdateSeek();
+};
+
+saveState();
+/* ===== ΤΕΛΟΣ ΗΧΟΥ v2 ===== */
+</script>
   
 </body>
 
