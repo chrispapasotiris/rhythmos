@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.4.3111">
+<meta name="app-version" content="1.4.32">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -752,7 +752,47 @@ function buildFixedAlerts(def,info){const alerts=[];const d=info.dailyCap;if(def
 function handleFixedActive(a){const info=fixedInfo(a.id);if(!info)return;if(info.def.hard&&info.dayMin>=info.hardLimit-0.05){pushAlert({title:`${info.def.name}: όριο`,message:`Έφτασες ${fmtPrecise(info.dayMin)} από ${fmtPrecise(info.hardLimit)}.`});stopActive(true);return;}buildFixedAlerts(info.def,info).forEach(al=>{const total=al.scope==='week'?info.weekMin:info.dayMin;if(total>=al.min-0.05&&!a.shownAlerts.includes(al.key)){a.shownAlerts.push(al.key);saveState();const cap=al.cap;const st=al.scope==='day'?'ημερήσιο':'εβδομαδιαίο';let msg;if(total>=cap-0.05){msg=`Έφτασες το ${st} όριο.${total>cap?` Υπέρβαση ${fmtHM(total-cap)}.`:''}`;}else{msg=`Χρησιμοποίησες ${fmtHM(total)}. Απομένουν ${fmtHM(cap-total)}.`;}pushAlert({title:`${info.def.name}: ${al.title}`,message:msg});}});}
 function handleCourseActive(a){const c=state.courses.find(x=>x.id===a.id);if(!c)return;const info=courseInfo(c);if(info.todayTarget>0&&info.dayMin>=info.todayTarget-0.05&&!a.shownAlerts.includes('today')){a.shownAlerts.push('today');saveState();pushAlert({title:`${c.name}: ημερήσιος`,message:`Κάλυψες ${fmtHM(info.todayTarget)}.`});}if(info.targetMin>0&&info.weekMin>=info.targetMin-0.05&&!a.shownAlerts.includes('week')){a.shownAlerts.push('week');saveState();pushAlert({title:`${c.name}: εβδομαδιαίος`,message:`Έφτασες ${fmtHM(info.targetMin)}.`});}}
 
-function doStart(type,id){state.active={type,id,start:Date.now(),shownAlerts:[]};saveState();render();showToast('Ξεκίνησε.');}
+function doStart(type,id){
+  if(!state.slotRunning && typeof scheduleGetDay==='function' && typeof mondayIndex==='function' && typeof slotStatusGet==='function' && typeof slotEff==='function' && typeof slotStatusSet==='function' && typeof slotParseHM==='function' && typeof slotNowMin==='function'){
+    var today=mondayIndex();
+    var want=type+':'+id;
+    var list=scheduleGetDay(today);
+
+    for(var i=0;i<list.length;i++){
+      var s=list[i];
+      if(s.activityId!==want)continue;
+
+      var st=slotStatusGet(s.id);
+      if(st&&(st.status==='done'||st.status==='skipped'))continue;
+
+      var eff=slotEff(s);
+      var late=slotNowMin()>slotParseHM(eff.start);
+
+      slotStatusSet(s.id,{
+        status:late?'late':'accepted',
+        startedAt:Date.now(),
+        endedAt:0,
+        actualDurMin:0,
+        overtime:false,
+        lastAsk:0
+      });
+
+      state.slotRunning={
+        slotId:s.id,
+        type:type,
+        id:id,
+        start:Date.now()
+      };
+
+      break;
+    }
+  }
+
+  state.active={type,id,start:Date.now(),shownAlerts:[]};
+  saveState();
+  render();
+  showToast('Ξεκίνησε.');
+}
 function startFixed(id){if(state.active){showToast('Τρέχει άλλο.');return;}const info=fixedInfo(id);if(!info)return;if(info.def.hard&&info.dayMin>=info.hardLimit-0.05){pushAlert({title:`${info.def.name}: όριο`,message:`Μέγιστο ${fmtPrecise(info.hardLimit)}.`});return;}if(id==='relax'&&info.dayMin>=info.dailyCap-0.05){if(!info.canOver){pushAlert({title:'Χαλάρωση',message:`${info.overs}/${info.allowed} υπερβάσεις.`});return;}confirmModal('Υπέρβαση',`Ήδη ${fmtPrecise(info.dayMin)}. Συνέχεια έως ${fmtPrecise(info.double)}.`,()=>doStart('fixed',id),'Συνέχεια');return;}if(!info.def.hard&&info.dayRemaining<=0){confirmModal('Υπέρβαση',`${info.def.name}: όριο εξαντλήθηκε.`,()=>doStart('fixed',id),'Έναρξη');return;}doStart('fixed',id);}
 function startCourse(id){if(state.active){showToast('Τρέχει άλλο.');return;}const c=state.courses.find(x=>x.id===id);if(!c||!c.active)return;if(c.off.includes(mondayIndex())){pushAlert({title:'Ρεπό',message:`Σήμερα ρεπό για ${c.name}.`});return;}const info=courseInfo(c);if(info.targetMin>0&&info.weekMin>=info.targetMin-0.05){confirmModal('Στόχος',`Ήδη ${fmtHM(info.weekMin)} από ${fmtHM(info.targetMin)}.`,()=>doStart('course',id),'Συνέχεια');return;}doStart('course',id);}
 function stopActive(auto){const wasPomo=P().phase==='focus';if(wasPomo){P().phase=null;P().phaseEndsAt=0;closeFocusOverlay();}endSession(auto);render();if(!auto)showToast(wasPomo?'Ο κύκλος τερματίστηκε, ο χρόνος καταγράφηκε.':'Ολοκληρώθηκε.');}
@@ -811,7 +851,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.4.3111';
+var APP_VERSION='1.4.32';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -1324,14 +1364,25 @@ main.insertAdjacentHTML('beforeend',
 }
 /* ===== ΑΠΟΣΥΜΦΟΡΗΣΗ ΗΜΕΡΑΣ (ενσωματωμένη στο v5) ===== */
 function weekPlanCardHTML(){
-var sleepMin=state.settings.sleepHours*60;
-var sleepWeek=sleepMin*7;
-var planned=plannedWeeklyMin();
-var freeWeek=10080-sleepWeek-planned;
-return '<div class="card"><h3>Εβδομαδιαίο πλάνο</h3><div class="stack-bar"><div style="width:'+sleepWeek/10080*100+'%;background:#c7d2fe"></div><div style="width:'+planned/10080*100+'%;background:linear-gradient(90deg,#6366f1,#8b5cf6)"></div><div style="width:'+Math.max(0,freeWeek)/10080*100+'%;background:linear-gradient(90deg,#34d399,#10b981)"></div></div>'
-+'<div class="plan-row"><span><span class="dot" style="background:#c7d2fe"></span>Ύπνος</span><strong>'+fmtHM(sleepWeek)+'</strong></div>'
-+'<div class="plan-row"><span><span class="dot" style="background:#6366f1"></span>Δραστηριότητες</span><strong>'+fmtHM(planned)+'</strong></div>'
-+'<div class="plan-row"><span><span class="dot" style="background:#10b981"></span>Ελεύθερος</span><strong class="'+(freeWeek<0?'text-danger':'text-success')+'">'+fmtHM(freeWeek)+'</strong></div></div>';
+  var snap=(typeof budgetSnapshotExact==='function'?budgetSnapshotExact:budgetSnapshot)(state.courses,FIXED_DEFS,state.settings.sleepHours);
+
+  var sleepWeek=(snap&&typeof snap.sleepW==='number')?snap.sleepW:state.settings.sleepHours*7*60;
+  var planned=(snap&&typeof snap.plannedW==='number')?snap.plannedW:plannedWeeklyMin();
+  var freeWeek=(snap&&typeof snap.weekRem==='number')?snap.weekRem:10080-sleepWeek-planned;
+
+  var pct=function(v){
+    return Math.max(0,Math.min(100,v/10080*100));
+  };
+
+  return '<div class="card"><h3>Εβδομαδιαίο πλάνο</h3><div class="stack-bar">'
+    +'<div style="width:'+pct(sleepWeek)+'%;background:#c7d2fe"></div>'
+    +'<div style="width:'+pct(planned)+'%;background:linear-gradient(90deg,#6366f1,#8b5cf6)"></div>'
+    +'<div style="width:'+pct(Math.max(0,freeWeek))+'%;background:linear-gradient(90deg,#34d399,#10b981)"></div>'
+    +'</div>'
+    +'<div class="plan-row"><span><span class="dot" style="background:#c7d2fe"></span>Ύπνος</span><strong>'+fmtHM(sleepWeek)+'</strong></div>'
+    +'<div class="plan-row"><span><span class="dot" style="background:#6366f1"></span>Δραστηριότητες</span><strong>'+fmtHM(planned)+'</strong></div>'
+    +'<div class="plan-row"><span><span class="dot" style="background:#10b981"></span>Ελεύθερος</span><strong class="'+(freeWeek<0?'text-danger':'text-success')+'">'+fmtHM(freeWeek)+'</strong></div>'
+    +'</div>';
 }
 function monthlyCardHTML(){
 ensureMonth();
@@ -1397,19 +1448,92 @@ return m;
 }
 function scheduleSlotCount(){return (state.schedule&&state.schedule.slots||[]).length;}
 function budgetSnapshotExact(courses,fixedDefs,sleepHours){
-var sleepW=sleepHours*7*60;
-var fixedW=fixedDefs.reduce(function(s,d){return s+d.weekly;},0);
-var courseW=courses.filter(function(c){return c.active&&c.hours>0;}).reduce(function(s,c){return s+c.hours*60;},0);
-var weekRem=10080-sleepW-fixedW-courseW;
-var days;
-if(scheduleSlotCount()>0){
-days=[0,1,2,3,4,5,6].map(function(d){return 1440-sleepHours*60-scheduleDayMinutes(d);});
-}else{
-var fixedDay=fixedW/7;var loads=[0,0,0,0,0,0,0];
-courses.forEach(function(c){if(!c.active||!c.hours)return;var off=Array.isArray(c.off)?c.off:[];var activeDays=Math.max(1,7-off.length);var per=c.hours*60/activeDays;for(var d=0;d<7;d++)if(off.indexOf(d)<0)loads[d]+=per;});
-days=loads.map(function(l){return 1440-sleepHours*60-fixedDay-l;});
-}
-return {weekRem:weekRem,days:days};
+  var slots=(state.schedule&&state.schedule.slots)||[];
+  var scheduledFixed={};
+  var scheduledCourse={};
+
+  slots.forEach(function(s){
+    if(!s||!s.activityId)return;
+    var p=String(s.activityId).split(':');
+    if(p[0]==='fixed')scheduledFixed[p.slice(1).join(':')]=1;
+    else if(p[0]==='course')scheduledCourse[p.slice(1).join(':')]=1;
+  });
+
+  var unscheduledFixedW=0;
+  fixedDefs.forEach(function(d){
+    if(!scheduledFixed[d.id])unscheduledFixedW+=(d.weekly||0);
+  });
+
+  var unscheduledCourses=[];
+  courses.forEach(function(c){
+    if(c&&c.active&&c.hours>0&&!scheduledCourse[c.id]){
+      var off=Array.isArray(c.off)?c.off:[];
+      var activeDays=Math.max(1,7-off.length);
+      unscheduledCourses.push({
+        id:c.id,
+        hoursMin:c.hours*60,
+        off:off,
+        per:c.hours*60/activeDays
+      });
+    }
+  });
+
+  var scheduledW=0;
+  var daysSlot=[0,0,0,0,0,0,0];
+  var todayIdx=(typeof mondayIndex==='function')?mondayIndex():0;
+
+  slots.forEach(function(s){
+    if(!s)return;
+    var st,en;
+
+    if(s.day===todayIdx && typeof slotEff==='function'){
+      var eff=slotEff(s);
+      st=eff.start;
+      en=eff.end;
+    }else{
+      st=s.start;
+      en=s.end;
+    }
+
+    var t=String(st||'0:0').split(':').map(Number);
+    var e=String(en||'0:0').split(':').map(Number);
+    var m=(e[0]*60+(e[1]||0))-(t[0]*60+(t[1]||0));
+
+    if(m>0){
+      scheduledW+=m;
+      if(s.day>=0&&s.day<7)daysSlot[s.day]+=m;
+    }
+  });
+
+  var unscheduledCourseW=0;
+  var unscheduledCourseDay=[0,0,0,0,0,0,0];
+
+  unscheduledCourses.forEach(function(c){
+    unscheduledCourseW+=c.hoursMin;
+    for(var d=0;d<7;d++){
+      if(c.off.indexOf(d)<0)unscheduledCourseDay[d]+=c.per;
+    }
+  });
+
+  var plannedW=scheduledW+unscheduledFixedW+unscheduledCourseW;
+
+  var actualSleepToday=(typeof sleepTodayMin==='function')?sleepTodayMin():(sleepHours*60);
+  var weeklySleep=sleepHours*7*60+(actualSleepToday-sleepHours*60);
+  var weekRem=10080-weeklySleep-plannedW;
+
+  var days=[];
+  for(var d=0;d<7;d++){
+    var sleepD=(d===todayIdx?actualSleepToday:sleepHours*60);
+    var loadD=daysSlot[d]+unscheduledFixedW/7+unscheduledCourseDay[d];
+    days.push(1440-sleepD-loadD);
+  }
+
+  return {
+    weekRem:weekRem,
+    days:days,
+    sleepW:weeklySleep,
+    plannedW:plannedW
+  };
 }
 function unplacedBadgesMount(){
 var main=document.querySelector('main');
