@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.4.34">
+<meta name="app-version" content="1.4.35">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -830,7 +830,7 @@ const trialDefs=def?FIXED_DEFS.map(x=>x.id===def.id?{...x,daily,weekly}:x):FIXED
 const data={name,short,desc:sheet.querySelector('#fDesc').value.trim(),color:sheet.querySelector('#fColor').value,color2:sheet.querySelector('#fColor2').value,daily,weekly,target,hard,timeRange:[from,to]};
 if(def){Object.assign(def,data);}else{FIXED_DEFS.push({id:'act_'+Date.now(),...data});}
 saveState();closeModal();render();showToast('Αποθηκεύτηκε.');}}],onMount(sheet){const hb=sheet.querySelector('#fHardBtn');hb.onclick=()=>{hard=!hard;hb.classList.toggle('on',hard);};const refreshBudget=()=>{const td=clamp(parseInt(sheet.querySelector('#fDaily').value)||60,5,1440);const tw=clamp(parseInt(sheet.querySelector('#fWeekly').value)||td,5,10080);const trialDefs=def?FIXED_DEFS.map(x=>x.id===def.id?{...x,daily:td,weekly:tw}:x):FIXED_DEFS.concat([{id:'__tmp',name:'',short:'',daily:td,weekly:tw}]);const snap=budgetSnapshot(state.courses,trialDefs,state.settings.sleepHours);const box=sheet.querySelector('#budgetBox');if(box)box.innerHTML=budgetPanelHTML(snap);const sb=sheet.querySelector('.modal-actions .btn-primary');if(sb)sb.disabled=budgetBad(snap);};sheet.querySelector('#fDaily').addEventListener('input',refreshBudget);sheet.querySelector('#fWeekly').addEventListener('input',refreshBudget);refreshBudget();}});}
-function deleteFixed(id){const def=FIXED_DEFS.find(x=>x.id===id);if(!def)return;confirmModal('Διαγραφή',`Διαγραφή "${def.name}" και των καταγραφών της;`,()=>{FIXED_DEFS.splice(FIXED_DEFS.indexOf(def),1);state.logs=state.logs.filter(l=>!(l.type==='fixed'&&l.id===id));if(state.active&&state.active.type==='fixed'&&state.active.id===id)state.active=null;const p=P();if(p.activityType==='fixed'&&p.activityId===id){p.phase=null;p.phaseEndsAt=0;}saveState();closeModal();render();showToast('Διαγράφηκε.');},'Διαγραφή');}
+function deleteFixed(id){const def=FIXED_DEFS.find(x=>x.id===id);if(!def)return;const idx=FIXED_DEFS.indexOf(def);const removedLogs=state.logs.filter(l=>l.type==='fixed'&&l.id===id);FIXED_DEFS.splice(idx,1);state.logs=state.logs.filter(l=>!(l.type==='fixed'&&l.id===id));if(state.active&&state.active.type==='fixed'&&state.active.id===id)state.active=null;const p=P();if(p.activityType==='fixed'&&p.activityId===id){p.phase=null;p.phaseEndsAt=0;}undoStack={kind:'fixed',index:idx,def:def,logs:removedLogs};saveState();closeModal();render();undoShow('Διαγράφηκε το «'+def.name+'».');}
 function openMonthlyEditor(id){const item=id?MONTHLY_DEFS.find(x=>x.id===id):null;const m=item||{name:'',hours:3};
 const body=`<div class="field"><label>Όνομα</label><input id="mName" value="${esc(m.name)}"></div><div class="field"><label>Ωρες</label><input id="mHours" type="number" min="0.5" max="72" step="0.5" value="${m.hours}"></div><div id="formError" class="form-error"></div>`;
 openModal({title:item?'Επεξεργασία μηνιαίας':'Νέα μηνιαία επιλογή',body,buttons:[{text:'Ακύρωση',class:'btn-ghost'},{text:'Αποθήκευση',class:'btn-primary',close:false,onClick:()=>{const sheet=document.querySelector('#modalOverlay .sheet');const err=sheet.querySelector('#formError');const name=sheet.querySelector('#mName').value.trim();const hours=clamp(parseFloat(sheet.querySelector('#mHours').value)||0,0.5,72);if(!name){err.textContent='Δώσε όνομα.';err.classList.add('show');return false;}if(item){item.name=name;item.hours=hours;}else{MONTHLY_DEFS.push({id:'mon_'+Date.now(),name,hours});}saveState();closeModal();render();showToast('Αποθηκεύτηκε.');}}]});}
@@ -852,7 +852,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.4.34';
+var APP_VERSION='1.4.35';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -1087,7 +1087,7 @@ function logsTodayHTML(){var s=startOfDay(),e=startOfNextDay();var idx=[];state.
 var rows=idx.map(function(i){var L=state.logs[i];var nm=L.type==='course'?(state.courses.find(function(c){return c.id===L.id})||{name:'Μάθημα'}).name:(FIXED_DEFS.find(function(d){return d.id===L.id})||{name:'Δραστηριότητα'}).name;
 return '<div class="list-row"><div class="list-left"><strong>'+esc(nm)+'</strong><span class="muted">'+fmtClock(L.start-s)+' – '+fmtClock(Math.min(L.end,e)-s)+'</span></div><div class="list-value">'+fmtHM(L.dur)+'</div><button class="btn btn-ghost" onclick="logEdit('+i+')">✎</button><button class="btn btn-ghost-danger" onclick="logDel('+i+')">✕</button></div>';}).join('');
 return '<div class="card"><h3>Καταγραφές σήμερα</h3><div class="stack" style="margin-top:10px">'+rows+'</div></div>';}
-function logDel(i){var L=state.logs[i];if(!L)return;confirmModal('Διαγραφή','Διαγραφή αυτής της καταγραφής;',function(){var k=state.logs.indexOf(L);if(k>-1)state.logs.splice(k,1);saveState();render();},'Διαγραφή');}
+function logDel(i){var L=state.logs[i];if(!L)return;var k=state.logs.indexOf(L);if(k<0)return;state.logs.splice(k,1);undoStack={kind:'log',index:k,log:L};saveState();render();undoShow('Διαγράφηκε η καταγραφή.');}
 function logEdit(i){var L=state.logs[i];if(!L)return;var m=prompt('Νέα διάρκεια σε λεπτά:',Math.round(L.dur));if(!m)return;var mins=clamp(parseFloat(m)||0,1,1440);L.dur=mins;L.end=L.start+mins*60000;saveState();render();}
 function dayCompliant(ts){var s=startOfDay(ts),e=startOfNextDay(ts);return FIXED_DEFS.every(function(d){return totalMin('fixed',d.id,s,e)<=d.daily+0.5;});}
 function streakCount(){var day=86400000;var cur=startOfDay();if(!dayCompliant(cur))cur-=day;var n=0;while(n<60&&dayCompliant(cur)){n++;cur-=day;}return n;}
@@ -3052,6 +3052,54 @@ saveState();
 /* ===== ΤΕΛΟΣ ΕΙΔΟΠΟΙΗΣΕΩΝ v1 ===== */
 </script>
 
+<script>
+/* ===== UNDO v1 ===== */
+var undoStack=null;
+function undoShow(msg){
+  var t=document.getElementById('undoToast');
+  if(!t){
+    t=document.createElement('div');
+    t.id='undoToast';
+    t.style.cssText='position:fixed;left:50%;transform:translateX(-50%) translateY(20px);bottom:calc(80px + env(safe-area-inset-bottom));background:var(--toast-bg);color:var(--toast-text);padding:10px 14px;border-radius:16px;font-size:.84rem;font-weight:700;opacity:0;pointer-events:none;transition:.25s;z-index:202;display:flex;align-items:center;gap:12px;max-width:92%;box-shadow:0 12px 30px rgba(0,0,0,.25)';
+    document.body.appendChild(t);
+  }
+  t.innerHTML='<span style="pointer-events:none">'+esc(msg)+'</span><button class="btn btn-ghost" style="pointer-events:auto;flex:0 0 auto;padding:6px 12px" onclick="undoPerform()">Αναίρεση</button>';
+  t.style.opacity='1';
+  t.style.pointerEvents='auto';
+  t.style.transform='translateX(-50%) translateY(0)';
+  clearTimeout(undoShow._tm);
+  undoShow._tm=setTimeout(function(){
+    undoStack=null;
+    t.style.opacity='0';
+    t.style.pointerEvents='none';
+    t.style.transform='translateX(-50%) translateY(20px)';
+  },5000);
+}
+function undoPerform(){
+  var u=undoStack;
+  if(!u)return;
+  undoStack=null;
+  if(u.kind==='log'){
+    state.logs.splice(Math.min(u.index,state.logs.length),0,u.log);
+  }else if(u.kind==='fixed'){
+    FIXED_DEFS.splice(Math.min(u.index,FIXED_DEFS.length),0,u.def);
+    state.logs=state.logs.concat(u.logs);
+    state.logs.sort(function(a,b){return a.start-b.start;});
+  }
+  saveState();
+  render();
+  var t=document.getElementById('undoToast');
+  if(t){
+    t.style.opacity='0';
+    t.style.pointerEvents='none';
+    t.style.transform='translateX(-50%) translateY(20px)';
+    clearTimeout(undoShow._tm);
+  }
+  showToast('Ανααιρέθηκε.');
+}
+/* ===== ΤΕΛΟΣ UNDO v1 ===== */
+</script>
+  
   
 </body>
 
