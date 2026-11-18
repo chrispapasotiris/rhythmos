@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.4.37">
+<meta name="app-version" content="1.4.38">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -516,7 +516,16 @@ function startPomodoro(){
   if(pomoSel.type)doStart(pomoSel.type,pomoSel.id);else render();
   openFocusOverlay();
 }
-function endSession(silent){if(!state.active)return;const a=state.active;const end=a.pausedAt||Date.now();if(end>a.start+500)addLogSplit(a.type,a.id,a.start,end);state.active=null;saveState();if(!silent)render();}
+function endSession(silent){
+  if(!state.active)return;
+  const a=state.active;
+  const end=a.pausedAt||Date.now();
+  if(end>a.start+500)addLogSplit(a.type,a.id,a.start,end);
+  state.active=null;
+  if(typeof healthClear==='function') healthClear();
+  saveState();
+  if(!silent)render();
+}
 function completeFocus(){
   const p=P();endSession(true);p.cycleCount++;
   const long=p.cycleCount%4===0;const dur=long?PM().longBreakMin:PM().breakMin;
@@ -691,7 +700,7 @@ function renderSettings(){
   const sleepWeek=state.settings.sleepHours*7*60;const planned=plannedWeeklyMin();const freeWeek=10080-sleepWeek-planned;
   const base=relaxBaseDaily();const double=relaxDouble();const weeklyMax=RELAX_WEEK+state.settings.relaxOvers*base;const monthFree=monthlyFreeMin();const pm=PM();
   return `<div class="section-title">Εμφάνιση</div>
-  <div class="card"><div class="setting-row"><div><strong>Μέγεθος & θέμα</strong><span class="muted">Κανονικό/μικρό, φωτεινό/νυχτερινό/σκοτεινό.</span></div><button class="btn btn-ghost" onclick="openAppearance()">Επιλογές</button></div></div>
+  <div class="card"><div class="setting-row"><div><strong>Μέγεθος & θέμα</strong><span class="muted">Κανονικό/μικρό, φωτεινό/νυχτερινό/σκοτεινό.</span></div><button class="btn btn-ghost" onclick="openQuickSettings()">Επιλογές</button></div></div>
   <div class="section-title">Focus & Pomodoro</div>
   <div class="card">
     <div class="setting-row"><div><strong>Καθαρό UI στη μελέτη</strong><span class="muted">Κρύβει quick actions & προτάσεις. Ενεργοποιείται αυτόματα κατά το focus.</span></div><button class="switch ${focusMode?'on':''}" onclick="toggleFocusMode()"></button></div>
@@ -788,7 +797,17 @@ function doStart(type,id){
     }
   }
 
-  state.active={type,id,start:Date.now(),pausedAt:null,shownAlerts:[]};
+  state.active={
+    type:type,
+    id:id,
+    start:Date.now(),
+    healthStart:Date.now(),
+    pausedAt:null,
+    shownAlerts:[]
+  };
+
+  if(typeof healthResetThresholds==='function') healthResetThresholds();
+
   saveState();
   render();
   showToast('Ξεκίνησε.');
@@ -851,7 +870,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.4.37';
+var APP_VERSION='1.4.38';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -3109,18 +3128,324 @@ function undoPerform(){
 function togglePause(){
   if(!state.active)return;
   const a=state.active;
+
   if(a.pausedAt){
-    a.start += (Date.now() - a.pausedAt);
-    a.pausedAt = null;
+    const pausedMs=Date.now()-a.pausedAt;
+    a.start += pausedMs;
+
+    const resetMin=clamp(parseInt((state.health&&state.health.pauseResetMin)||3,10),1,60);
+    if(pausedMs >= resetMin*60000){
+      a.healthStart=Date.now();
+      if(typeof healthResync==='function') healthResync();
+      else if(typeof healthResetThresholds==='function') healthResetThresholds();
+    }
+
+    a.pausedAt=null;
     showToast('Συνέχισε.');
   }else{
-    a.pausedAt = Date.now();
+    a.pausedAt=Date.now();
     showToast('Παύση.');
   }
+
   saveState();
   render();
 }
 /* ===== ΤΕΛΟΣ PAUSE v1 ===== */
+</script>
+
+<style>
+.qs-section{border:1px solid var(--line);border-radius:14px;margin:0 0 10px;background:var(--card);overflow:hidden}
+.qs-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border:0;background:transparent;color:var(--text);font:700 .92rem system-ui,sans-serif;cursor:pointer;text-align:left}
+.qs-head:hover{background:rgba(99,102,241,.06)}
+.qs-arrow{font-size:1rem;line-height:1;transition:transform .18s ease;color:var(--muted)}
+.qs-section.open .qs-arrow{transform:rotate(180deg)}
+.qs-body{max-height:0;opacity:0;padding:0 14px;overflow:hidden;transition:max-height .22s ease,opacity .18s ease,padding .22s ease}
+.qs-section.open .qs-body{max-height:760px;opacity:1;padding:10px 14px 14px}
+.qs-note{font-size:.76rem;color:var(--muted);margin-top:8px;line-height:1.35}
+@media (prefers-reduced-motion: reduce){
+  .qs-arrow,.qs-body{transition:none}
+}
+</style>
+
+<script>
+/* ===== ΥΓΕΙΑ v1: ΜΑΤΙΑ + ΣΗΚΩΜΑ + ΓΡΗΓΟΡΟ ΜΕΝΟΥ ===== */
+var HEALTH_NONE=999999;
+
+state.health=state.health||{};
+
+function healthEnsure(){
+  var h=state.health;
+  h.eyeEnabled=!!h.eyeEnabled;
+  h.standEnabled=!!h.standEnabled;
+  h.eyeMin=clamp(parseInt(h.eyeMin||30,10),5,180);
+  h.standMin=clamp(parseInt(h.standMin||60,10),10,360);
+  h.pauseResetMin=clamp(parseInt(h.pauseResetMin||3,10),1,60);
+  if(typeof h.nextEye!=='number'||h.nextEye<=0)h.nextEye=HEALTH_NONE;
+  if(typeof h.nextStand!=='number'||h.nextStand<=0)h.nextStand=HEALTH_NONE;
+}
+
+function healthResetThresholds(){
+  healthEnsure();
+  var h=state.health;
+  h.nextEye=h.eyeEnabled?h.eyeMin:HEALTH_NONE;
+  h.nextStand=h.standEnabled?h.standMin:HEALTH_NONE;
+}
+
+function healthClear(){
+  healthEnsure();
+  state.health.nextEye=HEALTH_NONE;
+  state.health.nextStand=HEALTH_NONE;
+}
+
+function healthElapsedMin(){
+  if(!state.active)return 0;
+  var a=state.active;
+  var base=a.healthStart||a.start;
+  var ref=a.pausedAt||Date.now();
+  return Math.max(0,Math.floor((ref-base)/60000));
+}
+
+function healthResync(){
+  healthEnsure();
+  var h=state.health;
+  var e=healthElapsedMin();
+
+  h.nextEye=h.eyeEnabled
+    ?(Math.floor(e/h.eyeMin)+1)*h.eyeMin
+    :HEALTH_NONE;
+
+  h.nextStand=h.standEnabled
+    ?(Math.floor(e/h.standMin)+1)*h.standMin
+    :HEALTH_NONE;
+}
+
+function healthFire(kind){
+  healthEnsure();
+  var h=state.health;
+  var title='';
+  var message='';
+
+  if(kind==='eye'){
+    title='Ξεκούραση ματιών';
+    message='Κοίτα 6 μέτρα μακριά για 2–3 λεπτά.';
+  }else{
+    title='Σήκω';
+    message='Σηκώσου, τεντώσου και περπάτα 2–3 λεπτά.';
+  }
+
+  if(typeof notifPush==='function'){
+    notifPush({title:title,message:message});
+    return;
+  }
+
+  if(typeof notify==='function'){
+    try{notify(title,message);}catch(e){}
+  }
+}
+
+function healthTick(){
+  healthEnsure();
+  var h=state.health;
+
+  if(!state.active){
+    if(h.nextEye!==HEALTH_NONE||h.nextStand!==HEALTH_NONE){
+      h.nextEye=HEALTH_NONE;
+      h.nextStand=HEALTH_NONE;
+    }
+    return;
+  }
+
+  var e=healthElapsedMin();
+  if(e<=0)return;
+
+  if(!h.eyeEnabled)h.nextEye=HEALTH_NONE;
+  if(!h.standEnabled)h.nextStand=HEALTH_NONE;
+
+  if(h.eyeEnabled&&h.nextEye===HEALTH_NONE){
+    h.nextEye=(Math.floor(e/h.eyeMin)+1)*h.eyeMin;
+  }
+
+  if(h.standEnabled&&h.nextStand===HEALTH_NONE){
+    h.nextStand=(Math.floor(e/h.standMin)+1)*h.standMin;
+  }
+
+  var loops=0;
+
+  while(loops<4){
+    loops++;
+
+    var dueStand=h.standEnabled&&e>=h.nextStand;
+    var dueEye=h.eyeEnabled&&e>=h.nextEye;
+
+    if(!dueStand&&!dueEye)break;
+
+    if(dueStand){
+      var firedStand=h.nextStand;
+      healthFire('stand');
+      h.nextStand=firedStand+h.standMin;
+
+      if(h.eyeEnabled&&h.nextEye<=firedStand){
+        h.nextEye=firedStand+h.eyeMin;
+      }
+      continue;
+    }
+
+    if(dueEye){
+      var firedEye=h.nextEye;
+      healthFire('eye');
+      h.nextEye=firedEye+h.eyeMin;
+      continue;
+    }
+  }
+
+  if(loops>=4){
+    healthResync();
+  }
+}
+
+function healthToggle(key,btn){
+  healthEnsure();
+  state.health[key]=!state.health[key];
+
+  if(btn){
+    btn.classList.toggle('on',!!state.health[key]);
+  }
+
+  if(state.active){
+    healthResync();
+  }else{
+    healthResetThresholds();
+  }
+
+  saveState();
+}
+
+function healthSetMin(key,value,input){
+  healthEnsure();
+  var h=state.health;
+
+  if(key==='eyeMin'){
+    h.eyeMin=clamp(parseInt(value||30,10),5,180);
+  }else if(key==='standMin'){
+    h.standMin=clamp(parseInt(value||60,10),10,360);
+  }else if(key==='pauseResetMin'){
+    h.pauseResetMin=clamp(parseInt(value||3,10),1,60);
+  }
+
+  if(input)input.value=h[key];
+
+  if(state.active){
+    healthResync();
+  }else{
+    healthResetThresholds();
+  }
+
+  saveState();
+}
+
+function qsToggle(id){
+  var body=document.getElementById(id);
+  if(!body)return;
+  var section=body.closest('.qs-section');
+  if(section)section.classList.toggle('open');
+}
+
+function openQuickSettings(){
+  healthEnsure();
+
+  var theme=state.settings.theme||'light';
+  var scale=state.settings.uiScale||'normal';
+  var h=state.health;
+
+  var body=''
+    +'<div class="qs-section" id="qsThemesSection">'
+      +'<button type="button" class="qs-head" onclick="qsToggle(\'qsThemes\')">'
+        +'<span>Εμφάνιση</span>'
+        +'<span class="qs-arrow">▾</span>'
+      +'</button>'
+      +'<div class="qs-body" id="qsThemes">'
+        +'<div class="appearance-label">Μέγεθος</div>'
+        +'<div class="appearance-grid">'
+          +'<button type="button" class="appearance-choice '+(scale==='normal'?'on':'')+'" data-scale-choice="normal" onclick="setUiScale(\'normal\')">'
+            +'<strong>Κανονικό</strong><small>Προεπιλεγμένο</small>'
+          +'</button>'
+          +'<button type="button" class="appearance-choice '+(scale==='small'?'on':'')+'" data-scale-choice="small" onclick="setUiScale(\'small\')">'
+            +'<strong>Μικρό</strong><small>Συμπαγές</small>'
+          +'</button>'
+        +'</div>'
+        +'<div class="appearance-label">Θέμα</div>'
+        +'<div class="appearance-grid">'
+          +'<button type="button" class="appearance-choice '+(theme==='light'?'on':'')+'" data-theme-choice="light" onclick="setTheme(\'light\')">'
+            +'<strong>Φωτεινό</strong><small>Ανοιχτό</small>'
+          +'</button>'
+          +'<button type="button" class="appearance-choice '+(theme==='blue'?'on':'')+'" data-theme-choice="blue" onclick="setTheme(\'blue\')">'
+            +'<strong>Νυχτερινό</strong><small>Μπλε</small>'
+          +'</button>'
+          +'<button type="button" class="appearance-choice '+(theme==='dark'?'on':'')+'" data-theme-choice="dark" onclick="setTheme(\'dark\')">'
+            +'<strong>Σκοτεινό</strong><small>Γκρι</small>'
+          +'</button>'
+        +'</div>'
+      +'</div>'
+    +'</div>'
+
+    +'<div class="qs-section" id="qsHealthSection">'
+      +'<button type="button" class="qs-head" onclick="qsToggle(\'qsHealth\')">'
+        +'<span>Ευεξία</span>'
+        +'<span class="qs-arrow">▾</span>'
+      +'</button>'
+      +'<div class="qs-body" id="qsHealth">'
+        +'<div class="setting-row">'
+          +'<div>'
+            +'<strong>Ξεκούραση ματιών</strong>'
+            +'<span class="muted">Κάθε '+h.eyeMin+' λεπτά συνεχούς εργασίας. Δεν φωτάνει ταυτόχρονα με σήκωμα.</span>'
+          +'</div>'
+          +'<button type="button" class="switch '+(h.eyeEnabled?'on':'')+'" onclick="healthToggle(\'eyeEnabled\',this)"></button>'
+        +'</div>'
+
+        +'<div class="field">'
+          +'<label>Διάστημα ματιών (λεπτά)</label>'
+          +'<input type="number" min="5" max="180" step="5" value="'+h.eyeMin+'" onchange="healthSetMin(\'eyeMin\',this.value,this)">'
+        +'</div>'
+
+        +'<div class="setting-row">'
+          +'<div>'
+            +'<strong>Υποχρεωτικό σήκωμα</strong>'
+            +'<span class="muted">Κάθε '+h.standMin+' λεπτά συνεχούς εργασίας.</span>'
+          +'</div>'
+          +'<button type="button" class="switch '+(h.standEnabled?'on':'')+'" onclick="healthToggle(\'standEnabled\',this)"></button>'
+        +'</div>'
+
+        +'<div class="field">'
+          +'<label>Διάστημα σηκώματος (λεπτά)</label>'
+          +'<input type="number" min="10" max="360" step="10" value="'+h.standMin+'" onchange="healthSetMin(\'standMin\',this.value,this)">'
+        +'</div>'
+
+        +'<div class="field">'
+          +'<label>Μηδενισμός μετά από παύση (λεπτά)</label>'
+          +'<input type="number" min="1" max="60" step="1" value="'+h.pauseResetMin+'" onchange="healthSetMin(\'pauseResetMin\',this.value,this)">'
+          +'<small class="qs-note">Αν σταματήσεις για τόσο, ο μετρητής υγείας ξεκινάει από την αρχή. Η καταγραφή χρόνου δεν χάνεται.</small>'
+        +'</div>'
+
+        +'<p class="qs-note">Οι ειδοποιήσεις είναι best-effort dentro του browser. Δεν μπορούν να εγγυηθούν ήχο ή appearance με κλειστή οθόνη, εκτός αν η εφαρμογή γίνει native wrapper.</p>'
+      +'</div>'
+    +'</div>';
+
+  openModal({
+    title:'Γρήγορες ρυθμίσεις',
+    body:body,
+    buttons:[{text:'Κλείσιμο',class:'btn-primary'}]
+  });
+}
+
+if(!window.__healthV1Mounted){
+  window.__healthV1Mounted=true;
+  healthEnsure();
+  healthResetThresholds();
+  setInterval(healthTick,15000);
+}
+
+saveState();
+/* ===== ΤΕΛΟΣ ΥΓΕΙΑΣ v1 ===== */
 </script>
   
 </body>
