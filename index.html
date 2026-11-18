@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.4.39">
+<meta name="app-version" content="1.4.40">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -454,7 +454,7 @@ function generateWeeklyReview(){const ws=startOfWeek();const we=startOfNextWeek(
 
 /* ===== POMODORO ===== */
 function pomoActivityName(){const p=P();if(!p.activityType)return 'Ελεύθερο focus';if(p.activityType==='course'){const c=state.courses.find(x=>x.id===p.activityId);return c?c.name:'Μάθημα';}const def=FIXED_DEFS.find(d=>d.id===p.activityId);return def?def.name:'Δραστηριότητα';}
-function pomoPhaseRemaining(){const p=P();return Math.max(0,p.phaseEndsAt-Date.now());}
+function pomoPhaseRemaining(){const p=P();const hb=state.healthBreak;const ref=(hb&&hb.pomo)?hb.start:Date.now();return Math.max(0,p.phaseEndsAt-ref);}
 function eligibleCoursesToday(){
   const today=mondayIndex();
   return state.courses.filter(c=>c.active&&c.hours>0&&!c.off.includes(today));
@@ -735,6 +735,7 @@ function renderSettings(){
 }
 
 function renderRunningDock(){const dock=$('#runningDock');if(!state.active){dock.innerHTML='';return;}const a=state.active;const name=a.type==='fixed'?(fixedInfo(a.id)||{def:{name:'Δραστηριότητα'}}).def.name:(state.courses.find(c=>c.id===a.id)||{name:'Μάθημα'}).name;const paused=!!a.pausedAt;dock.innerHTML=`<div class="dock-card" style="${paused?'opacity:.78;border-color:var(--warn)':''}"><div class="dock-info"><span>${esc(name)}${paused?' · Παύση':''}</span><strong id="dockTime">${fmtClock(activeElapsedMs())}</strong><small id="dockSub">${activeSubText()}</small><div class="dock-progress"><span id="dockProgress" style="width:${activeProgressPct()}%"></span></div></div><button class="btn btn-ghost" style="flex:0 0 auto" onclick="togglePause()">${paused?'Συνέχεια':'Παύση'}</button><button class="btn btn-stop dock-stop" onclick="stopActive()">Διακοπή</button></div>`;}
+function activeSubText(){if(!state.active)return '';if(state.active.pausedAt)return 'Σε παύση';if(state.active.type==='fixed'){const info=fixedInfo(state.active.id);if(!info)return '';if(info.dayRemaining>=0)return `Απομένουν ${fmtPrecise(info.dayRemaining)}`;return `Υπέρβαση +${fmtPrecise(info.dayOver)}`;}const c=state.courses.find(x=>x.id===state.active.id);if(!c)return '';const info=courseInfo(c);if(info.remaining>0)return `Απομένουν ${fmtHM(info.remaining)}`;return `Στόχος καλύφθηκε`;}
 function activeProgressPct(){if(!state.active)return 0;if(state.active.type==='fixed'){const info=fixedInfo(state.active.id);return info?clamp(info.dayMin/info.dailyCap*100,0,100):0;}const c=state.courses.find(x=>x.id===state.active.id);if(!c)return 0;const info=courseInfo(c);return info.targetMin?clamp(info.weekMin/info.targetMin*100,0,100):0;}
 
 function updateLive(){
@@ -746,10 +747,12 @@ function updateLive(){
 }
 
 function tick(){
-const p=P();const now=Date.now();
+const p=P();const now=Date.now();const hb=state.healthBreak;
+if(!hb){
 if(p.phase==='focus'&&now>=p.phaseEndsAt)completeFocus();
 else if((p.phase==='break'||p.phase==='longbreak')&&now>=p.phaseEndsAt)completeBreak();
-if(state.active)handleActive();
+}
+if(state.active&&!hb)handleActive();
 updateLive();
 if(now-lastReminderCheck>30000){lastReminderCheck=now;checkRemindersDue();}
 const nowMin=Math.floor(now/60000);
@@ -861,16 +864,16 @@ function checkRemindersDue(){let ch=false;state.reminders.forEach(r=>{const dueT
 function openModal(cfg){if(modalOpen){alertQueue.push(cfg);return;}modalOpen=true;const overlay=$('#modalOverlay');const sheet=document.createElement('div');sheet.className='sheet';sheet.innerHTML=`<div class="modal-handle"></div>${cfg.title?`<h3>${cfg.title}</h3>`:''}${cfg.message?`<p class="modal-message">${cfg.message}</p>`:''}${cfg.body||''}<div class="modal-actions"></div>`;overlay.innerHTML='';overlay.appendChild(sheet);overlay.classList.add('open');const actions=sheet.querySelector('.modal-actions');const buttons=cfg.buttons&&cfg.buttons.length?cfg.buttons:[{text:'Κλείσιμο'}];buttons.forEach(b=>{const btn=document.createElement('button');btn.className='btn '+(b.class||'btn-primary');btn.textContent=b.text;btn.onclick=()=>{if(b.onClick){const res=b.onClick();if(res===false)return;}if(b.close!==false)closeModal();};actions.appendChild(btn);});if(cfg.onMount)cfg.onMount(sheet);}
 function closeModal(){modalOpen=false;const overlay=$('#modalOverlay');overlay.classList.remove('open');overlay.innerHTML='';setTimeout(processAlertQueue,220);}
 function pushAlert(cfg){if(cfg&&!cfg.buttons){notifPush(cfg);return;}alertQueue.push(cfg);processAlertQueue();}
-function processAlertQueue(){if(modalOpen||!alertQueue.length)return;const cfg=alertQueue.shift();openModal(cfg);notify(cfg.title,cfg.message);}
+function processAlertQueue(){if(modalOpen||!alertQueue.length)return;const cfg=alertQueue.shift();openModal(cfg);notify(cfg.title,cfg.message,cfg.sticky);}
 function confirmModal(title,message,onConfirm,confirmText,cancelText){openModal({title,message,buttons:[{text:cancelText||'Άκυρο',class:'btn-ghost'},{text:confirmText||'Ναι',class:'btn-primary',onClick:onConfirm}]});}
-function notify(title,body){if(state.settings.notifications&&'Notification' in window&&Notification.permission==='granted'){try{new Notification(title||'Ρυθμός',{body:body||''});}catch(e){}}if(state.settings.sound)beep();}
+function notify(title,body,sticky){if(state.settings.notifications&&'Notification' in window&&Notification.permission==='granted'){try{const n=new Notification(title||'Ρυθμός',{body:body||'',requireInteraction:!!sticky,tag:sticky?'rhythmos-health':undefined});n.onclick=function(){try{window.focus();}catch(e){}};}catch(e){}}if(state.settings.sound)beep();}
 function beep(){if(!state.settings.sound)return;try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.state==='suspended')audioCtx.resume();const o=audioCtx.createOscillator();const g=audioCtx.createGain();o.connect(g);g.connect(audioCtx.destination);o.type='sine';o.frequency.setValueAtTime(620,audioCtx.currentTime);o.frequency.exponentialRampToValueAtTime(880,audioCtx.currentTime+.14);g.gain.setValueAtTime(.0001,audioCtx.currentTime);g.gain.exponentialRampToValueAtTime(.12,audioCtx.currentTime+.02);g.gain.exponentialRampToValueAtTime(.0001,audioCtx.currentTime+.32);o.start();o.stop(audioCtx.currentTime+.34);}catch(e){}}
 function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),2300);}
 
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.4.39';
+var APP_VERSION='1.4.40';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -3127,26 +3130,22 @@ function undoPerform(){
 /* ===== PAUSE v1 ===== */
 function togglePause(){
   if(!state.active)return;
+  if(state.healthBreak){healthBreakEnd();return;}
   const a=state.active;
-
   if(a.pausedAt){
     const pausedMs=Date.now()-a.pausedAt;
-    a.start += pausedMs;
-
+    a.start+=pausedMs;
     const resetMin=clamp(parseInt((state.health&&state.health.pauseResetMin)||3,10),1,60);
-    if(pausedMs >= resetMin*60000){
+    if(pausedMs>=resetMin*60000){
       a.healthStart=Date.now();
-      if(typeof healthResync==='function') healthResync();
-      else if(typeof healthResetThresholds==='function') healthResetThresholds();
+      if(typeof healthResync==='function')healthResync();
     }
-
     a.pausedAt=null;
     showToast('Συνέχισε.');
   }else{
     a.pausedAt=Date.now();
     showToast('Παύση.');
   }
-
   saveState();
   render();
 }
@@ -3191,13 +3190,15 @@ function togglePause(){
 </style>
 
 <script>
-/* ===== ΥΓΕΙΑ v2: ΓΡΑΝΑΖΙ DROPDOWN + STAHERES 30/60 ===== */
+/* ===== ΥΓΕΙΑ v3: ΕΙΔΟΠΟΙΗΣΗ ΜΕ ΕΠΙΛΟΓΗ + ΔΙΑΛΕΙΜΜΑ ΧΩΡΙΣ ΚΛΕΙΔΩΜΑ ===== */
 var EYE_MIN=30;
 var STAND_MIN=60;
-var PAUSE_RESET=3;
+var EYE_BREAK_MIN=3;
+var STAND_BREAK_MIN=5;
 var HEALTH_NONE=999999;
 
 state.health=state.health||{};
+state.healthBreak=state.healthBreak||null;
 
 function healthEnsure(){
   var h=state.health;
@@ -3205,6 +3206,13 @@ function healthEnsure(){
   h.standEnabled=!!h.standEnabled;
   if(typeof h.nextEye!=='number'||h.nextEye<=0)h.nextEye=HEALTH_NONE;
   if(typeof h.nextStand!=='number'||h.nextStand<=0)h.nextStand=HEALTH_NONE;
+}
+
+function healthApplies(){
+  if(!state.active)return false;
+  if(state.active.type==='course')return true;
+  var d=FIXED_DEFS.find(function(x){return x.id===state.active.id;});
+  return !!(d&&(d.id==='reading'||d.id==='school'));
 }
 
 function healthResetThresholds(){
@@ -3218,6 +3226,9 @@ function healthClear(){
   healthEnsure();
   state.health.nextEye=HEALTH_NONE;
   state.health.nextStand=HEALTH_NONE;
+  state.healthBreak=null;
+  var bar=document.getElementById('healthBreakBar');
+  if(bar)bar.classList.remove('on');
 }
 
 function healthElapsedMin(){
@@ -3236,29 +3247,104 @@ function healthResync(){
   h.nextStand=h.standEnabled?(Math.floor(e/STAND_MIN)+1)*STAND_MIN:HEALTH_NONE;
 }
 
-function healthFire(kind){
-  var title=kind==='eye'?'Ξεκούραση ματιών':'Σήκω';
+function healthOffer(kind){
+  var title=kind==='eye'?'Ξεκούραση ματιών':'Ώρα να σηκωθείς';
   var message=kind==='eye'
-    ?'Κοίτα 6 μέτρα μακριά για 2–3 λεπτά.'
-    :'Σηκώσου, τεντώσου και περπάτα 2–3 λεπτά.';
-  if(typeof notifPush==='function'){notifPush({title:title,message:message});return;}
-  if(typeof notify==='function'){try{notify(title,message);}catch(e){}}
+    ?'30′ συνεχούς εργασίας. Κοίτα 6 μέτρα μακριά για '+EYE_BREAK_MIN+' λεπτά.'
+    :'60′ συνεχούς εργασίας. Σηκώσου, τεντώσου και περπάτα για '+STAND_BREAK_MIN+' λεπτά.';
+  if(typeof notifTrim==='function'){
+    state.notifs.unshift({id:'n'+Date.now()+'_'+Math.floor(Math.random()*100000),title:title,message:message,ts:Date.now(),read:false});
+    notifTrim();saveState();
+    if(typeof notifBadgeUpdate==='function')notifBadgeUpdate();
+  }
+  pushAlert({
+    title:title,message:message,sticky:true,
+    buttons:[
+      {text:'Αποδοχή — διάλειμμα',class:'btn-success',onClick:function(){healthBreakStart(kind);}},
+      {text:'Απόρριψη — συνέχεια',class:'btn-ghost',onClick:function(){showToast('Συνέχεια εργασίας.');}}
+    ]
+  });
+}
+
+function healthBreakStart(kind){
+  if(!state.active){showToast('Δεν τρέχει συνεδρία.');return;}
+  var now=Date.now();
+  var pomo=false;
+  try{var p=P();if(p.phase&&p.phaseEndsAt>now)pomo=true;}catch(e){}
+  state.healthBreak={kind:kind,start:now,durMin:kind==='eye'?EYE_BREAK_MIN:STAND_BREAK_MIN,pomo:pomo};
+  if(!state.active.pausedAt)state.active.pausedAt=now;
+  saveState();render();healthBreakFrame();
+}
+
+function healthBreakEnd(){
+  var hb=state.healthBreak;
+  if(!hb)return;
+  var now=Date.now();
+  var dur=now-hb.start;
+  state.healthBreak=null;
+  if(state.active){
+    if(state.active.pausedAt){
+      state.active.start+=dur;
+      state.active.pausedAt=null;
+    }
+    if(hb.kind==='stand'){
+      state.active.healthStart=now;
+      healthResetThresholds();
+    }else{
+      state.active.healthStart=(state.active.healthStart||state.active.start)+dur;
+      healthResync();
+    }
+  }
+  try{var p=P();if(hb.pomo&&p.phase&&p.phaseEndsAt)p.phaseEndsAt+=dur;}catch(e){}
+  saveState();render();healthBreakFrame();
+  showToast('Τέλος διαλείμματος. Συνέχεια.');
+}
+
+function healthBreakFrame(){
+  var hb=state.healthBreak;
+  var bar=document.getElementById('healthBreakBar');
+  if(hb&&!state.active){healthClear();return;}
+  if(!hb){if(bar)bar.classList.remove('on');return;}
+  var total=hb.durMin*60000;
+  var left=Math.max(0,hb.start+total-Date.now());
+  if(left<=0){healthBreakEnd();return;}
+  if(!bar){
+    bar=document.createElement('div');
+    bar.id='healthBreakBar';
+    document.body.appendChild(bar);
+  }
+  if(bar.dataset.kind!==hb.kind||!bar.querySelector('.hb-time')){
+    bar.dataset.kind=hb.kind;
+    var title=hb.kind==='eye'?'Διάλειμμα ματιών':'Διάλειμμα — σήκω';
+    var sub=hb.kind==='eye'?'Κοίτα 6 μέτρα μακριά. Ξεκούρασε τα μάτια.':'Σηκώσου, τεντώσου, περπάτα λίγο.';
+    bar.innerHTML='<div class="hb-row"><div><div class="hb-title">'+title+'</div><div class="hb-sub">'+sub+'</div></div><div class="hb-time">0:00</div></div>'
+      +'<div class="hb-track"><div class="hb-fill"></div></div>'
+      +'<button class="btn btn-success" style="width:100%" onclick="healthBreakEnd()">Τέλος διαλείμματος — συνέχεια</button>';
+  }
+  var sec=Math.ceil(left/1000);
+  var mm=Math.floor(sec/60),ss=sec%60;
+  var tEl=bar.querySelector('.hb-time');
+  if(tEl)tEl.textContent=mm+':'+(ss<10?'0':'')+ss;
+  var fEl=bar.querySelector('.hb-fill');
+  if(fEl)fEl.style.width=Math.round((1-left/total)*100)+'%';
+  bar.classList.add('on');
 }
 
 function healthTick(){
   healthEnsure();
   var h=state.health;
-  if(!state.active){
+  if(state.healthBreak)return;
+  if(!state.active||!healthApplies()){
     if(h.nextEye!==HEALTH_NONE||h.nextStand!==HEALTH_NONE){h.nextEye=HEALTH_NONE;h.nextStand=HEALTH_NONE;}
     return;
   }
+  if(state.active.pausedAt)return;
   var e=healthElapsedMin();
   if(e<=0)return;
   if(!h.eyeEnabled)h.nextEye=HEALTH_NONE;
   if(!h.standEnabled)h.nextStand=HEALTH_NONE;
   if(h.eyeEnabled&&h.nextEye===HEALTH_NONE)h.nextEye=(Math.floor(e/EYE_MIN)+1)*EYE_MIN;
   if(h.standEnabled&&h.nextStand===HEALTH_NONE)h.nextStand=(Math.floor(e/STAND_MIN)+1)*STAND_MIN;
-
   var loops=0;
   while(loops<4){
     loops++;
@@ -3267,16 +3353,16 @@ function healthTick(){
     if(!dueStand&&!dueEye)break;
     if(dueStand){
       var fs=h.nextStand;
-      healthFire('stand');
       h.nextStand=fs+STAND_MIN;
       if(h.eyeEnabled&&h.nextEye<=fs)h.nextEye=fs+EYE_MIN;
-      continue;
+      healthOffer('stand');
+      return;
     }
     if(dueEye){
       var fe=h.nextEye;
-      healthFire('eye');
       h.nextEye=fe+EYE_MIN;
-      continue;
+      healthOffer('eye');
+      return;
     }
   }
   if(loops>=4)healthResync();
@@ -3361,10 +3447,10 @@ function gpBuildPanel(){
       +'</button>'
       +'<div class="gp-body" id="gpHealthBody">'
         +'<label class="gp-check"><input type="checkbox" id="gpEyeChk"'+(h.eyeEnabled?' checked':'')+' onchange="healthToggle(\'eyeEnabled\',this)">'
-          +'<span><strong>Ξεκούραση ματιών</strong><small>Κάθε 30′ συνεχούς εργασίας</small></span></label>'
+          +'<span><strong>Ξεκούραση ματιών</strong><small>Ειδοποίηση κάθε 30′ — διάλειμμα '+EYE_BREAK_MIN+'′ μόνο με αποδοχή</small></span></label>'
         +'<label class="gp-check"><input type="checkbox" id="gpStandChk"'+(h.standEnabled?' checked':'')+' onchange="healthToggle(\'standEnabled\',this)">'
-          +'<span><strong>Υποχρεωτικό σήκωμα</strong><small>Κάθε 60′ συνεχούς εργασίας</small></span></label>'
-        +'<p class="gp-note">Στα 60′ έρχεται μόνο σήκωμα, όχι και μάτια. Το επόμενο μάτι είναι στα 90′. Παύση 3′+ μηδενίζει τον μετρητή.</p>'
+          +'<span><strong>Σήκωμα</strong><small>Ειδοποίηση κάθε 60′ — διάλειμμα '+STAND_BREAK_MIN+'′ μόνο με αποδοχή</small></span></label>'
+        +'<p class="gp-note">Καμία αυτόματη παύση. Στα 60′ έρχεται μόνο σήκωμα, όχι και μάτια. Το διάλειμμα τερματίζεται όποτε θες και δεν τρώει χρόνο pomodoro. Ισχύει για μαθήματα, Σχολή και Διάβασμα.</p>'
       +'</div>'
     +'</div>';
   document.body.appendChild(panel);
@@ -3384,16 +3470,28 @@ function gpBuildPanel(){
   window.addEventListener('scroll',gpClose,true);
 }
 
-if(!window.__healthV2Mounted){
-  window.__healthV2Mounted=true;
+if(!window.__healthV3Mounted){
+  window.__healthV3Mounted=true;
+  var hst=document.createElement('style');
+  hst.textContent='#healthBreakBar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(150px + env(safe-area-inset-bottom));width:calc(100% - 28px);max-width:402px;z-index:170;background:var(--card);border:1px solid var(--card-border);border-radius:22px;box-shadow:0 18px 42px rgba(23,30,61,.34);padding:14px;display:none}'
+    +'#healthBreakBar.on{display:block;animation:fadeUp .3s both}'
+    +'.hb-row{display:flex;align-items:center;justify-content:space-between;gap:10px}'
+    +'.hb-title{font-weight:700;font-size:.95rem}'
+    +'.hb-sub{color:var(--muted);font-size:.76rem;margin-top:3px;line-height:1.35}'
+    +'.hb-time{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--primary)}'
+    +'.hb-track{height:6px;border-radius:999px;background:var(--track);overflow:hidden;margin:10px 0}'
+    +'.hb-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--primary),var(--success));width:0;transition:width 1s linear}';
+  document.head.appendChild(hst);
   healthEnsure();
-  healthResetThresholds();
+  if(state.healthBreak&&!state.active)state.healthBreak=null;
+  if(state.active)healthResync();else healthResetThresholds();
   setInterval(healthTick,15000);
+  setInterval(healthBreakFrame,1000);
   if(document.readyState!=='loading')gpBuildPanel();
   else document.addEventListener('DOMContentLoaded',gpBuildPanel);
 }
 saveState();
-/* ===== ΤΕΛΟΣ ΥΓΕΙΑΣ v2 ===== */
+/* ===== ΤΕΛΟΣ ΥΓΕΙΑΣ v3 ===== */
 </script>
   
 </body>
