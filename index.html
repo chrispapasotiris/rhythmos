@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.4.38">
+<meta name="app-version" content="1.4.39">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -870,7 +870,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.4.38';
+var APP_VERSION='1.4.39';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -3166,9 +3166,35 @@ function togglePause(){
   .qs-arrow,.qs-body{transition:none}
 }
 </style>
+  
+<style>
+.gear-panel{position:fixed;z-index:260;width:min(320px,calc(100vw - 24px));background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 44px rgba(20,25,60,.28);padding:8px;opacity:0;transform:translateY(-6px) scale(.98);pointer-events:none;transition:opacity .18s ease,transform .18s ease}
+.gear-panel.open{opacity:1;transform:translateY(0) scale(1);pointer-events:auto}
+.gp-section{border:1px solid var(--line);border-radius:12px;margin:6px 0;background:var(--card);overflow:hidden}
+.gp-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 13px;border:0;background:transparent;color:var(--text);font:700 .9rem system-ui,sans-serif;cursor:pointer;text-align:left}
+.gp-head:hover{background:rgba(99,102,241,.06)}
+.gp-arrow{font-size:.95rem;line-height:1;transition:transform .18s ease;color:var(--muted)}
+.gp-section.open .gp-arrow{transform:rotate(180deg)}
+.gp-body{max-height:0;opacity:0;overflow:hidden;transition:max-height .22s ease,opacity .18s ease,padding .22s ease;padding:0 13px}
+.gp-section.open .gp-body{max-height:420px;opacity:1;padding:8px 13px 13px}
+.gp-label{font-size:.74rem;color:var(--muted);margin:8px 0 5px;font-weight:600}
+.gp-grid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.gp-choice{border:1px solid var(--line);background:var(--input-bg);color:var(--text);border-radius:10px;padding:8px 9px;font:600 .8rem system-ui,sans-serif;cursor:pointer;text-align:left}
+.gp-choice.on{border-color:var(--primary);background:rgba(99,102,241,.12)}
+.gp-choice small{display:block;font-weight:500;color:var(--muted);font-size:.68rem;margin-top:2px}
+.gp-check{display:flex;align-items:flex-start;gap:9px;padding:8px 2px;cursor:pointer;font-size:.84rem;line-height:1.3}
+.gp-check input{margin-top:2px;width:17px;height:17px;accent-color:var(--primary);flex:0 0 auto}
+.gp-check span strong{display:block;font-weight:700}
+.gp-check span small{display:block;color:var(--muted);font-size:.72rem;margin-top:1px}
+.gp-note{font-size:.7rem;color:var(--muted);margin-top:8px;line-height:1.35}
+@media (prefers-reduced-motion: reduce){.gear-panel,.gp-arrow,.gp-body{transition:none}}
+</style>
 
 <script>
-/* ===== ΥΓΕΙΑ v1: ΜΑΤΙΑ + ΣΗΚΩΜΑ + ΓΡΗΓΟΡΟ ΜΕΝΟΥ ===== */
+/* ===== ΥΓΕΙΑ v2: ΓΡΑΝΑΖΙ DROPDOWN + STAHERES 30/60 ===== */
+var EYE_MIN=30;
+var STAND_MIN=60;
+var PAUSE_RESET=3;
 var HEALTH_NONE=999999;
 
 state.health=state.health||{};
@@ -3177,9 +3203,6 @@ function healthEnsure(){
   var h=state.health;
   h.eyeEnabled=!!h.eyeEnabled;
   h.standEnabled=!!h.standEnabled;
-  h.eyeMin=clamp(parseInt(h.eyeMin||30,10),5,180);
-  h.standMin=clamp(parseInt(h.standMin||60,10),10,360);
-  h.pauseResetMin=clamp(parseInt(h.pauseResetMin||3,10),1,60);
   if(typeof h.nextEye!=='number'||h.nextEye<=0)h.nextEye=HEALTH_NONE;
   if(typeof h.nextStand!=='number'||h.nextStand<=0)h.nextStand=HEALTH_NONE;
 }
@@ -3187,8 +3210,8 @@ function healthEnsure(){
 function healthResetThresholds(){
   healthEnsure();
   var h=state.health;
-  h.nextEye=h.eyeEnabled?h.eyeMin:HEALTH_NONE;
-  h.nextStand=h.standEnabled?h.standMin:HEALTH_NONE;
+  h.nextEye=h.eyeEnabled?EYE_MIN:HEALTH_NONE;
+  h.nextStand=h.standEnabled?STAND_MIN:HEALTH_NONE;
 }
 
 function healthClear(){
@@ -3209,243 +3232,168 @@ function healthResync(){
   healthEnsure();
   var h=state.health;
   var e=healthElapsedMin();
-
-  h.nextEye=h.eyeEnabled
-    ?(Math.floor(e/h.eyeMin)+1)*h.eyeMin
-    :HEALTH_NONE;
-
-  h.nextStand=h.standEnabled
-    ?(Math.floor(e/h.standMin)+1)*h.standMin
-    :HEALTH_NONE;
+  h.nextEye=h.eyeEnabled?(Math.floor(e/EYE_MIN)+1)*EYE_MIN:HEALTH_NONE;
+  h.nextStand=h.standEnabled?(Math.floor(e/STAND_MIN)+1)*STAND_MIN:HEALTH_NONE;
 }
 
 function healthFire(kind){
-  healthEnsure();
-  var h=state.health;
-  var title='';
-  var message='';
-
-  if(kind==='eye'){
-    title='Ξεκούραση ματιών';
-    message='Κοίτα 6 μέτρα μακριά για 2–3 λεπτά.';
-  }else{
-    title='Σήκω';
-    message='Σηκώσου, τεντώσου και περπάτα 2–3 λεπτά.';
-  }
-
-  if(typeof notifPush==='function'){
-    notifPush({title:title,message:message});
-    return;
-  }
-
-  if(typeof notify==='function'){
-    try{notify(title,message);}catch(e){}
-  }
+  var title=kind==='eye'?'Ξεκούραση ματιών':'Σήκω';
+  var message=kind==='eye'
+    ?'Κοίτα 6 μέτρα μακριά για 2–3 λεπτά.'
+    :'Σηκώσου, τεντώσου και περπάτα 2–3 λεπτά.';
+  if(typeof notifPush==='function'){notifPush({title:title,message:message});return;}
+  if(typeof notify==='function'){try{notify(title,message);}catch(e){}}
 }
 
 function healthTick(){
   healthEnsure();
   var h=state.health;
-
   if(!state.active){
-    if(h.nextEye!==HEALTH_NONE||h.nextStand!==HEALTH_NONE){
-      h.nextEye=HEALTH_NONE;
-      h.nextStand=HEALTH_NONE;
-    }
+    if(h.nextEye!==HEALTH_NONE||h.nextStand!==HEALTH_NONE){h.nextEye=HEALTH_NONE;h.nextStand=HEALTH_NONE;}
     return;
   }
-
   var e=healthElapsedMin();
   if(e<=0)return;
-
   if(!h.eyeEnabled)h.nextEye=HEALTH_NONE;
   if(!h.standEnabled)h.nextStand=HEALTH_NONE;
-
-  if(h.eyeEnabled&&h.nextEye===HEALTH_NONE){
-    h.nextEye=(Math.floor(e/h.eyeMin)+1)*h.eyeMin;
-  }
-
-  if(h.standEnabled&&h.nextStand===HEALTH_NONE){
-    h.nextStand=(Math.floor(e/h.standMin)+1)*h.standMin;
-  }
+  if(h.eyeEnabled&&h.nextEye===HEALTH_NONE)h.nextEye=(Math.floor(e/EYE_MIN)+1)*EYE_MIN;
+  if(h.standEnabled&&h.nextStand===HEALTH_NONE)h.nextStand=(Math.floor(e/STAND_MIN)+1)*STAND_MIN;
 
   var loops=0;
-
   while(loops<4){
     loops++;
-
     var dueStand=h.standEnabled&&e>=h.nextStand;
     var dueEye=h.eyeEnabled&&e>=h.nextEye;
-
     if(!dueStand&&!dueEye)break;
-
     if(dueStand){
-      var firedStand=h.nextStand;
+      var fs=h.nextStand;
       healthFire('stand');
-      h.nextStand=firedStand+h.standMin;
-
-      if(h.eyeEnabled&&h.nextEye<=firedStand){
-        h.nextEye=firedStand+h.eyeMin;
-      }
+      h.nextStand=fs+STAND_MIN;
+      if(h.eyeEnabled&&h.nextEye<=fs)h.nextEye=fs+EYE_MIN;
       continue;
     }
-
     if(dueEye){
-      var firedEye=h.nextEye;
+      var fe=h.nextEye;
       healthFire('eye');
-      h.nextEye=firedEye+h.eyeMin;
+      h.nextEye=fe+EYE_MIN;
       continue;
     }
   }
-
-  if(loops>=4){
-    healthResync();
-  }
+  if(loops>=4)healthResync();
 }
 
-function healthToggle(key,btn){
+function healthToggle(key,chk){
   healthEnsure();
-  state.health[key]=!state.health[key];
-
-  if(btn){
-    btn.classList.toggle('on',!!state.health[key]);
-  }
-
-  if(state.active){
-    healthResync();
-  }else{
-    healthResetThresholds();
-  }
-
+  state.health[key]=!!chk.checked;
+  if(state.active)healthResync();else healthResetThresholds();
   saveState();
 }
 
-function healthSetMin(key,value,input){
-  healthEnsure();
-  var h=state.health;
-
-  if(key==='eyeMin'){
-    h.eyeMin=clamp(parseInt(value||30,10),5,180);
-  }else if(key==='standMin'){
-    h.standMin=clamp(parseInt(value||60,10),10,360);
-  }else if(key==='pauseResetMin'){
-    h.pauseResetMin=clamp(parseInt(value||3,10),1,60);
-  }
-
-  if(input)input.value=h[key];
-
-  if(state.active){
-    healthResync();
-  }else{
-    healthResetThresholds();
-  }
-
-  saveState();
+/* ---- dropdown στο γρανάζι ---- */
+function gpGetGear(){
+  var btns=document.querySelectorAll('.gear-btn');
+  for(var i=0;i<btns.length;i++){if(btns[i].id!=='notifBadge')return btns[i];}
+  return null;
 }
-
-function qsToggle(id){
-  var body=document.getElementById(id);
+function gpToggleSection(bodyId){
+  var body=document.getElementById(bodyId);
   if(!body)return;
-  var section=body.closest('.qs-section');
-  if(section)section.classList.toggle('open');
+  var sec=body.closest('.gp-section');
+  if(sec)sec.classList.toggle('open');
 }
-
-function openQuickSettings(){
-  healthEnsure();
-
-  var theme=state.settings.theme||'light';
-  var scale=state.settings.uiScale||'normal';
-  var h=state.health;
-
-  var body=''
-    +'<div class="qs-section" id="qsThemesSection">'
-      +'<button type="button" class="qs-head" onclick="qsToggle(\'qsThemes\')">'
-        +'<span>Εμφάνιση</span>'
-        +'<span class="qs-arrow">▾</span>'
+function gpSetTheme(t){state.settings.theme=t;saveState();if(typeof applyUi==='function')applyUi();render();gpSyncThemeUI();}
+function gpSetScale(s){state.settings.uiScale=s;saveState();if(typeof applyUi==='function')applyUi();render();gpSyncThemeUI();}
+function gpSyncThemeUI(){
+  var th=state.settings.theme||'light';
+  var sc=state.settings.uiScale||'normal';
+  document.querySelectorAll('[data-gp-theme]').forEach(function(b){b.classList.toggle('on',b.dataset.gpTheme===th);});
+  document.querySelectorAll('[data-gp-scale]').forEach(function(b){b.classList.toggle('on',b.dataset.gpScale===sc);});
+}
+function gpPosition(panel,gear){
+  var r=gear.getBoundingClientRect();
+  var pw=panel.offsetWidth||320;
+  var left=Math.max(12,Math.min(window.innerWidth-pw-12,r.right-pw));
+  panel.style.left=left+'px';
+  panel.style.top=(r.bottom+8)+'px';
+}
+function gpClose(){
+  var p=document.getElementById('gearPanel');
+  if(p)p.classList.remove('open');
+}
+function gpTogglePanel(){
+  var gear=gpGetGear();
+  if(!gear)return;
+  var panel=document.getElementById('gearPanel');
+  if(!panel){gpBuildPanel();panel=document.getElementById('gearPanel');}
+  if(panel.classList.contains('open')){gpClose();return;}
+  gpSyncThemeUI();
+  gpPosition(panel,gear);
+  panel.classList.add('open');
+}
+function gpBuildPanel(){
+  if(document.getElementById('gearPanel'))return;
+  var h=state.health||{};
+  var panel=document.createElement('div');
+  panel.id='gearPanel';
+  panel.className='gear-panel';
+  panel.innerHTML=''
+    +'<div class="gp-section" id="gpThemes">'
+      +'<button type="button" class="gp-head" onclick="gpToggleSection(\'gpThemesBody\')">'
+        +'<span>Εμφάνιση</span><span class="gp-arrow">▾</span>'
       +'</button>'
-      +'<div class="qs-body" id="qsThemes">'
-        +'<div class="appearance-label">Μέγεθος</div>'
-        +'<div class="appearance-grid">'
-          +'<button type="button" class="appearance-choice '+(scale==='normal'?'on':'')+'" data-scale-choice="normal" onclick="setUiScale(\'normal\')">'
-            +'<strong>Κανονικό</strong><small>Προεπιλεγμένο</small>'
-          +'</button>'
-          +'<button type="button" class="appearance-choice '+(scale==='small'?'on':'')+'" data-scale-choice="small" onclick="setUiScale(\'small\')">'
-            +'<strong>Μικρό</strong><small>Συμπαγές</small>'
-          +'</button>'
+      +'<div class="gp-body" id="gpThemesBody">'
+        +'<div class="gp-label">Μέγεθος</div>'
+        +'<div class="gp-grid">'
+          +'<button type="button" class="gp-choice" data-gp-scale="normal" onclick="gpSetScale(\'normal\')"><strong>Κανονικό</strong><small>Προεπιλεγμένο</small></button>'
+          +'<button type="button" class="gp-choice" data-gp-scale="small" onclick="gpSetScale(\'small\')"><strong>Μικρό</strong><small>Συμπαγές</small></button>'
         +'</div>'
-        +'<div class="appearance-label">Θέμα</div>'
-        +'<div class="appearance-grid">'
-          +'<button type="button" class="appearance-choice '+(theme==='light'?'on':'')+'" data-theme-choice="light" onclick="setTheme(\'light\')">'
-            +'<strong>Φωτεινό</strong><small>Ανοιχτό</small>'
-          +'</button>'
-          +'<button type="button" class="appearance-choice '+(theme==='blue'?'on':'')+'" data-theme-choice="blue" onclick="setTheme(\'blue\')">'
-            +'<strong>Νυχτερινό</strong><small>Μπλε</small>'
-          +'</button>'
-          +'<button type="button" class="appearance-choice '+(theme==='dark'?'on':'')+'" data-theme-choice="dark" onclick="setTheme(\'dark\')">'
-            +'<strong>Σκοτεινό</strong><small>Γκρι</small>'
-          +'</button>'
+        +'<div class="gp-label">Θέμα</div>'
+        +'<div class="gp-grid">'
+          +'<button type="button" class="gp-choice" data-gp-theme="light" onclick="gpSetTheme(\'light\')"><strong>Φωτεινό</strong><small>Ανοιχτό</small></button>'
+          +'<button type="button" class="gp-choice" data-gp-theme="blue" onclick="gpSetTheme(\'blue\')"><strong>Νυχτερινό</strong><small>Μπλε</small></button>'
+          +'<button type="button" class="gp-choice" data-gp-theme="dark" onclick="gpSetTheme(\'dark\')"><strong>Σκοτεινό</strong><small>Γκρι</small></button>'
         +'</div>'
       +'</div>'
     +'</div>'
-
-    +'<div class="qs-section" id="qsHealthSection">'
-      +'<button type="button" class="qs-head" onclick="qsToggle(\'qsHealth\')">'
-        +'<span>Ευεξία</span>'
-        +'<span class="qs-arrow">▾</span>'
+    +'<div class="gp-section" id="gpHealth">'
+      +'<button type="button" class="gp-head" onclick="gpToggleSection(\'gpHealthBody\')">'
+        +'<span>Ευεξία</span><span class="gp-arrow">▾</span>'
       +'</button>'
-      +'<div class="qs-body" id="qsHealth">'
-        +'<div class="setting-row">'
-          +'<div>'
-            +'<strong>Ξεκούραση ματιών</strong>'
-            +'<span class="muted">Κάθε '+h.eyeMin+' λεπτά συνεχούς εργασίας. Δεν φωτάνει ταυτόχρονα με σήκωμα.</span>'
-          +'</div>'
-          +'<button type="button" class="switch '+(h.eyeEnabled?'on':'')+'" onclick="healthToggle(\'eyeEnabled\',this)"></button>'
-        +'</div>'
-
-        +'<div class="field">'
-          +'<label>Διάστημα ματιών (λεπτά)</label>'
-          +'<input type="number" min="5" max="180" step="5" value="'+h.eyeMin+'" onchange="healthSetMin(\'eyeMin\',this.value,this)">'
-        +'</div>'
-
-        +'<div class="setting-row">'
-          +'<div>'
-            +'<strong>Υποχρεωτικό σήκωμα</strong>'
-            +'<span class="muted">Κάθε '+h.standMin+' λεπτά συνεχούς εργασίας.</span>'
-          +'</div>'
-          +'<button type="button" class="switch '+(h.standEnabled?'on':'')+'" onclick="healthToggle(\'standEnabled\',this)"></button>'
-        +'</div>'
-
-        +'<div class="field">'
-          +'<label>Διάστημα σηκώματος (λεπτά)</label>'
-          +'<input type="number" min="10" max="360" step="10" value="'+h.standMin+'" onchange="healthSetMin(\'standMin\',this.value,this)">'
-        +'</div>'
-
-        +'<div class="field">'
-          +'<label>Μηδενισμός μετά από παύση (λεπτά)</label>'
-          +'<input type="number" min="1" max="60" step="1" value="'+h.pauseResetMin+'" onchange="healthSetMin(\'pauseResetMin\',this.value,this)">'
-          +'<small class="qs-note">Αν σταματήσεις για τόσο, ο μετρητής υγείας ξεκινάει από την αρχή. Η καταγραφή χρόνου δεν χάνεται.</small>'
-        +'</div>'
-
-        +'<p class="qs-note">Οι ειδοποιήσεις είναι best-effort dentro του browser. Δεν μπορούν να εγγυηθούν ήχο ή appearance με κλειστή οθόνη, εκτός αν η εφαρμογή γίνει native wrapper.</p>'
+      +'<div class="gp-body" id="gpHealthBody">'
+        +'<label class="gp-check"><input type="checkbox" id="gpEyeChk"'+(h.eyeEnabled?' checked':'')+' onchange="healthToggle(\'eyeEnabled\',this)">'
+          +'<span><strong>Ξεκούραση ματιών</strong><small>Κάθε 30′ συνεχούς εργασίας</small></span></label>'
+        +'<label class="gp-check"><input type="checkbox" id="gpStandChk"'+(h.standEnabled?' checked':'')+' onchange="healthToggle(\'standEnabled\',this)">'
+          +'<span><strong>Υποχρεωτικό σήκωμα</strong><small>Κάθε 60′ συνεχούς εργασίας</small></span></label>'
+        +'<p class="gp-note">Στα 60′ έρχεται μόνο σήκωμα, όχι και μάτια. Το επόμενο μάτι είναι στα 90′. Παύση 3′+ μηδενίζει τον μετρητή.</p>'
       +'</div>'
     +'</div>';
+  document.body.appendChild(panel);
 
-  openModal({
-    title:'Γρήγορες ρυθμίσεις',
-    body:body,
-    buttons:[{text:'Κλείσιμο',class:'btn-primary'}]
+  var gear=gpGetGear();
+  if(gear){gear.onclick=function(ev){ev.stopPropagation();gpTogglePanel();};}
+
+  document.addEventListener('click',function(ev){
+    var p=document.getElementById('gearPanel');
+    if(!p||!p.classList.contains('open'))return;
+    if(p.contains(ev.target))return;
+    var g=gpGetGear();
+    if(g&&g.contains(ev.target))return;
+    gpClose();
   });
+  window.addEventListener('resize',gpClose);
+  window.addEventListener('scroll',gpClose,true);
 }
 
-if(!window.__healthV1Mounted){
-  window.__healthV1Mounted=true;
+if(!window.__healthV2Mounted){
+  window.__healthV2Mounted=true;
   healthEnsure();
   healthResetThresholds();
   setInterval(healthTick,15000);
+  if(document.readyState!=='loading')gpBuildPanel();
+  else document.addEventListener('DOMContentLoaded',gpBuildPanel);
 }
-
 saveState();
-/* ===== ΤΕΛΟΣ ΥΓΕΙΑΣ v1 ===== */
+/* ===== ΤΕΛΟΣ ΥΓΕΙΑΣ v2 ===== */
 </script>
   
 </body>
