@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.4.42">
+<meta name="app-version" content="1.4.43">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -309,9 +309,7 @@ const STORE_KEY='rhythmos_time_app_v4';
 const DAY_SHORT=['Δε','Τρ','Τε','Πε','Πα','Σα','Κυ'];
 const DAY_FULL=['Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο','Κυριακή'];
 const MONTH_GEN=['Ιανουαρίου','Φεβρουαρίου','Μαρτίου','Απριλίου','Μαΐου','Ιουνίου','Ιουλίου','Αυγούστου','Σεπτεμβρίου','Οκτωβρίου','Νοεμβρίου','Δεκεμβρίου'];
-const TAB_TITLES={day:'Ημέρα',activities:'Δραστηριότητες',schedule:'Πρόγραμμα',analysis:'Ανάλυση',settings:'Ρυθμίσεις'};
 const RELAX_WEEK=270;
-
 const SEED_FIXED=[
   {id:'gym',name:'Γυμναστήριο',short:'Γ',color:'#ff8a65',color2:'#ff5e62',daily:132,weekly:528,target:4,desc:'Με επιστροφή και καθαρισμό.',timeRange:[7,21]},
   {id:'school',name:'Σχολή / Μετακίνηση',short:'Σ',color:'#60a5fa',color2:'#4f46e5',daily:360,weekly:720,target:2,desc:'2 ημέρες των 6 ωρών.',timeRange:[8,20]},
@@ -446,10 +444,7 @@ function getTodayTimeline(){const ds=startOfDay();const de=startOfNextDay(ds);co
 function getWeeklyFixedData(){const ws=startOfWeek();const data=[];for(let i=0;i<7;i++){const d=new Date(ws);d.setDate(d.getDate()+i);const ds=d.getTime();const de=startOfNextDay(ds);const day={day:DAY_SHORT[i],total:0,items:[]};FIXED_DEFS.forEach(def=>{const m=totalMin('fixed',def.id,ds,de);if(m>0.5){day.items.push({name:def.name,min:m,color:def.color});day.total+=m;}});state.courses.forEach(c=>{if(!c.active||!c.hours)return;const m=totalMin('course',c.id,ds,de);if(m>0.5){day.items.push({name:c.name,min:m,color:c.color});day.total+=m;}});data.push(day);}return data;}
 function getStats4Weeks(){const now=Date.now();const fourWeeks=28*86400000;const from=now-fourWeeks;const stats={};FIXED_DEFS.forEach(def=>{const total=totalMin('fixed',def.id,from,now);const days=new Set();state.logs.forEach(l=>{if(l.type==='fixed'&&l.id===def.id&&l.dur>0.01&&l.start>=from){days.add(Math.floor((l.start-from)/86400000));}});const avg=days.size>0?total/days.size:0;const prev2Weeks=totalMin('fixed',def.id,from-fourWeeks/2,from);const trend=prev2Weeks>0?((total-prev2Weeks)/prev2Weeks*100):0;const dayTotals={};state.logs.forEach(l=>{if(l.type==='fixed'&&l.id===def.id&&l.start>=from){const k=startOfDay(l.start);dayTotals[k]=(dayTotals[k]||0)+l.dur;}});const overCount=Object.keys(dayTotals).filter(k=>dayTotals[k]>def.daily+0.5).length;stats[def.id]={total,avg,days:days.size,trend,overCount};});return stats;}
 function getDailyPlanKey(ts){const d=new Date(ts||Date.now());return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
-function getTodayPlan(){return state.dailyPlans[getDailyPlanKey()]||[];}
-function saveDailyPlan(plan){state.dailyPlans[getDailyPlanKey()]=plan;saveState();}
 function timeToMinutes(t){if(!t)return 0;const [h,m]=t.split(':').map(Number);return h*60+m;}
-function checkPlanOverlaps(plan){const overlaps=[];for(let i=0;i<plan.length;i++){for(let j=i+1;j<plan.length;j++){const a=plan[i],b=plan[j];if(!a.startTime||!a.endTime||!b.startTime||!b.endTime)continue;const aS=timeToMinutes(a.startTime),aE=timeToMinutes(a.endTime),bS=timeToMinutes(b.startTime),bE=timeToMinutes(b.endTime);if(aS<bE&&bS<aE)overlaps.push({i,j});}}return overlaps;}
 function getSmartSuggestions(){const suggestions=[];const today=mondayIndex();const ds=startOfDay();const de=startOfNextDay(ds);const awakeMin=todayAwakeMin();const logged=allTotalMin(ds,de);const freeTime=awakeMin-logged;const currentHour=new Date().getHours();if(freeTime<30)return suggestions;state.courses.forEach(c=>{if(!c.active||!c.hours||c.off.includes(today))return;const info=courseInfo(c);if(info.remaining>60){const priority=info.remaining>180?'high':info.remaining>120?'medium':'low';suggestions.push({type:'course',id:c.id,name:c.name,duration:Math.min(info.remaining,freeTime),priority,reason:`Χρειάζεσαι ${fmtHM(info.remaining)} ακόμα`,timeOk:true});}});FIXED_DEFS.forEach(def=>{const info=fixedInfo(def.id);const [sH,eH]=def.timeRange||[0,24];const timeOk=currentHour>=sH&&currentHour<eH;if(def.target&&info.occ<def.target&&timeOk){suggestions.push({type:'fixed',id:def.id,name:def.name,duration:Math.min(def.daily,freeTime),priority:'medium',reason:`${info.occ}/${def.target} φορές`,timeOk});}if(def.id==='walk'&&info.dayRemaining>60&&timeOk&&!(def.target&&info.occ<def.target)){suggestions.push({type:'fixed',id:def.id,name:def.name,duration:Math.min(120,freeTime),priority:'low',reason:'Δικαίωμα βόλτας',timeOk});}if(def.id==='relax'&&info.dayRemaining>30&&timeOk){suggestions.push({type:'fixed',id:def.id,name:def.name,duration:Math.min(info.dayRemaining,freeTime),priority:'low',reason:'Χαλάρωση',timeOk});}});suggestions.sort((a,b)=>{if(a.timeOk!==b.timeOk)return b.timeOk-a.timeOk;const p={high:3,medium:2,low:1};return p[b.priority]-p[a.priority];});return suggestions.slice(0,state.settings.suggestionLimit||3);}
 function generateWeeklyReview(){const ws=startOfWeek();const we=startOfNextWeek();const now=Date.now();if(now<we-2*3600000)return null;const weekKey=`${shortDate(ws)}-${shortDate(we-86400000)}`;if(state.weeklyReviews.find(r=>r.key===weekKey))return null;const totalStudy=state.courses.filter(c=>c.active&&c.hours>0).reduce((s,c)=>s+totalMin('course',c.id,ws,we),0);const targetStudy=state.courses.filter(c=>c.active&&c.hours>0).reduce((s,c)=>s+c.hours*60,0);let complianceDays=0,totalDays=0;for(let i=0;i<7;i++){const d=new Date(ws);d.setDate(d.getDate()+i);const ds=d.getTime();const de=startOfNextDay(ds);let ok=true;FIXED_DEFS.forEach(def=>{if(totalMin('fixed',def.id,ds,de)>def.daily+0.5)ok=false;});totalDays++;if(ok)complianceDays++;}const relaxTotal=totalMin('fixed','relax',ws,we);const relaxOvers=relaxOversUsed(true);const gymTotal=totalMin('fixed','gym',ws,we);const gymOcc=occurrences('fixed','gym',ws,we);const review={key:weekKey,date:now,stats:{study:{total:totalStudy,target:targetStudy,pct:targetStudy>0?totalStudy/targetStudy*100:0},compliance:{days:complianceDays,total:totalDays,rate:totalDays>0?complianceDays/totalDays*100:0},relax:{total:relaxTotal,overs:relaxOvers},gym:{total:gymTotal,occurrences:gymOcc},suggestions:[]}};if(review.stats.study.pct<90)review.stats.suggestions.push(`Αύξησε τη μελέτη κατά ${fmtHM(targetStudy-totalStudy)}`);if(review.stats.compliance.rate<80)review.stats.suggestions.push('Μείνε εντός ορίων περισσότερο');if(relaxOvers>0)review.stats.suggestions.push(`Μείωσε υπερβάσεις χαλάρωσης (${relaxOvers})`);if(gymOcc<4)review.stats.suggestions.push(`Γυμναστήριο ${4-gymOcc} φορές ακόμα`);state.weeklyReviews.push(review);state.lastReviewCheck=now;saveState();return review;}
 
@@ -610,27 +605,6 @@ function renderDay(){
   <div class="card"><h3>Υπόλοιπα σταθερών</h3><div class="stack" style="margin-top:12px">${FIXED_DEFS.map(def=>{const info=fixedInfo(def.id);const p3=info.dailyCap?clamp(info.dayMin/info.dailyCap*100,0,100):0;const over=info.dayRemaining<0;const txt=over?`+${fmtHM(info.dayOver)}`:fmtHM(info.dayRemaining);return `<div class="list-row"><div class="list-left"><strong>${def.name}</strong><div class="progress ${over?'over':''}" style="--accent:${def.color};--accent2:${def.color2}"><span style="width:${p3}%"></span></div></div><div class="list-value ${over?'text-danger':''}">${txt}</div></div>`;}).join('')}</div></div>`;
   if(dueReminders.length){html+=`<div class="card overdue"><h3 class="text-danger">Εκπρόθεσμες υπενθυμίσεις</h3><div class="stack" style="margin-top:12px">${dueReminders.map(r=>{const dueMin=(r.intervalMin*60000-(Date.now()-r.lastDone))/60000;return `<div class="list-row"><div class="list-left"><strong>${esc(r.name)}</strong><span class="muted">${countdownText(dueMin)}</span></div><button class="btn btn-success" onclick="markReminderDone('${r.id}')">Έγινε</button></div>`;}).join('')}</div></div>`;}
   return html;
-}
-
-function openPlanEditor(){
-  const todayPlan=getTodayPlan();const overlaps=checkPlanOverlaps(todayPlan);
-  let body=`<div id="planSlots">`;
-  if(todayPlan.length===0){body+=`<div class="empty" style="padding:20px"><p class="muted">Δεν έχεις προγραμματίσει τίποτα.</p></div>`;}
-  else{todayPlan.forEach((slot,i)=>{const isOv=overlaps.some(o=>o.i===i||o.j===i);body+=`<div class="plan-slot ${isOv?'overlap':''}"><div class="plan-slot-header"><strong>${slot.name||'Νέα'}</strong><button class="btn btn-ghost-danger" style="padding:6px 10px;font-size:.72rem" onclick="removePlanSlot(${i})">✕</button></div>
-    <div class="time-inputs"><input type="time" value="${slot.startTime||'08:00'}" onchange="updatePlanSlot(${i},'startTime',this.value)"><span class="muted">έως</span><input type="time" value="${slot.endTime||'09:00'}" onchange="updatePlanSlot(${i},'endTime',this.value)"></div>
-    <div style="margin-top:8px"><select onchange="updatePlanSlot(${i},'activityId',this.value)"><option value="">-- Επίλεξε --</option>${FIXED_DEFS.map(d=>`<option value="fixed:${d.id}" ${slot.activityId===`fixed:${d.id}`?'selected':''}>${d.name}</option>`).join('')}${state.courses.filter(c=>c.active&&c.hours>0).map(c=>`<option value="course:${c.id}" ${slot.activityId===`course:${c.id}`?'selected':''}>${c.name}</option>`).join('')}</select></div>
-    <div class="plan-slot-actions"><button onclick="movePlanSlot(${i},-1)" ${i===0?'disabled':''}>↑ Πάνω</button><button onclick="movePlanSlot(${i},1)" ${i===todayPlan.length-1?'disabled':''}>↓ Κάτω</button></div>
-    ${isOv?`<div class="overlap-warning">⚠ Επικάλυψη με άλλη δραστηριότητα</div>`:''}</div>`;});}
-  body+=`</div><div class="actions" style="margin-top:14px"><button class="btn btn-primary" onclick="addPlanSlot()">+ Πρόσθεσε</button><button class="btn btn-ghost" onclick="autoFillPlan()">Αυτόματο</button></div><p class="note">Το αυτόματο γεμίζει με βάση τα υπόλοιπα μαθημάτων.</p>`;
-  openModal({title:'Πλάνο σήμερα',body,buttons:[{text:'Κλείσιμο',class:'btn-primary'}]});
-}
-function addPlanSlot(){const plan=getTodayPlan();const last=plan[plan.length-1];const st=last?last.endTime:'08:00';const [h,m]=st.split(':').map(Number);const sm=h*60+m;const em=sm+60;plan.push({startTime:`${pad(Math.floor(sm/60))}:${pad(sm%60)}`,endTime:`${pad(Math.floor(em/60))}:${pad(em%60)}`,activityId:'',name:''});saveDailyPlan(plan);openPlanEditor();}
-function removePlanSlot(i){const plan=getTodayPlan();plan.splice(i,1);saveDailyPlan(plan);openPlanEditor();}
-function movePlanSlot(i,d){const plan=getTodayPlan();const n=i+d;if(n<0||n>=plan.length)return;const t=plan[i];plan[i]=plan[n];plan[n]=t;saveDailyPlan(plan);openPlanEditor();}
-function updatePlanSlot(i,f,v){const plan=getTodayPlan();if(!plan[i])return;plan[i][f]=v;if(f==='activityId'){const [t,id]=v.split(':');if(t==='fixed'){const def=FIXED_DEFS.find(x=>x.id===id);if(def)plan[i].name=def.name;}else if(t==='course'){const c=state.courses.find(x=>x.id===id);if(c)plan[i].name=c.name;}}saveDailyPlan(plan);openPlanEditor();}
-function autoFillPlan(){
-const doFill=function(){const plan=[];const today=mondayIndex();let cur=8*60;const end=(24-state.settings.sleepHours)*60;state.courses.filter(c=>c.active&&c.hours>0&&!c.off.includes(today)).forEach(c=>{const info=courseInfo(c);if(info.todayTarget>60){const dur=Math.min(info.todayTarget,120);const em=cur+dur;if(em<=end){plan.push({startTime:`${pad(Math.floor(cur/60))}:${pad(cur%60)}`,endTime:`${pad(Math.floor(em/60))}:${pad(em%60)}`,activityId:`course:${c.id}`,name:c.name});cur=em+30;}}});saveDailyPlan(plan);openPlanEditor();showToast('Γέμισε αυτόματα.');};
-if(getTodayPlan().length){confirmModal('Αυτόματο πλάνο','Θα αντικατασταθεί το υπάρχον πλάνο ημέρας.',doFill,'Ναι');}else{doFill();}
 }
 
 function renderActivities(){
@@ -881,7 +855,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.4.42';
+var APP_VERSION='1.4.43';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -959,7 +933,6 @@ function makeNoiseWav(kind){var sr=22050,sec=45,n=sr*sec;var x=new Float32Array(
 if(kind==='sea'){for(var i=0;i<n;i++){x[i]*=0.55+0.45*Math.sin(2*Math.PI*0.12*(i/sr));}}else{var y=0;for(var i=0;i<n;i++){y=0.7*y+0.3*x[i];x[i]=y;}}
 var f=Math.floor(sr*0.05);for(var i=0;i<f;i++){var g=i/f;x[i]*=g;x[n-1-i]*=g;}
 return encodeWav(x,sr);}
-function noiseStart(){return;}
 function noiseStop(){try{AUD_EL.pause();}catch(e){}}
 var AUD_REAL={
 'AMBForst_Forest%20(ID%200100)_BigSoundBank.com.wav':'forest.mp3',
@@ -1707,7 +1680,6 @@ render();
 <script>
 /* ===== ΠΡΟΓΡΑΜΜΑ v8: ΑΝΑΒΟΛΗ + ΚΛΕΙΣΙΜΟ + ΥΠΕΡΒΑΣΗ ===== */
 state.slotStatus=state.slotStatus||{};
-state.slotAsk=state.slotAsk||{};
 state.slotRunning=state.slotRunning||null;
 
 function slotDateKey(){return getDailyPlanKey();}
@@ -3161,20 +3133,6 @@ function togglePause(){
 }
 /* ===== ΤΕΛΟΣ PAUSE v1 ===== */
 </script>
-
-<style>
-.qs-section{border:1px solid var(--line);border-radius:14px;margin:0 0 10px;background:var(--card);overflow:hidden}
-.qs-head{width:100%;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 14px;border:0;background:transparent;color:var(--text);font:700 .92rem system-ui,sans-serif;cursor:pointer;text-align:left}
-.qs-head:hover{background:rgba(99,102,241,.06)}
-.qs-arrow{font-size:1rem;line-height:1;transition:transform .18s ease;color:var(--muted)}
-.qs-section.open .qs-arrow{transform:rotate(180deg)}
-.qs-body{max-height:0;opacity:0;padding:0 14px;overflow:hidden;transition:max-height .22s ease,opacity .18s ease,padding .22s ease}
-.qs-section.open .qs-body{max-height:760px;opacity:1;padding:10px 14px 14px}
-.qs-note{font-size:.76rem;color:var(--muted);margin-top:8px;line-height:1.35}
-@media (prefers-reduced-motion: reduce){
-  .qs-arrow,.qs-body{transition:none}
-}
-</style>
   
 <style>
 .gear-panel{position:fixed;z-index:260;width:min(320px,calc(100vw - 24px));background:var(--card);border:1px solid var(--line);border-radius:16px;box-shadow:0 18px 44px rgba(20,25,60,.28);padding:8px;opacity:0;transform:translateY(-6px) scale(.98);pointer-events:none;transition:opacity .18s ease,transform .18s ease}
