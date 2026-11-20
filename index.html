@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.7.33">
+<meta name="app-version" content="1.7.3">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -808,7 +808,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.7.33';
+var APP_VERSION='1.7.3';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -5155,7 +5155,35 @@ return cfg;
 function bfCfgSync(){
 var b=bfEnsure(),cfg=document.getElementById('bfCfg');if(!cfg)return;
 BF_SPECIES.forEach(function(s){
-var
+var chip=cfg.querySelector('[data-bf-chip="'+s.id+'"]');if(!chip)return;
+var cb=chip.querySelector('input');if(cb)cb.checked=!!b.species[s.id];
+chip.classList.toggle('on',!!b.species[s.id]);
+});
+['count','speed','flap','erratic','wind','size','density'].forEach(function(k){
+var r=document.getElementById('bfR_'+k);if(r)r.value=b[k];
+var l=document.getElementById('bfV_'+k);if(l)l.textContent=bfLabel(k,b[k]);
+});
+['fly','glide','depth'].forEach(function(k){var c=document.getElementById('bfB_'+k);if(c)c.checked=!!b[k];});
+var act=state.settings.theme==='butterflies';
+var hint=document.getElementById('bfHint'),btn=document.getElementById('bfActivate');
+if(hint)hint.textContent=act?'Οι αλλαγές εφαρμόζονται αμέσως στην οθόνη.':'Το θέμα δεν είναι ενεργό. Οι ρυθμίσεις αποθηκεύονται και θα φανούν μόλις το ενεργοποιήσεις.';
+if(btn)btn.style.display=act?'none':'flex';
+}
+function bfOpenCfg(){
+var panel=document.getElementById('gearPanel');
+if(!panel)return;
+if(!panel.classList.contains('open')){if(typeof gpTogglePanel==='function')gpTogglePanel();}
+var cfg=bfCfgNode();if(!cfg)return;
+Array.prototype.forEach.call(panel.querySelectorAll('.gp-section'),function(s){s.style.display='none';});
+cfg.style.display='block';
+panel.scrollTop=0;
+bfCfgSync();
+}
+function bfCloseCfg(){
+var panel=document.getElementById('gearPanel'),cfg=document.getElementById('bfCfg');
+if(cfg)cfg.style.display='none';
+if(panel)Array.prototype.forEach.call(panel.querySelectorAll('.gp-section'),function(s){s.style.display='';});
+}
 
 /* ===== ΧΑΡΤΗΣ ΩΡΩΝ + ΔΙΑΙΤΑ ===== */
 function rhHourBuckets(){
@@ -5879,7 +5907,24 @@ var s=rhHistStart(),e=startOfNextDay(s),idx=[];
 state.logs.forEach(function(L,i){if(L.end>s&&L.start<e)idx.push(i);});
 var tot=allTotalMin(s,e);
 var lbl=new Date(s).toLocaleDateString('el-GR',{weekday:'short',day:'numeric',month:'short'});
-if(rhHistOff===0)lbl='
+if(rhHistOff===0)lbl='Σήμερα';else if(rhHistOff===1)lbl='Χθες';
+var h='<div class="card"><h3>Ιστορικό καταγραφών</h3>'
++'<div class="rh-hist-nav"><button type="button" class="btn btn-ghost" onclick="rhHistGo(1)" aria-label="Προηγούμενη ημέρα">‹</button>'
++'<div><strong>'+esc(lbl)+'</strong><small>'+fmtHM(tot)+' σύνολο · '+idx.length+' καταγραφές</small></div>'
++'<button type="button" class="btn btn-ghost" onclick="rhHistGo(-1)"'+(rhHistOff<=0?' disabled':'')+' aria-label="Επόμενη ημέρα">›</button></div>';
+if(!idx.length){
+h+='<p class="note">Καμία καταγραφή αυτή την ημέρα. Πήγαινε πιο πίσω ή πρόσθεσε ξεχασμένη δουλειά από την Ημέρα.</p>';
+}else{
+h+='<div class="stack" style="margin-top:10px">';
+idx.forEach(function(i){
+var L=state.logs[i];
+h+='<div class="list-row"><div class="list-left"><strong>'+esc(rhHistName(L.type,L.id))+'</strong>'
++'<span class="muted">'+fmtAbs(L.start)+' – '+fmtAbs(L.end)+'</span></div>'
++'<div class="list-value">'+fmtHM(L.dur)+'</div>'
++'<button class="btn btn-ghost" onclick="logEdit('+i+')" aria-label="Επεξεργασία">✎</button>'
++'<button class="btn btn-ghost-danger" onclick="logDel('+i+')" aria-label="Διαγραφή">✕</button></div>';
+});
+h+='</div>';
 }
 return h+'</div>';
 }
@@ -6077,7 +6122,28 @@ else if(!c.active)btn='<button class="btn btn-primary" disabled>Ανενεργό
 else btn='<button class="btn btn-primary" onclick="startCourse(\''+c.id+'\')">Έναρξη</button>';
 return '<article class="card activity '+(isActive?'running':'')+'" style="--accent:'+c.color+';--accent2:'+(c.color2||c.color)+';animation-delay:'+(i*0.03)+'s">'
 +'<div class="activity-head"><div class="icon">'+esc(c.short||c.name.charAt(0))+'</div>'
-+'<div class="activity-title"><h3>
++'<div class="activity-title"><h3>'+esc(c.name)+'</h3><p class="muted">'+(c.type==='makeup'?'Εμβόλιμη · ':'')+(wk?fmtHM(wk)+' / εβδομάδα':'χωρίς εβδομαδιαίο στόχο')+'</p></div>'
++'<span class="pill '+sc+'">'+st+'</span></div>'
++'<div class="metrics">'
++'<div class="metric"><span>Εβδομάδα</span><strong>'+(wk?fmtHM(Math.max(0,wk-info.weekMin)):'—')+'</strong><div class="progress"><span style="width:'+wp+'%"></span></div><small>'+fmtHM(info.weekMin)+(wk?' / '+fmtHM(wk):'')+'</small></div>'
++'<div class="metric"><span>Συνολικός στόχος</span><strong>'+(tot?fmtHM(Math.max(0,tot-done)):'—')+'</strong><div class="progress '+(tot&&done>=tot?'':'')+'"><span style="width:'+tp+'%"></span></div><small>'+fmtHM(done)+(tot?' / '+fmtHM(tot)+' · '+Math.round(tp)+'%':' · χωρίς στόχο')+'</small></div>'
++'<div class="metric"><span>Εξέταση</span><strong>'+ex+'</strong><small>'+exSub+'</small></div>'
++'</div>'
++'<div class="actions">'+btn
++'<button class="btn btn-ghost" onclick="rhStudyEditor(\''+c.id+'\')">✎</button>'
++'<button class="btn btn-ghost-danger" onclick="rhCourseDel(\''+c.id+'\')">✕</button>'
++'</div></article>';
+}
+function renderActivities(){
+var html='<div class="actions" style="margin:0 0 12px"><button class="btn btn-primary" onclick="openFixedEditor(null)">+ Νέα δραστηριότητα</button>'
++'<button class="btn btn-ghost" onclick="rhStudyEditor(null)">+ Νέο μάθημα</button></div>';
+if(!FIXED_DEFS.length&&!state.courses.length){
+html+='<div class="rh-empty">Καμία δραστηριότητα ακόμα. Φτιάξε μία και διάλεξε κατηγορία — τα μαθήματα πάνε στην κατηγορία «Μαθήματα».</div>';
+}
+ACT_CATS.forEach(function(cat){
+if(cat.id==='study')return;
+var list=FIXED_DEFS.filter(function(d){return (d.categoryId||'organize')===cat.id;});
+if(!list.length)return;
 html+='<div class="section-title" style="color:'+cat.color+'">'+cat.name+' <span class="muted" style="font-size:.78rem">· '+list.length+'</span></div>';
 html+=list.map(function(d,i){return fixedCard(d,i);}).join('');
 });
@@ -6166,7 +6232,34 @@ var body='<div class="field"><label>Όνομα</label><input id="fName" value="'
 +'<div id="formError" class="form-error"></div>';
 openModal({title:def?'Επεξεργασία δραστηριότητας':'Νέα δραστηριότητα',body:body,buttons:[
 {text:'Άκυρο',class:'btn-ghost'},
-{text:'Αποθήκευση',class:'b
+{text:'Αποθήκευση',class:'btn-primary',close:false,onClick:function(){
+var sh=document.querySelector('#modalOverlay .sheet'),err=sh.querySelector('#formError');
+var name=sh.querySelector('#fName').value.trim();
+if(!name){err.textContent='Δώσε όνομα.';err.classList.add('show');return false;}
+var daily=clamp(parseInt(sh.querySelector('#fDaily').value)||60,5,1440);
+var weekly=clamp(parseInt(sh.querySelector('#fWeekly').value)||daily,5,10080);
+var target=clamp(parseInt(sh.querySelector('#fTarget').value)||0,0,21);
+var from=clamp(parseInt(sh.querySelector('#fFrom').value)||0,0,24);
+var to=clamp(parseInt(sh.querySelector('#fTo').value)||24,0,24);if(to<=from)to=Math.min(24,from+1);
+if(weekly<daily){err.textContent='Το εβδομαδιαίο όριο δεν γίνεται μικρότερο από το ημερήσιο.';err.classList.add('show');return false;}
+var chosen=sh.querySelector('#fCat').value||catGuess(name);
+var col=sh.querySelector('#fColor').value;
+var data={name:name,short:(sh.querySelector('#fShort').value.trim()||name.charAt(0)),desc:sh.querySelector('#fDesc').value.trim(),color:col,color2:col,daily:daily,weekly:weekly,target:target,hard:hard,healthAware:hw,categoryId:chosen,timeRange:[from,to]};
+if(def){Object.assign(def,data);}
+else{FIXED_DEFS.push(Object.assign({id:'act_'+Date.now(),restorative:false,milestones:null},data));}
+saveState();closeModal();render();showToast('Αποθηκεύτηκε.');
+}}],onMount:function(sh){
+var hb=sh.querySelector('#fHardBtn');hb.onclick=function(){hard=!hard;hb.classList.toggle('on',hard);};
+var hwb=sh.querySelector('#fHealthBtn');hwb.onclick=function(){hw=!hw;hwb.classList.toggle('on',hw);};
+sh.querySelector('#fCat').onchange=function(){
+if(this.value!=='study')return;
+var nm=sh.querySelector('#fName').value.trim();
+closeModal();
+setTimeout(function(){rhStudyEditor(null,{name:nm});},260);
+};
+}});
+}
+function rhStudyPass(){
 var main=document.querySelector('main');if(!main)return;
 var act=document.querySelector('.nav-btn.active');
 if(!act||act.textContent.indexOf('Δραστηριότητες')<0)return;
@@ -6249,6 +6342,29 @@ return '#'+f(r)+f(g)+f(b);
 }
 function rhShade(hex,amt){
 var c=rhHex2Rgb(hex),t=amt<0?0:255,p=Math.abs(amt)/100;
+return rhRgb2Hex(c.r+(t-c.r)*p,c.g+(t-c.g)*p,c.b+(t-c.b)*p);
+}
+function rhLum(hex){var c=rhHex2Rgb(hex);return (0.2126*c.r+0.7152*c.g+0.0722*c.b)/255;}
+function rhInk(hex){return rhLum(hex)>0.62?'#1a1410':'#ffffff';}
+function rhPair(hex){var l=rhLum(hex);return {a:hex,b:l<0.28?rhShade(hex,28):rhShade(hex,-26)};}
+function rhPickColor(){
+var used={};
+FIXED_DEFS.forEach(function(d){used[String(d.color||'').toLowerCase()]=1;});
+state.courses.forEach(function(c){used[String(c.color||'').toLowerCase()]=1;});
+for(var i=0;i<RH_SWATCHES.length;i++){if(!used[RH_SWATCHES[i]])return RH_SWATCHES[i];}
+return RH_SWATCHES[Math.floor(Math.random()*RH_SWATCHES.length)];
+}
+function rhColorInit(){
+FIXED_DEFS.forEach(function(d){
+if(!d.color)d.color=rhPickColor();
+if(!d.color2||String(d.color2).toLowerCase()===String(d.color).toLowerCase())d.color2=rhPair(d.color).b;
+d.timeRange=[0,24];
+});
+state.courses.forEach(function(c){
+if(!c.color)c.color=rhPickColor();
+if(!c.color2||String(c.color2).toLowerCase()===String(c.color).toLowerCase())c.color2=rhPair(c.color).b;
+});
+}
 function rhActColor(type,id){
 if(type==='course'){var c=state.courses.find(function(x){return x.id===id;});return c?c.color:'#64748b';}
 var d=FIXED_DEFS.find(function(x){return x.id===id;});
@@ -6518,7 +6634,7 @@ safeSetForce(true,function(ok){
 if(ok===false){rhDirectRollback();return;}
 location.reload();
 });
-})
+});
 }
 function safeRetryLatest(){
 try{sessionStorage.removeItem('r-direct-backup');}catch(e){}
@@ -6586,7 +6702,7 @@ document.body.appendChild(b);
 rhSafeAugment();
 /* ===== ΤΕΛΟΣ ΑΣΦΑΛΕΙΑΣ v2 ===== */
 </script>
-  
+
 </body>
 
 </html>
