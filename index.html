@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.4.51">
+<meta name="app-version" content="1.4.52">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -654,12 +654,12 @@ function renderSchedule(){
 function renderAnalysis(){
   const stats=getStats4Weeks();const now=Date.now();const fourWeeks=28*86400000;const from=now-fourWeeks;
   const totalLogged=allTotalMin(from,now);const avgDaily=totalLogged/28;const awakeMin=todayAwakeMin();
-  let cd=0,td=0;for(let i=0;i<28;i++){const d=new Date(now);d.setDate(d.getDate()-i);d.setHours(0,0,0,0);const ds=d.getTime();const de=startOfNextDay(ds);let has=false;state.logs.forEach(l=>{if(l.end>ds&&l.start<de)has=true;});if(!has)continue;let ok=true;FIXED_DEFS.forEach(def=>{if(totalMin('fixed',def.id,ds,de)>def.daily+0.5)ok=false;});td++;if(ok)cd++;}
+  let cd=0,td=0;for(let i=0;i<28;i++){const a=dayAudit(Date.now()-i*86400000);if(a.empty)continue;td++;if(a.ok)cd++;}
   const cr=td>0?cd/td*100:0;const sorted=FIXED_DEFS.map(def=>({def,total:stats[def.id].total})).sort((a,b)=>b.total-a.total);
   const wsA=startOfWeek(),elA=Date.now()-wsA;const thisWeek=allTotalMin(wsA,Date.now());const lastWeek=allTotalMin(wsA-7*86400000,wsA-7*86400000+elA);
   const wt=lastWeek>0?((thisWeek-lastWeek)/lastWeek*100):0;
-  let html=`<div class="card"><h3>Στατιστικά 4 εβδομάδων</h3><div class="stats-grid"><div class="stat-card"><div class="stat-label">Σύνολο</div><div class="stat-value">${fmtHM(totalLogged)}</div><div class="stat-sub">28 μέρες</div></div><div class="stat-card"><div class="stat-label">Μέσος / μέρα</div><div class="stat-value">${fmtHM(avgDaily)}</div><div class="stat-sub">από ${fmtHM(awakeMin)}</div></div><div class="stat-card"><div class="stat-label">Compliance</div><div class="stat-value ${cr>=80?'text-success':cr>=60?'text-warn':'text-danger'}">${Math.round(cr)}%</div><div class="stat-sub">εντός ορίων</div></div><div class="stat-card"><div class="stat-label">Τάση</div><div class="stat-value ${wt>5?'trend-up':wt<-5?'trend-down':'trend-flat'}">${wt>0?'+':''}${wt.toFixed(0)}%</div><div class="stat-sub">vs προηγ.</div></div></div></div>`;
-  html+=`<div class="card"><h3>Ανά δραστηριότητα</h3><div class="stack" style="margin-top:12px">${sorted.map(({def,total})=>{const s=stats[def.id];const tc=s.trend>10?'trend-up':s.trend<-10?'trend-down':'trend-flat';const tt=s.trend>0?`+${s.trend.toFixed(0)}%`:s.trend.toFixed(0)+'%';return `<div class="list-row"><div class="list-left"><strong style="color:${def.color}">${def.name}</strong><span class="muted" style="font-size:.72rem">Μέσος ${fmtHM(s.avg)} · ${s.days} μ. · ${s.overCount} υπ.</span></div><div style="text-align:right"><div class="list-value">${fmtHM(total)}</div><div class="${tc}" style="font-size:.68rem;font-weight:700">${tt}</div></div></div>`;}).join('')}</div></div>`;
+  let html=`<div class="card"><h3>Στατιστικά 4 εβδομάδων</h3><div class="stats-grid"><div class="stat-card"><div class="stat-label">Σύνολο</div><div class="stat-value">${fmtHM(totalLogged)}</div><div class="stat-sub">28 μέρες</div></div><div class="stat-card"><div class="stat-label">Μέσος / μέρα</div><div class="stat-value">${fmtHM(avgDaily)}</div><div class="stat-sub">από ${fmtHM(awakeMin)}</div></div><div class="stat-card"><div class="stat-label">Compliance</div><div class="stat-value ${cr>=80?'text-success':cr>=60?'text-warn':'text-danger'}">${Math.round(cr)}%</div><div class="stat-sub">πλήρης τήρηση</div></div><div class="stat-card"><div class="stat-label">Τάση</div><div class="stat-value ${wt>5?'trend-up':wt<-5?'trend-down':'trend-flat'}">${wt>0?'+':''}${wt.toFixed(0)}%</div><div class="stat-sub">vs προηγ.</div></div></div></div>`;
+  html+=`dayAuditCardHTML();html+=`<div class="card"><h3>Ανά δραστηριότητα</h3>`<div class="stack" style="margin-top:12px">${sorted.map(({def,total})=>{const s=stats[def.id];const tc=s.trend>10?'trend-up':s.trend<-10?'trend-down':'trend-flat';const tt=s.trend>0?`+${s.trend.toFixed(0)}%`:s.trend.toFixed(0)+'%';return `<div class="list-row"><div class="list-left"><strong style="color:${def.color}">${def.name}</strong><span class="muted" style="font-size:.72rem">Μέσος ${fmtHM(s.avg)} · ${s.days} μ. · ${s.overCount} υπ.</span></div><div style="text-align:right"><div class="list-value">${fmtHM(total)}</div><div class="${tc}" style="font-size:.68rem;font-weight:700">${tt}</div></div></div>`;}).join('')}</div></div>`;
   const cs=state.courses.filter(c=>c.active&&c.hours>0).map(c=>{const total=totalMin('course',c.id,from,now);const target=c.hours*60*4;return {c,total,target,pct:target>0?total/target*100:0};});
   if(cs.length){html+=`<div class="card"><h3>Μαθήματα 4 εβδομάδων</h3><div class="stack" style="margin-top:12px">${cs.map(({c,total,target,pct})=>`<div class="list-row"><div class="list-left"><strong>${esc(c.name)}</strong><div class="progress" style="--accent:${c.color};--accent2:${c.color2}"><span style="width:${clamp(pct,0,100)}%"></span></div></div><div class="list-value">${fmtHM(total)} / ${fmtHM(target)}</div></div>`).join('')}</div></div>`;}
   const lr=state.weeklyReviews[state.weeklyReviews.length-1];
@@ -855,7 +855,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.4.51';
+var APP_VERSION='1.4.52';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -4243,6 +4243,66 @@ else notify(cfg.title,cfg.message,cfg.sticky);
 
 render();
 /* ===== ΤΕΛΟΣ ΣΥΝΟΧΗΣ v1 ===== */
+</script>
+
+<script>
+/* ===== ΕΛΕΓΧΟΣ ΗΜΕΡΑΣ v1: ΤΙ ΣΗΜΑΙΝΕΙ ΣΥΜΜΟΡΦΩΣΗ ===== */
+function rhDayLogged(s,e){return allTotalMin(s,e);}
+function rhRestorativeOk(d,ds){
+var base=d.weekly/7,m=totalMin('fixed',d.id,ds,startOfNextDay(ds));
+if(m<=base+0.5)return true;
+if(m>base*2+0.5)return false;
+var ws=startOfWeek(ds),n=0;
+for(var t=ws;t<=ds;t=startOfNextDay(t)){if(totalMin('fixed',d.id,t,startOfNextDay(t))>base+0.5)n++;}
+return n<=(state.settings.relaxOvers||0);
+}
+function dayAudit(ts){
+var s=startOfDay(ts),e=startOfNextDay(s),wd=mondayIndex(s),checks=[];
+if(rhDayLogged(s,e)<=0)return {empty:true,checks:[],score:0,ok:false,logged:0};
+FIXED_DEFS.forEach(function(d){
+var m=totalMin('fixed',d.id,s,e);
+var rest=(typeof isRestorative==='function')?isRestorative(d):(d.id==='relax');
+if(m<=0&&!d.hard&&!d.target)return;
+var ok=rest?rhRestorativeOk(d,s):(m<=d.daily+0.5);
+var cap=rest?d.weekly/7:d.daily;
+checks.push({label:d.name+' — όριο',ok:ok,detail:fmtHM(m)+' / '+fmtHM(cap)});
+});
+state.courses.forEach(function(c){
+if(!c.active||!c.hours)return;
+var off=Array.isArray(c.off)?c.off:[];
+if(off.indexOf(wd)>=0)return;
+var per=(c.hours*60)/Math.max(1,7-off.length);
+var m=totalMin('course',c.id,s,e);
+checks.push({label:c.name+' — στόχος',ok:m>=per*0.9-0.5,detail:fmtHM(m)+' / '+fmtHM(per)});
+});
+var sl=(state.sleep&&state.sleep.hours)?(state.sleep.hours[getDailyPlanKey(s)]||0):0;
+if(sl>0){var tgt=state.settings.sleepHours*60;checks.push({label:'Ύπνος',ok:sl*60>=tgt*0.85,detail:fmtHM(sl*60)+' / '+fmtHM(tgt)});}
+var pass=checks.filter(function(c){return c.ok;}).length;
+return {empty:checks.length===0,checks:checks,score:checks.length?pass/checks.length*100:0,ok:checks.length>0&&pass===checks.length,logged:rhDayLogged(s,e)};
+}
+function dayCompliant(ts){var a=dayAudit(ts);return !a.empty&&a.ok;}
+function dayHasData(ts){var s=startOfDay(ts),e=startOfNextDay(s);return rhDayLogged(s,e)>0;}
+function streakCount(){
+var day=86400000,cur=startOfDay(),n=0;
+var a=dayAudit(cur);
+if(a.empty||!a.ok)cur-=day;
+while(n<60){var x=dayAudit(cur);if(x.empty||!x.ok)break;n++;cur-=day;}
+return n;
+}
+function dayAuditCardHTML(){
+var a=dayAudit(Date.now());
+var h='<div class="card"><h3>Έλεγχος σημερινής ημέρας</h3>';
+if(a.empty)return h+'<p class="note">Καμία υποχρέωση για σήμερα ή καμία καταγραφή ακόμα. Η ημέρα δεν μετράει στο Compliance — ούτε επιτυχία ούτε αποτυχία. Αν βλέπεις συνεχώς 100%, σημαίνει ότι δεν έχεις ορίσει υποχρεώσεις που ελέγχονται.</p></div>';
+h+='<div class="stack" style="margin-top:10px">';
+a.checks.forEach(function(c){
+h+='<div class="list-row"><div class="list-left"><strong>'+esc(c.label)+'</strong><span class="muted" style="font-size:.74rem">'+esc(c.detail)+'</span></div><span class="pill '+(c.ok?'success':'danger')+'">'+(c.ok?'Τηρήθηκε':'Όχι')+'</span></div>';
+});
+h+='</div><div class="plan-row" style="margin-top:10px"><span>Σκορ ημέρας</span><strong class="'+(a.ok?'text-success':'text-warn')+'">'+Math.round(a.score)+'%</strong></div>';
+h+='<p class="note">Compliance = ποσοστό ημερών όπου τηρήθηκαν ΟΛΑ τα παραπάνω. Όριο σταθερών, ημερήσιος στόχος μαθημάτων στο 90%, ύπνος στο 85%. Οι επιτρεπμένες υπερβάσεις χαλάρωσης μετράνε ως τήρηση.</p></div>';
+return h;
+}
+render();
+/* ===== ΤΕΛΟΣ ΕΛΕΓΧΟΥ ΗΜΕΡΑΣ v1 ===== */
 </script>
   
 </body>
