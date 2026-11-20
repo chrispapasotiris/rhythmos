@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.7.21">
+<meta name="app-version" content="1.7.3">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -808,7 +808,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.7.21';
+var APP_VERSION='1.7.3';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -6574,7 +6574,135 @@ rhPolishPass();
 render();
 /* ===== ΤΕΛΟΣ POLISH v1 ===== */
 </script>
-  
+
+<script>
+/* ===== ΑΣΦΑΛΕΙΑ v2: ΕΠΑΝΑΦΟΡΑ ΧΩΡΙΣ ΕΞΑΡΤΗΣΗ ΑΠΟ CONTROLLER ===== */
+function rhSWReg(){
+if(!('serviceWorker' in navigator))return Promise.resolve(null);
+return navigator.serviceWorker.getRegistration().then(function(r){
+if(r)return r;
+return navigator.serviceWorker.register('sw.js').then(function(){return navigator.serviceWorker.getRegistration();}).catch(function(){return null;});
+}).catch(function(){return null;});
+}
+function rhSWActive(){
+return rhSWReg().then(function(r){
+if(!r)return null;
+if(navigator.serviceWorker.controller)return navigator.serviceWorker.controller;
+if(r.active)return r.active;
+return new Promise(function(res){
+var w=r.waiting||r.installing;
+if(!w){res(null);return;}
+var t=setTimeout(function(){res(r.active||null);},4500);
+w.addEventListener('statechange',function(){
+if(w.state==='activated'){clearTimeout(t);res(r.active||w);}
+});
+});
+});
+}
+function safeCtl(){
+if(navigator.serviceWorker&&navigator.serviceWorker.controller)return navigator.serviceWorker.controller;
+return null;
+}
+function safeSetForce(on,then){
+rhSWActive().then(function(sw){
+if(!sw){if(then)then(false);return;}
+var done=false;
+function onMsg(e){
+if(e.data&&e.data.type==='force-written'){done=true;navigator.serviceWorker.removeEventListener('message',onMsg);if(then)then(true);}
+}
+navigator.serviceWorker.addEventListener('message',onMsg);
+try{sw.postMessage({type:'set-force',on:!!on});}catch(e){}
+setTimeout(function(){if(!done){navigator.serviceWorker.removeEventListener('message',onMsg);if(then)then(true);}},1800);
+});
+}
+function rhDirectRollback(){
+var paths=['good/index.html.txt','good/index.html','good/index.txt'];
+safeToast('Φόρτωση αντιγράφου απευθείας…');
+(function next(i){
+if(i>=paths.length){safeToast('Δεν βρέθηκε έγκυρο αντίγραφο στον φάκελο good/.');return;}
+fetch(paths[i]+'?v='+Date.now(),{cache:'no-store'}).then(function(r){if(!r.ok)throw 0;return r.text();}).then(function(t){
+if(!t||t.length<5000||t.indexOf('app-version')<0)throw 0;
+try{sessionStorage.setItem('r-direct-backup',paths[i]);}catch(e){}
+document.open();document.write(t);document.close();
+}).catch(function(){next(i+1);});
+})(0);
+}
+function safeRollback(){
+rhSWActive().then(function(sw){
+if(!sw){rhDirectRollback();return;}
+safeSetForce(true,function(ok){
+if(ok===false){rhDirectRollback();return;}
+location.reload();
+});
+});
+}
+function safeRetryLatest(){
+try{sessionStorage.removeItem('r-direct-backup');}catch(e){}
+rhSWActive().then(function(sw){
+if(!sw){location.reload();return;}
+safeSetForce(false,function(){location.reload();});
+});
+}
+function rhSafeDiag(){
+var box=document.getElementById('rhSafeDiag');if(!box)return;
+var L=[];
+L.push('Έλεγχος σελίδας από worker: <b>'+(navigator.serviceWorker&&navigator.serviceWorker.controller?'ναι':'όχι — Hard reload ή ανενεργός')+'</b>');
+rhSWReg().then(function(r){
+L.push('Εγγραφή worker: <b>'+(r?'ναι':'όχι')+'</b>');
+if(r){
+L.push('Κατάσταση: '+(r.active?'ενεργός':(r.waiting?'σε αναμονή':(r.installing?'εγκαθίσταται':'καμία'))));
+L.push('Scope: '+r.scope.replace(location.origin,''));
+}
+var paths=['good/index.html.txt','good/index.html'];
+return (function probe(i){
+if(i>=paths.length){L.push('Αντίγραφο στο good/: <b>δεν βρέθηκε</b>');return null;}
+return fetch(paths[i]+'?v='+Date.now(),{cache:'no-store'}).then(function(x){
+if(!x.ok)throw 0;return x.text();
+}).then(function(t){
+var m=t.match(/name="app-version"\s+content="([^"]+)"/);
+L.push('Αντίγραφο: <b>'+paths[i]+'</b> — έκδοση '+(m?m[1]:'άγνωστη')+', '+Math.round(t.length/1024)+' KB');
+return true;
+}).catch(function(){return probe(i+1);});
+})(0);
+}).then(function(){
+L.push('Τρέχουσα έκδοση: <b>'+(typeof APP_VERSION!=='undefined'?APP_VERSION:';')+'</b>');
+box.innerHTML=L.map(function(x){return '<div>'+x+'</div>';}).join('');
+}).catch(function(){
+box.innerHTML=L.map(function(x){return '<div>'+x+'</div>';}).join('')+'<div>Σφάλμα ελέγχου.</div>';
+});
+}
+function rhSafeAugment(){
+var p=document.getElementById('safePanel');
+if(!p||p.querySelector('#rhSafeExtra'))return;
+var d=document.createElement('div');
+d.id='rhSafeExtra';
+d.style.cssText='margin:10px 0;padding-top:10px;border-top:1px solid rgba(255,255,255,.18)';
+d.innerHTML='<div id="rhSafeDiag" style="font-size:.72rem;line-height:1.65;opacity:.9;margin-bottom:10px">Έλεγχος…</div>'
++'<button id="rhDirectBtn" style="display:block;width:100%;margin-bottom:8px;padding:12px;border:none;border-radius:14px;background:#2f7d4f;color:#fff;font:700 .9rem system-ui,sans-serif;cursor:pointer">Άμεση επαναφορά χωρίς worker</button>'
++'<button id="rhDiagBtn" style="display:block;width:100%;padding:12px;border:none;border-radius:14px;background:#333a55;color:#fff;font:700 .9rem system-ui,sans-serif;cursor:pointer">Ανανέωση ελέγχου</button>'
++'<p style="font-size:.68rem;opacity:.72;margin:9px 0 0;line-height:1.5">Το Ctrl+Shift+R παρακάμπτει τον worker για εκείνη τη φόρτωση, οπότε η σελίδα φαίνεται «μη ελεγχόμενη». Με απλό F5 αναλαμβάνει ξανά. Η άμεση επαναφορά διαβάζει το αντίγραφο και το εμφανίζει χωρίς καθόλου worker — ισχύει μέχρι την επόμενη ανανέωση.</p>';
+var last=p.lastElementChild;
+if(last)p.insertBefore(d,last);else p.appendChild(d);
+document.getElementById('rhDirectBtn').onclick=function(){rhDirectRollback();};
+document.getElementById('rhDiagBtn').onclick=function(){document.getElementById('rhSafeDiag').innerHTML='Έλεγχος…';rhSafeDiag();};
+rhSafeDiag();
+}
+if(!window.__rhSafe2){
+window.__rhSafe2=true;
+new MutationObserver(rhSafeAugment).observe(document.body,{childList:true});
+try{
+if(sessionStorage.getItem('r-direct-backup')){
+var b=document.createElement('div');
+b.textContent='ΑΝΤΙΓΡΑΦΟ ΑΣΦΑΛΕΙΑΣ — άμεση φόρτωση, χωρίς worker';
+b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:400;background:#2f7d4f;color:#fff;font:700 .7rem system-ui,sans-serif;text-align:center;padding:5px 8px';
+document.body.appendChild(b);
+}
+}catch(e){}
+}
+rhSafeAugment();
+/* ===== ΤΕΛΟΣ ΑΣΦΑΛΕΙΑΣ v2 ===== */
+</script>
+
 </body>
 
 </html>
