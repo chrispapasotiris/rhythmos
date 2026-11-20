@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.4.44">
+<meta name="app-version" content="1.4.45">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -855,7 +855,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.4.44';
+var APP_VERSION='1.4.45';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -3454,6 +3454,7 @@ if(!window.__healthV3Mounted){
   if(state.active)healthResync();else healthResetThresholds();
   setInterval(healthTick,15000);
   setInterval(healthBreakFrame,1000);
+  setInterval(function(){if(state.healthBreak)healthBreakFrame();},1000);
   if(document.readyState!=='loading')gpBuildPanel();
   else document.addEventListener('DOMContentLoaded',gpBuildPanel);
 }
@@ -3785,6 +3786,239 @@ html{scrollbar-width:thin;scrollbar-color:var(--primary) var(--soft)}
 @media(max-width:380px){.dock-info small{display:none}.dock-card .btn{padding:7px 9px;font-size:.72rem}}
 @media(prefers-reduced-motion:reduce){.card{animation:none}.dock-card{animation:none}}
 </style>
+
+<style>
+#healthBreakBar{position:fixed!important;left:14px!important;right:14px!important;margin:0 auto!important;width:auto!important;max-width:402px!important;transform:none;bottom:calc(174px + env(safe-area-inset-bottom))!important;z-index:180;background:var(--card);border:1px solid var(--card-border);border-radius:20px!important;box-shadow:0 18px 44px rgba(10,14,30,.42)!important;padding:14px;display:none}
+#healthBreakBar.on{display:block;animation:hbIn .26s ease both}
+@keyframes hbIn{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+html.compact #healthBreakBar{bottom:calc(160px + env(safe-area-inset-bottom))!important;padding:12px}
+.hb-row{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.hb-title{font-weight:700;font-size:.95rem}
+.hb-sub{color:var(--muted);font-size:.76rem;margin-top:3px;line-height:1.35}
+.hb-time{font-size:1.5rem;font-weight:700;font-variant-numeric:tabular-nums;color:var(--primary);white-space:nowrap}
+.hb-track{height:6px;border-radius:999px;background:var(--track);overflow:hidden;margin:10px 0}
+.hb-fill{height:100%;border-radius:999px;background:linear-gradient(90deg,var(--primary),var(--success));width:0;transition:width 1s linear}
+#rhAlarmGlow{position:fixed;inset:0;pointer-events:none;z-index:300;opacity:0;transition:opacity .18s}
+body.rh-alarming #rhAlarmGlow{opacity:1;animation:rhPulse .48s ease-in-out infinite alternate}
+@keyframes rhPulse{from{box-shadow:inset 0 0 0 3px rgba(239,68,68,.5),inset 0 0 40px rgba(239,68,68,.18)}to{box-shadow:inset 0 0 0 6px rgba(239,68,68,1),inset 0 0 90px rgba(239,68,68,.42)}}
+@media(prefers-reduced-motion:reduce){#healthBreakBar.on{animation:none}body.rh-alarming #rhAlarmGlow{animation:none;box-shadow:inset 0 0 0 5px rgba(239,68,68,.9)}}
+</style>
+
+<script>
+/* ===== ΣΥΝΑΓΕΡΜΟΣ ΕΥΕΞΙΑΣ v1: ΗΧΟΣ + ΔΟΝΗΣΗ 7Δ + ΘΕΣΗ ΠΛΑΙΣΙΟΥ ===== */
+var RH_AC=null,RH_NODES=null,RH_AEL=null,RH_HTML_OK=false,RH_TIMER=0,RH_WAV=null;
+
+function rhCtx(){
+  if(!RH_AC){try{RH_AC=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}}
+  return RH_AC;
+}
+function rhAlarmWav(){
+  if(RH_WAV)return RH_WAV;
+  if(typeof encodeWav!=='function')return null;
+  var sr=22050,n=Math.floor(sr*0.9),x=new Float32Array(n);
+  function seg(a,b,f){
+    var i0=Math.floor(a*sr),i1=Math.floor(b*sr);
+    for(var i=i0;i<i1;i++){
+      var t=i/sr;
+      var env=Math.min(1,(t-a)/0.012)*Math.min(1,(b-t)/0.025);
+      x[i]=(Math.sin(2*Math.PI*f*t)>=0?1:-1)*0.6*env;
+    }
+  }
+  seg(0,0.18,880);seg(0.26,0.44,1245);
+  try{RH_WAV=URL.createObjectURL(encodeWav(x,sr));}catch(e){RH_WAV=null;}
+  return RH_WAV;
+}
+function rhUnlock(){
+  var c=rhCtx();
+  if(c){
+    if(c.state==='suspended'){try{c.resume();}catch(e){}}
+    try{var b=c.createBuffer(1,1,22050),s=c.createBufferSource();s.buffer=b;s.connect(c.destination);s.start(0);}catch(e){}
+    try{audioCtx=c;}catch(e){}
+  }
+  if(!RH_HTML_OK){
+    var u=rhAlarmWav();
+    if(u){
+      if(!RH_AEL){RH_AEL=new Audio(u);RH_AEL.preload='auto';}
+      try{
+        RH_AEL.muted=true;
+        var p=RH_AEL.play();
+        if(p&&p.then){p.then(function(){try{RH_AEL.pause();RH_AEL.currentTime=0;RH_AEL.muted=false;RH_HTML_OK=true;}catch(e){}}).catch(function(){try{RH_AEL.muted=false;}catch(e){}});}
+        else{RH_AEL.pause();RH_AEL.currentTime=0;RH_AEL.muted=false;RH_HTML_OK=true;}
+      }catch(e){try{RH_AEL.muted=false;}catch(e2){}}
+    }
+  }
+}
+document.addEventListener('pointerdown',rhUnlock,true);
+document.addEventListener('touchstart',rhUnlock,true);
+document.addEventListener('keydown',rhUnlock,true);
+
+function rhTone(c,t,f,d,g,track){
+  var o=c.createOscillator(),gn=c.createGain();
+  o.type='square';
+  o.frequency.setValueAtTime(f,t);
+  gn.gain.setValueAtTime(0.0001,t);
+  gn.gain.exponentialRampToValueAtTime(g,t+0.012);
+  gn.gain.exponentialRampToValueAtTime(0.0001,t+d);
+  o.connect(gn);gn.connect(c.destination);
+  o.start(t);o.stop(t+d+0.03);
+  if(track)RH_NODES.push({o:o,g:gn});
+}
+function rhSoundStart(){
+  if(!state.settings.sound)return;
+  var c=rhCtx();
+  if(c&&c.state==='running'){
+    RH_NODES=[];
+    var t0=c.currentTime+0.03;
+    for(var i=0;i<14;i++){
+      rhTone(c,t0+i*0.5,880,0.17,0.3,true);
+      rhTone(c,t0+i*0.5+0.22,1245,0.17,0.3,true);
+    }
+    return;
+  }
+  if(RH_AEL){
+    try{RH_AEL.muted=false;RH_AEL.loop=true;RH_AEL.volume=1;RH_AEL.currentTime=0;var p=RH_AEL.play();if(p&&p.catch)p.catch(function(){});}catch(e){}
+  }
+}
+function rhSoundStop(){
+  if(RH_NODES){
+    for(var i=0;i<RH_NODES.length;i++){
+      try{RH_NODES[i].o.stop();}catch(e){}
+      try{RH_NODES[i].g.disconnect();}catch(e){}
+    }
+    RH_NODES=null;
+  }
+  if(RH_AEL){try{RH_AEL.pause();RH_AEL.currentTime=0;}catch(e){}}
+}
+function rhVibeStart(){
+  try{
+    if(navigator.vibrate){
+      var pat=[];
+      for(var i=0;i<14;i++){pat.push(350);pat.push(150);}
+      navigator.vibrate(pat);
+    }
+  }catch(e){}
+}
+function rhVibeStop(){try{if(navigator.vibrate)navigator.vibrate(0);}catch(e){}}
+
+function startHealthAlarm(){
+  stopHealthAlarm();
+  rhUnlock();
+  rhSoundStart();
+  rhVibeStart();
+  document.body.classList.add('rh-alarming');
+  RH_TIMER=setTimeout(stopHealthAlarm,7000);
+}
+function stopHealthAlarm(){
+  if(RH_TIMER){clearTimeout(RH_TIMER);RH_TIMER=0;}
+  rhSoundStop();
+  rhVibeStop();
+  document.body.classList.remove('rh-alarming');
+}
+function rhSystemNotify(title,body){
+  if(state.settings.notifications&&'Notification' in window&&Notification.permission==='granted'){
+    try{
+      var n=new Notification(title||'Ρυθμός',{body:body||'',requireInteraction:true,tag:'rhythmos-health'});
+      n.onclick=function(){try{window.focus();}catch(e){}};
+    }catch(e){}
+  }
+}
+function beep(){
+  if(!state.settings.sound)return;
+  var c=rhCtx();if(!c)return;
+  if(c.state==='suspended'){try{c.resume();}catch(e){}}
+  try{
+    var t=c.currentTime+0.01;
+    rhTone(c,t,760,0.14,0.28,false);
+    rhTone(c,t+0.16,1040,0.2,0.28,false);
+  }catch(e){}
+}
+function processAlertQueue(){
+  if(modalOpen||!alertQueue.length)return;
+  var cfg=alertQueue.shift();
+  openModal(cfg);
+  if(cfg.alarm)rhSystemNotify(cfg.title,cfg.message);
+  else notify(cfg.title,cfg.message,cfg.sticky);
+}
+function healthOffer(kind){
+  var title=kind==='eye'?'Ξεκούραση ματιών':'Ώρα να σηκωθείς';
+  var message=kind==='eye'
+    ?'30′ συνεχούς εργασίας. Κοίτα 6 μέτρα μακριά για '+EYE_BREAK_MIN+' λεπτά.'
+    :'60′ συνεχούς εργασίας. Σηκώσου, τεντώσου και περπάτα για '+STAND_BREAK_MIN+' λεπτά.';
+  if(typeof notifTrim==='function'){
+    state.notifs.unshift({id:'n'+Date.now()+'_'+Math.floor(Math.random()*100000),title:title,message:message,ts:Date.now(),read:false});
+    notifTrim();saveState();
+    if(typeof notifBadgeUpdate==='function')notifBadgeUpdate();
+  }
+  startHealthAlarm();
+  pushAlert({
+    title:title,message:message,sticky:true,alarm:true,
+    buttons:[
+      {text:'Αποδοχή — διάλειμμα',class:'btn-success',onClick:function(){stopHealthAlarm();healthBreakStart(kind);}},
+      {text:'Απόρριψη — συνέχεια',class:'btn-ghost',onClick:function(){showToast('Συνέχεια εργασίας.');}}
+    ]
+  });
+}
+function healthClear(){
+  stopHealthAlarm();
+  healthEnsure();
+  state.health.nextEye=HEALTH_NONE;
+  state.health.nextStand=HEALTH_NONE;
+  state.healthBreak=null;
+  var bar=document.getElementById('healthBreakBar');
+  if(bar)bar.classList.remove('on');
+}
+function healthBreakEnd(){
+  var hb=state.healthBreak;
+  if(!hb)return;
+  stopHealthAlarm();
+  var now=Date.now(),dur=now-hb.start;
+  state.healthBreak=null;
+  if(state.active){
+    if(state.active.pausedAt){state.active.start+=dur;state.active.pausedAt=null;}
+    if(hb.kind==='stand'){state.active.healthStart=now;healthResetThresholds();}
+    else{state.active.healthStart=(state.active.healthStart||state.active.start)+dur;healthResync();}
+  }
+  try{var p=P();if(hb.pomo&&p.phase&&p.phaseEndsAt)p.phaseEndsAt+=dur;}catch(e){}
+  saveState();render();
+  try{if(typeof updateFocusOverlay==='function')updateFocusOverlay(true);}catch(e){}
+  healthBreakFrame();
+  showToast('Τέλος διαλείμματος. Συνέχεια.');
+}
+function healthBreakFrame(){
+  var hb=state.healthBreak;
+  var bar=document.getElementById('healthBreakBar');
+  if(hb&&!state.active){healthClear();return;}
+  if(!hb){if(bar)bar.classList.remove('on');return;}
+  var total=hb.durMin*60000;
+  var left=Math.max(0,hb.start+total-Date.now());
+  if(left<=0){healthBreakEnd();return;}
+  if(!bar){bar=document.createElement('div');bar.id='healthBreakBar';document.body.appendChild(bar);}
+  if(bar.dataset.kind!==hb.kind||!bar.querySelector('.hb-time')){
+    bar.dataset.kind=hb.kind;
+    var title=hb.kind==='eye'?'Διάλειμμα ματιών':'Διάλειμμα — σήκω';
+    var sub=hb.kind==='eye'?'Κοίτα 6 μέτρα μακριά. Ξεκούρασε τα μάτια.':'Σηκώσου, τεντώσου, περπάτα λίγο.';
+    bar.innerHTML='<div class="hb-row"><div><div class="hb-title">'+title+'</div><div class="hb-sub">'+sub+'</div></div><div class="hb-time">0:00</div></div>'
+      +'<div class="hb-track"><div class="hb-fill"></div></div>'
+      +'<button class="btn btn-success" style="width:100%" onclick="healthBreakEnd()">Τέλος διαλείμματος — συνέχεια</button>';
+  }
+  var sec=Math.ceil(left/1000),mm=Math.floor(sec/60),ss=sec%60;
+  var tEl=bar.querySelector('.hb-time');
+  if(tEl)tEl.textContent=mm+':'+(ss<10?'0':'')+ss;
+  var fEl=bar.querySelector('.hb-fill');
+  if(fEl)fEl.style.width=Math.round((1-left/total)*100)+'%';
+  bar.classList.add('on');
+  var fo=document.getElementById('focusOverlay'),fl=document.getElementById('foLabel');
+  if(fo&&fl&&!fo.classList.contains('hidden'))fl.textContent=hb.kind==='eye'?'ΔΙΑΛΕΙΜΜΑ ΜΑΤΙΩΝ':'ΣΗΚΩ — ΔΙΑΛΕΙΜΜΑ';
+}
+if(!window.__rhAlarmV1){
+  window.__rhAlarmV1=true;
+  var g=document.createElement('div');
+  g.id='rhAlarmGlow';
+  document.body.appendChild(g);
+  document.addEventListener('visibilitychange',function(){if(document.hidden)stopHealthAlarm();});
+}
+/* ===== ΤΕΛΟΣ ΣΥΝΑΓΕΡΜΟΥ ΕΥΕΞΙΑΣ v1 ===== */
+</script>
   
 </body>
 
