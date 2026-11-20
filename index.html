@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.7.6">
+<meta name="app-version" content="1.7.7">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -808,7 +808,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.7.6';
+var APP_VERSION='1.7.7';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -5260,7 +5260,7 @@ bfApplyAll();
 if(!window.__rhTheme3){
 window.__rhTheme3=true;
 var mm=document.querySelector('main');
-if(mm&&typeof MutationObserver==='function')new MutationObserver(function(){rhDomPass();if(typeof rhPass2==='function')rhPass2();if(typeof rhUxPass==='function')rhUxPass();if(typeof rhPolishPass==='function')rhPolishPass();}).observe(mm,{childList:true});
+if(mm&&typeof MutationObserver==='function')new MutationObserver(function(){rhDomPass();if(typeof rhPass2==='function')rhPass2();if(typeof rhUxPass==='function')rhUxPass();if(typeof rhPolishPass==='function')rhPolishPass();if(typeof rhEmptyPass==='function')rhEmptyPass();}).observe(mm,{childList:true});
 setInterval(function(){rhThemeApply();rhThemeGrid();rhPanelScrollFix();bfCfgNode();},4000);
 setInterval(function(){
 var el=document.getElementById('rh-hour-card');
@@ -7328,6 +7328,128 @@ setTimeout(rhPomoGear,1500);
 setTimeout(function(){rhPomoCardPass(true);rhPomoGear();},3200);
 render();
 /* ===== ΤΕΛΟΣ POMODORO v3 ===== */
+</script>
+
+<style>
+#rhWelcome{position:relative;overflow:hidden;border-radius:20px;padding:18px;margin-bottom:12px;border:1px solid var(--card-border);background:linear-gradient(150deg,color-mix(in srgb,var(--primary) 10%,var(--card)),var(--card) 62%);box-shadow:var(--shadow)}
+#rhWelcome::before{content:'';position:absolute;top:-90px;right:-60px;width:230px;height:230px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--primary2) 26%,transparent),transparent 68%);pointer-events:none}
+.rh-w-head{display:flex;align-items:center;gap:12px;position:relative;padding-right:34px}
+.rh-w-badge{width:46px;height:46px;border-radius:14px;display:grid;place-items:center;background:linear-gradient(140deg,var(--primary),var(--primary2));color:#fff;flex:0 0 auto;box-shadow:0 8px 20px color-mix(in srgb,var(--primary) 32%,transparent)}
+.rh-w-badge svg{width:24px;height:24px;display:block}
+.rh-w-head h3{margin:0;font-size:1.05rem;line-height:1.25}
+.rh-w-head p{margin:3px 0 0;font-size:.78rem;color:var(--muted);line-height:1.4}
+.rh-w-steps{display:flex;flex-direction:column;gap:8px;margin-top:14px;position:relative}
+.rh-w-step{display:flex;align-items:flex-start;gap:9px;font-size:.8rem;line-height:1.45}
+.rh-w-step i{width:20px;height:20px;border-radius:50%;background:var(--soft);border:1px solid var(--line);color:var(--muted);display:grid;place-items:center;font:700 .68rem system-ui,sans-serif;flex:0 0 auto;font-style:normal;margin-top:1px}
+.rh-w-acts{display:flex;gap:8px;margin-top:15px;position:relative;flex-wrap:wrap}
+.rh-w-acts .btn{flex:1;min-width:132px}
+.rh-w-x{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--muted);cursor:pointer;display:grid;place-items:center;font-size:.85rem;padding:0;z-index:2}
+.rh-w-x:hover{color:var(--danger);border-color:var(--danger)}
+</style>
+
+<script>
+/* ===== ΚΑΘΑΡΗ ΕΚΚΙΝΗΣΗ v1: ΤΙΠΟΤΑ ΠΡΟΚΑΤΑΒΟΛΙΚΟ, ΤΙΠΟΤΑ ΔΙΚΟ ΣΟΥ ΔΕΝ ΧΑΝΕΤΑΙ ===== */
+var RH_SEED_FIXED_IDS=['gym','school','mealprep','clothes','food','walk','reading','relax'];
+function rhSeedCourseIds(){
+return (typeof RH_SEED_IDS!=='undefined'&&Array.isArray(RH_SEED_IDS))?RH_SEED_IDS:['osy','qm1','mech1','comp','elec','makeup1','makeup2'];
+}
+function rhIsVirgin(){
+if(state.__rhInitAt)return false;
+if(Array.isArray(state.logs)&&state.logs.length>0)return false;
+var seeds=rhSeedCourseIds();
+var fOk=FIXED_DEFS.every(function(d){return RH_SEED_FIXED_IDS.indexOf(d.id)>=0;});
+if(!fOk)return false;
+var cOk=state.courses.every(function(c){return seeds.indexOf(c.id)>=0||/^mk\d{1,4}$/.test(String(c.id));});
+if(!cOk)return false;
+if(state.devNotes&&state.devNotes.some(function(n){return n&&n.userMade;}))return false;
+return true;
+}
+function rhCleanSlate(){
+try{FIXED_DEFS.length=0;state.fixedDefs=FIXED_DEFS;}catch(e){state.fixedDefs=[];}
+state.courses.length=0;
+try{if(typeof MONTHLY_DEFS!=='undefined'&&MONTHLY_DEFS)MONTHLY_DEFS.length=0;}catch(e){}
+if(Array.isArray(state.monthlyDefs))state.monthlyDefs.length=0;
+if(state.monthly)state.monthly.items={};
+if(Array.isArray(state.devNotes))state.devNotes.length=0;
+if(Array.isArray(state.feedback))state.feedback.length=0;
+if(Array.isArray(state.weeklyReviews))state.weeklyReviews.length=0;
+state.reviews={};state.reviewNotes={};state.dayClose={};state.carry={};
+state.settings.showMakeup=false;
+state.feedbackDraft='';
+}
+function rhWelcomeHTML(){
+return '<div class="card" id="rhWelcomeCard" style="all:unset;display:block">'
++'<button type="button" class="rh-w-x" onclick="rhWelcomeOff()" aria-label="Κλείσιμο">✕</button>'
++'<div class="rh-w-head"><div class="rh-w-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></div>'
++'<div><h3>Ο δικός σου ρυθμός, από το μηδέν</h3><p>Δεν υπάρχει τίποτα προκαθορισμένο. Ό,τι βλέπεις από εδώ και πέρα το ορίζεις εσύ.</p></div></div>'
++'<div class="rh-w-steps">'
++'<div class="rh-w-step"><i>1</i><span>Φτιάξε μια <b>δραστηριότητα</b> — ύπνος, γυμναστήριο, φαγητό, ό,τι θες — με ημερήσιο ή εβδομαδιαίο όριο και κατηγορία.</span></div>'
++'<div class="rh-w-step"><i>2</i><span>Όρισε τα <b>μαθήματά</b> σου με εβδομαδιαίο και συνολικό στόχο, και ημερομηνία εξέτασης αν την ξέρεις.</span></div>'
++'<div class="rh-w-step"><i>3</i><span>Βάλε <b>θέσεις</b> στο εβδομαδιαίο πρόγραμμα και ξεκίνα καταγραφή. Οι στόχοι, η πρόοδος και οι αναφορές γεμίζουν μόνα τους.</span></div>'
++'</div>'
++'<div class="rh-w-acts"><button type="button" class="btn btn-primary" onclick="openFixedEditor(null)">+ Δραστηριότητα</button>'
++'<button type="button" class="btn btn-ghost" onclick="rhStudyEditor(null)">+ Μάθημα</button></div>'
++'</div>';
+}
+function rhWelcomeOff(){
+state.__rhWelcomeOff=true;saveState();
+var w=document.getElementById('rhWelcome');if(w)w.remove();
+}
+function rhEmptyPass(){
+var main=document.querySelector('main');if(!main)return;
+var act=document.querySelector('.nav-btn.active'),label=act?act.textContent:'';
+var bare=FIXED_DEFS.length===0&&state.courses.length===0;
+if(label.indexOf('Ημέρα')>=0){
+Array.prototype.slice.call(main.querySelectorAll('.card')).forEach(function(c){
+var h=c.querySelector('h3');if(!h)return;
+var t=h.textContent;
+if(t.indexOf('Γρήγορη έναρξη')>=0){
+var g=c.querySelector('.quick-grid');
+if(!g||!g.children.length)c.remove();
+}
+if(t.indexOf('Ημέρα σε λωρίδα')>=0){
+var hasLogs=state.logs.length>0;
+var hasSlots=!!(state.schedule&&state.schedule.slots&&state.schedule.slots.length);
+if(!hasLogs&&!hasSlots)c.remove();
+}
+});
+var g2=document.getElementById('goals-card-extra');
+if(g2)g2.style.display=bare?'none':'';
+var wel=document.getElementById('rhWelcome');
+if(bare&&!state.__rhWelcomeOff){
+if(!wel){
+wel=document.createElement('div');
+wel.id='rhWelcome';
+wel.innerHTML=rhWelcomeHTML();
+main.insertBefore(wel,main.firstChild);
+}
+}else if(wel){wel.remove();}
+}
+if(label.indexOf('Δραστηριότητες')>=0){
+var mk=state.courses.filter(function(c){return c.type==='makeup';}).length;
+Array.prototype.forEach.call(main.querySelectorAll('.rh-mk-bar'),function(b){
+b.style.display=(mk===0&&!state.settings.showMakeup)?'none':'';
+});
+var mo=document.getElementById('rh-monthly-card');
+if(mo){
+var empty=(typeof MONTHLY_DEFS!=='undefined'&&MONTHLY_DEFS)?MONTHLY_DEFS.length===0:true;
+Array.prototype.forEach.call(mo.querySelectorAll('.summary-grid'),function(s){s.style.display=empty?'none':'';});
+}
+}
+}
+(function(){
+var virgin=rhIsVirgin();
+if(virgin)rhCleanSlate();
+if(!state.__rhInitAt){state.__rhInitAt=Date.now();}
+saveState();
+})();
+if(!window.__rhFresh1){
+window.__rhFresh1=true;
+setInterval(rhEmptyPass,2500);
+}
+rhEmptyPass();
+render();
+/* ===== ΤΕΛΟΣ ΚΑΘΑΡΗΣ ΕΚΚΙΝΗΣΗΣ v1 ===== */
 </script>
   
 </body>
