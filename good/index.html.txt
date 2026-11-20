@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.7.7">
+<meta name="app-version" content="1.7.8">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -808,7 +808,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.7.7';
+var APP_VERSION='1.7.8';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -7348,20 +7348,19 @@ render();
 </style>
 
 <script>
-/* ===== ΚΑΘΑΡΗ ΕΚΚΙΝΗΣΗ v1: ΤΙΠΟΤΑ ΠΡΟΚΑΤΑΒΟΛΙΚΟ, ΤΙΠΟΤΑ ΔΙΚΟ ΣΟΥ ΔΕΝ ΧΑΝΕΤΑΙ ===== */
-var RH_SEED_FIXED_IDS=['gym','school','mealprep','clothes','food','walk','reading','relax'];
-function rhSeedCourseIds(){
-return (typeof RH_SEED_IDS!=='undefined'&&Array.isArray(RH_SEED_IDS))?RH_SEED_IDS:['osy','qm1','mech1','comp','elec','makeup1','makeup2'];
+/* ===== ΚΑΘΑΡΗ ΕΚΚΙΝΗΣΗ v2 + ONBOARDING FIX ===== */
+function rhUserMade(id){
+var s=String(id||'');
+return /^act_\d/.test(s)||/^crs_\d/.test(s)||/^mk\d{10,}$/.test(s)||/^mo_\d/.test(s);
 }
 function rhIsVirgin(){
-if(state.__rhInitAt)return false;
+if(state.__rhCleanV2)return false;
 if(Array.isArray(state.logs)&&state.logs.length>0)return false;
-var seeds=rhSeedCourseIds();
-var fOk=FIXED_DEFS.every(function(d){return RH_SEED_FIXED_IDS.indexOf(d.id)>=0;});
-if(!fOk)return false;
-var cOk=state.courses.every(function(c){return seeds.indexOf(c.id)>=0||/^mk\d{1,4}$/.test(String(c.id));});
-if(!cOk)return false;
-if(state.devNotes&&state.devNotes.some(function(n){return n&&n.userMade;}))return false;
+if(Array.isArray(state.feedback)&&state.feedback.length>0)return false;
+if(state.schedule&&state.schedule.slots&&state.schedule.slots.length>0)return false;
+if(FIXED_DEFS.some(function(d){return rhUserMade(d.id);}))return false;
+if(state.courses.some(function(c){return rhUserMade(c.id);}))return false;
+if(Array.isArray(state.devNotes)&&state.devNotes.some(function(n){return n&&n.userMade;}))return false;
 return true;
 }
 function rhCleanSlate(){
@@ -7373,13 +7372,13 @@ if(state.monthly)state.monthly.items={};
 if(Array.isArray(state.devNotes))state.devNotes.length=0;
 if(Array.isArray(state.feedback))state.feedback.length=0;
 if(Array.isArray(state.weeklyReviews))state.weeklyReviews.length=0;
+if(state.schedule)state.schedule.slots=[];
 state.reviews={};state.reviewNotes={};state.dayClose={};state.carry={};
 state.settings.showMakeup=false;
 state.feedbackDraft='';
 }
 function rhWelcomeHTML(){
-return '<div class="card" id="rhWelcomeCard" style="all:unset;display:block">'
-+'<button type="button" class="rh-w-x" onclick="rhWelcomeOff()" aria-label="Κλείσιμο">✕</button>'
+return '<button type="button" class="rh-w-x" onclick="rhWelcomeOff()" aria-label="Κλείσιμο">✕</button>'
 +'<div class="rh-w-head"><div class="rh-w-badge"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></div>'
 +'<div><h3>Ο δικός σου ρυθμός, από το μηδέν</h3><p>Δεν υπάρχει τίποτα προκαθορισμένο. Ό,τι βλέπεις από εδώ και πέρα το ορίζεις εσύ.</p></div></div>'
 +'<div class="rh-w-steps">'
@@ -7388,31 +7387,38 @@ return '<div class="card" id="rhWelcomeCard" style="all:unset;display:block">'
 +'<div class="rh-w-step"><i>3</i><span>Βάλε <b>θέσεις</b> στο εβδομαδιαίο πρόγραμμα και ξεκίνα καταγραφή. Οι στόχοι, η πρόοδος και οι αναφορές γεμίζουν μόνα τους.</span></div>'
 +'</div>'
 +'<div class="rh-w-acts"><button type="button" class="btn btn-primary" onclick="openFixedEditor(null)">+ Δραστηριότητα</button>'
-+'<button type="button" class="btn btn-ghost" onclick="rhStudyEditor(null)">+ Μάθημα</button></div>'
-+'</div>';
++'<button type="button" class="btn btn-ghost" onclick="rhStudyEditor(null)">+ Μάθημα</button></div>';
 }
 function rhWelcomeOff(){
 state.__rhWelcomeOff=true;saveState();
 var w=document.getElementById('rhWelcome');if(w)w.remove();
 }
+function rhHideCard(main,needle,when){
+if(!when)return;
+Array.prototype.slice.call(main.querySelectorAll('.card')).forEach(function(c){
+if(c.id==='rhWelcome'||c.closest('#rhWelcome'))return;
+var h=c.querySelector('h3');if(!h)return;
+if(h.textContent.indexOf(needle)>=0)c.remove();
+});
+}
 function rhEmptyPass(){
 var main=document.querySelector('main');if(!main)return;
 var act=document.querySelector('.nav-btn.active'),label=act?act.textContent:'';
+var noLogs=!(state.logs&&state.logs.length);
+var noSlots=!(state.schedule&&state.schedule.slots&&state.schedule.slots.length);
+var noCourses=state.courses.filter(function(c){return c.active;}).length===0;
 var bare=FIXED_DEFS.length===0&&state.courses.length===0;
 if(label.indexOf('Ημέρα')>=0){
 Array.prototype.slice.call(main.querySelectorAll('.card')).forEach(function(c){
 var h=c.querySelector('h3');if(!h)return;
-var t=h.textContent;
-if(t.indexOf('Γρήγορη έναρξη')>=0){
+if(h.textContent.indexOf('Γρήγορη έναρξη')>=0){
 var g=c.querySelector('.quick-grid');
 if(!g||!g.children.length)c.remove();
 }
-if(t.indexOf('Ημέρα σε λωρίδα')>=0){
-var hasLogs=state.logs.length>0;
-var hasSlots=!!(state.schedule&&state.schedule.slots&&state.schedule.slots.length);
-if(!hasLogs&&!hasSlots)c.remove();
-}
 });
+rhHideCard(main,'Μαθήματα σήμερα',noCourses);
+rhHideCard(main,'Ημέρα σε λωρίδα',noLogs&&noSlots);
+rhHideCard(main,'Πρόγραμμα σήμερα',noLogs&&noSlots);
 var g2=document.getElementById('goals-card-extra');
 if(g2)g2.style.display=bare?'none':'';
 var wel=document.getElementById('rhWelcome');
@@ -7424,6 +7430,14 @@ wel.innerHTML=rhWelcomeHTML();
 main.insertBefore(wel,main.firstChild);
 }
 }else if(wel){wel.remove();}
+}
+if(label.indexOf('Πρόγραμμα')>=0){
+rhHideCard(main,'Φορτίο εβδομάδας',noLogs);
+}
+if(label.indexOf('Ανάλυση')>=0){
+rhHideCard(main,'Μαθήματα 4 εβδομάδων',state.courses.length===0);
+rhHideCard(main,'Στατιστικά 4 εβδομάδων',noLogs);
+rhHideCard(main,'Ανά δραστηριότητα',noLogs);
 }
 if(label.indexOf('Δραστηριότητες')>=0){
 var mk=state.courses.filter(function(c){return c.type==='makeup';}).length;
@@ -7437,19 +7451,70 @@ Array.prototype.forEach.call(mo.querySelectorAll('.summary-grid'),function(s){s.
 }
 }
 }
+
+/* ---------- ONBOARDING: ΚΑΜΙΑ ΔΙΠΛΗ ΕΠΙΚΑΛΥΨΗ, ΚΑΜΙΑ ΚΛΕΙΔΩΜΕΝΗ ΟΘΟΝΗ ---------- */
+function rhObNodes(){
+var set=[],guard=['MAIN','HEADER','NAV'];
+var hits=document.querySelectorAll('[onclick*="nextOb"],[onclick*="prevOb"],[onclick*="doneOb"],[onclick*="skipOb"]');
+Array.prototype.forEach.call(hits,function(h){
+var n=h;
+while(n&&n.parentElement&&n.parentElement!==document.body)n=n.parentElement;
+if(!n||n.parentElement!==document.body)return;
+if(guard.indexOf(n.tagName)>=0)return;
+if(n.id==='app'||n.id==='modalOverlay'||n.id==='safePanel'||n.id==='gearPanel'||n.id==='focusOverlay')return;
+if(set.indexOf(n)<0)set.push(n);
+});
+return set;
+}
+function rhObUnlock(){
+document.body.style.overflow='';
+document.body.style.position='';
+document.body.style.touchAction='';
+document.body.style.pointerEvents='';
+document.documentElement.style.overflow='';
+['ob-open','no-scroll','modal-open','locked','ob-active'].forEach(function(c){document.body.classList.remove(c);document.documentElement.classList.remove(c);});
+}
+function rhObFinish(){
+state.onboardingComplete=true;saveState();
+rhObNodes().forEach(function(n){try{n.remove();}catch(e){}});
+rhObUnlock();
+try{render();}catch(e){}
+try{showToast('Καλώς ήρθες!');}catch(e){}
+}
+window.doneOb=rhObFinish;
+window.skipOb=rhObFinish;
+function rhObGuard(){
+var nodes=rhObNodes();
+if(!nodes.length)return;
+if(state.onboardingComplete){
+nodes.forEach(function(n){try{n.remove();}catch(e){}});
+rhObUnlock();
+return;
+}
+if(nodes.length>1){
+for(var i=0;i<nodes.length-1;i++){try{nodes[i].remove();}catch(e){}}
+}
+}
 (function(){
 var virgin=rhIsVirgin();
 if(virgin)rhCleanSlate();
-if(!state.__rhInitAt){state.__rhInitAt=Date.now();}
+state.__rhCleanV2=true;
+state.__rhInitAt=state.__rhInitAt||Date.now();
 saveState();
 })();
-if(!window.__rhFresh1){
-window.__rhFresh1=true;
-setInterval(rhEmptyPass,2500);
+if(state.onboardingComplete){rhObNodes().forEach(function(n){try{n.remove();}catch(e){}});rhObUnlock();}
+if(!window.__rhFresh2){
+window.__rhFresh2=true;
+new MutationObserver(rhObGuard).observe(document.body,{childList:true});
+document.addEventListener('keydown',function(ev){
+if(ev.key==='Escape'&&rhObNodes().length)rhObFinish();
+});
+setInterval(function(){rhEmptyPass();rhObGuard();},2500);
 }
+rhObGuard();
 rhEmptyPass();
 render();
-/* ===== ΤΕΛΟΣ ΚΑΘΑΡΗΣ ΕΚΚΙΝΗΣΗΣ v1 ===== */
+/* ===== ΤΕΛΟΣ ΚΑΘΑΡΗΣ ΕΚΚΙΝΗΣΗΣ v2 ===== */
 </script>
   
 </body>
