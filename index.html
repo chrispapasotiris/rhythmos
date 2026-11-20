@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.7.8">
+<meta name="app-version" content="1.7.9">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -808,7 +808,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.7.8';
+var APP_VERSION='1.7.9';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -5260,7 +5260,7 @@ bfApplyAll();
 if(!window.__rhTheme3){
 window.__rhTheme3=true;
 var mm=document.querySelector('main');
-if(mm&&typeof MutationObserver==='function')new MutationObserver(function(){rhDomPass();if(typeof rhPass2==='function')rhPass2();if(typeof rhUxPass==='function')rhUxPass();if(typeof rhPolishPass==='function')rhPolishPass();if(typeof rhEmptyPass==='function')rhEmptyPass();}).observe(mm,{childList:true});
+if(mm&&typeof MutationObserver==='function')new MutationObserver(function(){rhDomPass();if(typeof rhPass2==='function')rhPass2();if(typeof rhUxPass==='function')rhUxPass();if(typeof rhPolishPass==='function')rhPolishPass();if(typeof rhEmptyPass==='function')rhEmptyPass();if(typeof rhHelpPass==='function')rhHelpPass();}).observe(mm,{childList:true});
 setInterval(function(){rhThemeApply();rhThemeGrid();rhPanelScrollFix();bfCfgNode();},4000);
 setInterval(function(){
 var el=document.getElementById('rh-hour-card');
@@ -7515,6 +7515,226 @@ rhObGuard();
 rhEmptyPass();
 render();
 /* ===== ΤΕΛΟΣ ΚΑΘΑΡΗΣ ΕΚΚΙΝΗΣΗΣ v2 ===== */
+</script>
+
+<style>
+.rh-card-help{display:flex;justify-content:flex-end;margin:-6px 0 4px}
+.rh-help-btn{width:24px;height:24px;border-radius:50%;border:1px solid var(--line);background:var(--soft);color:var(--muted);font:800 .78rem/1 system-ui,sans-serif;cursor:pointer;display:grid;place-items:center;padding:0;transition:transform .16s,background .16s,color .16s,border-color .16s}
+.rh-help-btn:hover{background:var(--primary);border-color:transparent;color:#fff;transform:scale(1.12)}
+.rh-help-btn:active{transform:scale(.94)}
+.rh-hlp{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--line)}
+.rh-hlp:last-of-type{border-bottom:0}
+.rh-hlp i{width:26px;height:26px;border-radius:9px;display:grid;place-items:center;font:800 .74rem/1 system-ui,sans-serif;font-style:normal;flex:0 0 auto;color:#fff}
+.rh-hlp .b{flex:1;min-width:0}
+.rh-hlp b{display:block;font-size:.88rem;margin-bottom:3px}
+.rh-hlp p{margin:0;font-size:.79rem;line-height:1.5;color:var(--muted)}
+.rh-hlp .ex{margin-top:7px;padding:8px 10px;border-radius:10px;background:var(--soft);border:1px solid var(--line);font-size:.76rem;line-height:1.45;font-variant-numeric:tabular-nums}
+.rh-fb-kind{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.rh-fb-kind>span{font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);flex:0 0 auto}
+.rh-fb-seg{display:flex;gap:5px;flex:1;min-width:0}
+.rh-fb-seg button{flex:1;padding:7px 4px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--muted);font:700 .72rem system-ui,sans-serif;cursor:pointer;white-space:nowrap;transition:background .15s,color .15s,border-color .15s}
+.rh-fb-seg button:hover{border-color:var(--primary)}
+.rh-fb-seg button.on{background:var(--primary);border-color:transparent;color:#fff}
+.rh-drop{margin-top:10px;border:1.5px dashed var(--line);border-radius:12px;padding:11px;text-align:center;transition:border-color .18s,background .18s}
+.rh-drop.over{border-color:var(--primary);background:color-mix(in srgb,var(--primary) 9%,transparent)}
+.rh-drop-btn{display:inline-flex;align-items:center;gap:7px;padding:8px 13px;border-radius:10px;border:1px solid var(--line);background:var(--soft);color:var(--text);font:700 .76rem system-ui,sans-serif;cursor:pointer}
+.rh-drop-btn:hover{border-color:var(--primary);color:var(--primary)}
+.rh-drop-btn svg{width:15px;height:15px;display:block}
+.rh-drop small{display:block;margin-top:7px;font-size:.68rem;color:var(--muted);line-height:1.4}
+.rh-files{display:flex;flex-wrap:wrap;gap:6px;margin-top:9px}
+.rh-file{display:inline-flex;align-items:center;gap:7px;padding:6px 8px;border-radius:9px;background:var(--soft);border:1px solid var(--line);font-size:.72rem;max-width:100%}
+.rh-file b{font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+.rh-file span{color:var(--muted);font-variant-numeric:tabular-nums;flex:0 0 auto}
+.rh-file button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:.8rem;padding:0 2px;line-height:1}
+.rh-file button:hover{color:var(--danger)}
+.rh-fb-acts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.rh-rm-top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.rh-live{display:inline-flex;align-items:center;gap:6px;font-size:.66rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.rh-live i{width:7px;height:7px;border-radius:50%;background:var(--success);display:block;animation:rhLive 1.9s ease-in-out infinite}
+@keyframes rhLive{0%,100%{opacity:.35;transform:scale(.85)}50%{opacity:1;transform:scale(1.15)}}
+.rh-rm-row{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px solid var(--line)}
+.rh-rm-row:last-of-type{border-bottom:0}
+.rh-rm-dot{width:9px;height:9px;border-radius:50%;flex:0 0 auto;margin-top:5px}
+.rh-rm-dot.s0{background:#f59e0b;box-shadow:0 0 0 3px color-mix(in srgb,#f59e0b 22%,transparent)}
+.rh-rm-dot.s1{background:#3b82f6;box-shadow:0 0 0 3px color-mix(in srgb,#3b82f6 20%,transparent)}
+.rh-rm-dot.s2{background:#10b981;box-shadow:0 0 0 3px color-mix(in srgb,#10b981 20%,transparent)}
+.rh-rm-txt{flex:1;min-width:0}
+.rh-rm-txt b{display:block;font-size:.85rem;line-height:1.3}
+.rh-rm-txt small{display:block;font-size:.72rem;color:var(--muted);line-height:1.45;margin-top:3px}
+.rh-rm-pill{flex:0 0 auto;font-size:.64rem;font-weight:700;padding:4px 8px;border-radius:999px;white-space:nowrap}
+.rh-rm-pill.s0{background:rgba(245,158,11,.16);color:#b07a1a}
+.rh-rm-pill.s1{background:rgba(59,130,246,.15);color:#2563eb}
+.rh-rm-pill.s2{background:rgba(16,185,129,.16);color:#0f8a63}
+html.dusk .rh-rm-pill.s0,html.blue .rh-rm-pill.s0,html.dark .rh-rm-pill.s0{color:#f0b429}
+html.dusk .rh-rm-pill.s1,html.blue .rh-rm-pill.s1,html.dark .rh-rm-pill.s1{color:#7fb0ff}
+html.dusk .rh-rm-pill.s2,html.blue .rh-rm-pill.s2,html.dark .rh-rm-pill.s2{color:#6fdcae}
+.rh-rm-note{margin-top:11px;padding:9px 11px;border-radius:11px;background:var(--soft);border:1px solid var(--line);font-size:.7rem;color:var(--muted);line-height:1.5}
+.rh-fb-item{padding:11px 0;border-bottom:1px solid var(--line)}
+.rh-fb-item:last-child{border-bottom:0}
+.rh-fb-meta{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:.67rem;color:var(--muted);margin-bottom:5px}
+.rh-fb-item p{margin:0;font-size:.81rem;line-height:1.45}
+@media(prefers-reduced-motion:reduce){.rh-live i{animation:none}}
+</style>
+
+<script>
+/* ===== ΟΡΙΑ + FEEDBACK + ROADMAP v1 ===== */
+function rhThresholdHelp(){
+var s=state.settings;
+var awake=(typeof todayAwakeMin==='function')?todayAwakeMin():(1440-(s.sleepHours||8)*60);
+var hp=s.heavyDayPct||85,ap=s.alertPct||80,sl=s.suggestionLimit||3;
+var heavy=Math.round(awake*hp/100);
+var d=FIXED_DEFS[0];
+var cap=d?d.daily:120;
+var nm=d?d.name:'μια δραστηριότητα';
+var at=Math.round(cap*ap/100);
+var body=''
++'<div class="rh-hlp"><i style="background:linear-gradient(140deg,#ef4444,#f97316)">1</i><div class="b">'
++'<b>Βαριά μέρα</b><p>Πόσο γεμάτη θεωρείται μια ημέρα. Είναι ποσοστό του χρόνου που είσαι ξύπνιος, όχι του 24ώρου. Όταν το φορτίο περάσει αυτό το σημείο, η ημέρα μαρκάρεται ως βαριά και η γραμμή στο γράφημα φορτίου δείχνει το ίδιο όριο.</p>'
++'<div class="ex">Σήμερα είσαι ξύπνιος <b>'+fmtHM(awake)+'</b>. Στο '+hp+'% η ημέρα γίνεται βαριά στα <b>'+fmtHM(heavy)+'</b>. Για τη σημερινή κρίνεται το καταγεγραμμένο φορτίο, για τις επόμενες το προγραμματισμένο.</div></div></div>'
++'<div class="rh-hlp"><i style="background:linear-gradient(140deg,#f59e0b,#eab308)">2</i><div class="b">'
++'<b>Προειδοποίηση ορίων</b><p>Πότε σου χτυπάει η ειδοποίηση πριν φτάσεις στο όριο μιας δραστηριότητας ή ενός μαθήματος. Δεν αλλάζει το ίδιο το όριο — μόνο το πόσο νωρίς σε προειδοποιεί. Δουλεύει και στο ημερήσιο και στο εβδομαδιαίο.</p>'
++'<div class="ex">«'+esc(nm)+'» με ημερήσιο όριο <b>'+fmtHM(cap)+'</b>. Στο '+ap+'% η ειδοποίηση έρχεται στα <b>'+fmtHM(at)+'</b>, δηλαδή '+fmtHM(cap-at)+' πριν το όριο.</div></div></div>'
++'<div class="rh-hlp"><i style="background:linear-gradient(140deg,#6366f1,#8b5cf6)">3</i><div class="b">'
++'<b>Όριο προτάσεων</b><p>Πόσες προτάσεις εμφανίζονται στην Ημέρα κάθε φορά. Οι υποψήφιες δουλειές ταξινομούνται κατά προτεραιότητα και κόβονται σε αυτό το πλήθος, ώστε η οθόνη να μη γεμίζει.</p>'
++'<div class="ex">Τώρα εμφανίζονται έως <b>'+sl+'</b> '+(sl===1?'πρόταση':'προτάσεις')+'. Οι μεταφορές από χθες μπαίνουν πάντα πρώτες και μετράνε μέσα σε αυτό το όριο.</div></div></div>'
++'<p class="note" style="margin-top:12px">Κανένα από τα τρία δεν μπλοκάρει την καταγραφή. Είναι δείκτες και ειδοποιήσεις, όχι περιορισμοί.</p>';
+openModal({title:'Τι σημαίνουν τα κατώφλια',body:body,buttons:[{text:'Κατάλαβα',class:'btn-primary'}]});
+}
+function rhHelpPass(){
+var main=document.querySelector('main');if(!main)return;
+var act=document.querySelector('.nav-btn.active');
+if(!act||act.textContent.indexOf('Ρυθμίσεις')<0)return;
+var head=null;
+Array.prototype.forEach.call(main.querySelectorAll('.section-title'),function(t){
+if(t.textContent.trim().toLowerCase().indexOf('κατώφλια')===0)head=t;
+});
+if(!head)return;
+var card=head.nextElementSibling;
+if(!card||!card.classList.contains('card'))return;
+if(card.querySelector('.rh-card-help'))return;
+var row=document.createElement('div');
+row.className='rh-card-help';
+row.innerHTML='<button type="button" class="rh-help-btn" onclick="rhThresholdHelp()" aria-label="Τι σημαίνουν τα κατώφλια" title="Τι σημαίνουν τα κατώφλια">?</button>';
+card.insertBefore(row,card.firstChild);
+}
+
+/* ---------- FEEDBACK ---------- */
+var rhFbFiles=[];
+function rhFbSize(b){
+if(b<1024)return b+' B';
+if(b<1048576)return (b/1024).toFixed(0)+' KB';
+return (b/1048576).toFixed(1)+' MB';
+}
+function rhFbKindSet(k){
+state.feedbackKind=k;saveState();
+Array.prototype.forEach.call(document.querySelectorAll('[data-fbkind]'),function(b){
+b.classList.toggle('on',b.getAttribute('data-fbkind')===k);
+});
+}
+function rhFbFilesAdd(list){
+var arr=Array.prototype.slice.call(list||[]),added=0;
+arr.forEach(function(f){
+if(rhFbFiles.length>=6){return;}
+if(f.size>8*1048576){showToast('Το «'+f.name+'» είναι πάνω από 8 MB.');return;}
+rhFbFiles.push({name:f.name,size:f.size,type:f.type||''});added++;
+});
+if(arr.length&&!added)showToast('Όριο 6 αρχείων.');
+rhFbFilesRender();
+}
+function rhFbFileDel(i){rhFbFiles.splice(i,1);rhFbFilesRender();}
+function rhFbFilesRender(){
+var w=document.getElementById('rhFbFiles');if(!w)return;
+w.innerHTML=rhFbFiles.map(function(f,i){
+return '<span class="rh-file"><b>'+esc(f.name)+'</b><span>'+rhFbSize(f.size)+'</span>'
++'<button type="button" onclick="rhFbFileDel('+i+')" aria-label="Αφαίρεση '+esc(f.name)+'">✕</button></span>';
+}).join('');
+}
+function rhFbSave(status){
+var ta=document.getElementById('rhFbText');
+var v=ta?(ta.value||'').trim():'';
+if(v.length<3){showToast('Γράψε δυο λόγια παραπάνω.');return;}
+state.feedback.unshift({
+kind:state.feedbackKind||'Ιδέα',text:v,ts:Date.now(),
+ver:(typeof APP_VERSION!=='undefined'?APP_VERSION:''),
+status:status,files:rhFbFiles.slice()
+});
+state.feedbackDraft='';rhFbFiles=[];
+if(ta)ta.value='';
+saveState();rhNotesRefresh();
+showToast(status==='queued'?'Μπήκε στην ουρά αποστολής.':'Αποθηκεύτηκε προσωρινά στη συσκευή.');
+}
+function rhFbAdd(){rhFbSave('draft');}
+function rhFbDel(i){if(!state.feedback[i])return;state.feedback.splice(i,1);saveState();rhNotesRefresh();}
+function rhFbComposer(){
+var kinds=['Ιδέα','Σφάλμα','Βελτίωση'];
+var k=state.feedbackKind||'Ιδέα';
+return '<div class="rh-fb-kind"><span>Είδος</span><div class="rh-fb-seg">'
++kinds.map(function(x){return '<button type="button" data-fbkind="'+x+'" class="'+(k===x?'on':'')+'" onclick="rhFbKindSet(\''+x+'\')">'+x+'</button>';}).join('')
++'</div></div>'
++'<div class="field" style="margin-bottom:0"><textarea id="rhFbText" rows="3" placeholder="Περιγραφή, βήματα αναπαραγωγής, τι περίμενες…" oninput="state.feedbackDraft=this.value;">'+esc(state.feedbackDraft||'')+'</textarea></div>'
++'<div class="rh-drop" id="rhFbDrop" ondragover="event.preventDefault();this.classList.add(\'over\')" ondragleave="this.classList.remove(\'over\')" ondrop="event.preventDefault();this.classList.remove(\'over\');rhFbFilesAdd(event.dataTransfer.files)">'
++'<input type="file" id="rhFbFile" multiple style="display:none" onchange="rhFbFilesAdd(this.files);this.value=\'\'">'
++'<button type="button" class="rh-drop-btn" onclick="document.getElementById(\'rhFbFile\').click()">'
++'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.4 11.05l-8.5 8.5a5 5 0 01-7.07-7.07l8.49-8.49a3.33 3.33 0 014.71 4.71l-8.5 8.49a1.67 1.67 0 01-2.36-2.36l7.78-7.78"/></svg>'
++'Επισύναψη αρχείων</button>'
++'<small>Σύρε εδώ ή πάτα το κουμπί. Έως 6 αρχεία, 8 MB το καθένα. Screenshot και log βοηθούν περισσότερο από περιγραφή.</small>'
++'<div class="rh-files" id="rhFbFiles"></div></div>'
++'<div class="rh-fb-acts"><button type="button" class="btn btn-ghost" onclick="rhFbSave(\'draft\')">Προσωρινή αποθήκευση</button>'
++'<button type="button" class="btn btn-primary" onclick="rhFbSave(\'queued\')">Αποστολή</button></div>'
++'<p class="rh-mini">Η προσωρινή αποθήκευση μένει μόνο στη συσκευή και φεύγει μαζί με το backup. Η αποστολή βάζει το αναφορά στην ουρά· ο διακομιστής δεν έχει συνδεθεί ακόμη, οπότε τίποτα δεν φεύγει από τη συσκευή σου.</p>';
+}
+function rhFbList(){
+if(!state.feedback.length)return '';
+var h='<div style="margin-top:14px">';
+state.feedback.forEach(function(f,i){
+var q=f.status==='queued';
+h+='<div class="rh-fb-item"><div class="rh-fb-meta">'
++'<span class="pill '+(q?'info':'warn')+'">'+(q?'Σε ουρά':'Πρόχειρο')+'</span>'
++'<span class="pill info">'+esc(f.kind||'Ιδέα')+'</span>'
++'<span>'+new Date(f.ts).toLocaleDateString('el-GR')+(f.ver?' · v'+esc(f.ver):'')+'</span>'
++'<button class="btn btn-ghost-danger" style="margin-left:auto;padding:3px 8px;font-size:.66rem" onclick="rhFbDel('+i+')" aria-label="Διαγραφή αναφοράς">✕</button></div>'
++'<p>'+esc(f.text)+'</p>';
+if(f.files&&f.files.length){
+h+='<div class="rh-files">'+f.files.map(function(x){return '<span class="rh-file"><b>'+esc(x.name)+'</b><span>'+rhFbSize(x.size)+'</span></span>';}).join('')+'</div>';
+}
+h+='</div>';
+});
+return h+'</div>';
+}
+function rhRoadmap(){
+var items=Array.isArray(state.devNotes)?state.devNotes:[];
+var h='<div class="card"><div class="rh-rm-top"><h3 style="margin:0">Τι ετοιμάζεται</h3>'
++'<span class="rh-live"><i></i>Ζωντανή ενημέρωση</span></div>';
+if(!items.length){
+h+='<p class="note">Δεν υπάρχει ανακοινωμένο πλάνο αυτή τη στιγμή.</p>';
+}else{
+items.forEach(function(n,i){
+var st=n.done?2:(i===0?0:1);
+var lbl=st===2?'Ολοκληρώθηκε':st===0?'Σε εξέλιξη':'Προγραμματισμένο';
+h+='<div class="rh-rm-row"><span class="rh-rm-dot s'+st+'"></span>'
++'<div class="rh-rm-txt"><b>'+esc(n.t)+'</b>'+(n.d?'<small>'+esc(n.d)+'</small>':'')+'</div>'
++'<span class="rh-rm-pill s'+st+'">'+lbl+'</span></div>';
+});
+}
+h+='<div class="rh-rm-note">Ό,τι ολοκληρώνεται εμφανίζεται εδώ για πέντε λεπτά αφότου ανοίξεις την εφαρμογή και μετά κρύβεται αυτόματα, ώστε η λίστα να δείχνει μόνο ό,τι πραγματικά εκκρεμεί.<br><br><b>Προεπισκόπηση.</b> Η ζωντανή ενημέρωση και το αυτόματο κρύψιμο δεν έχουν ενεργοποιηθεί ακόμη — προς το παρόν η λίστα είναι μόνο οπτική και δεν αλλάζει από τη συσκευή σου.</div>';
+return h+'</div>';
+}
+function rhNotesCardHTML(){
+rhNotesInit();
+return '<div class="card"><h3>Feedback</h3>'+rhFbComposer()+rhFbList()+'</div>'+rhRoadmap();
+}
+function rhNotesRefresh(){
+var w=document.getElementById('rh-notes-wrap');
+if(w){w.innerHTML=rhNotesCardHTML();rhFbFilesRender();}
+}
+rhHelpPass();
+rhFbFilesRender();
+if(!window.__rhHelp1){
+window.__rhHelp1=true;
+setInterval(rhHelpPass,2500);
+}
+render();
+/* ===== ΤΕΛΟΣ ΟΡΙΩΝ + FEEDBACK + ROADMAP v1 ===== */
 </script>
   
 </body>
