@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.8.0">
+<meta name="app-version" content="1.8.1">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -808,7 +808,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.8.0';
+var APP_VERSION='1.8.1';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -8396,7 +8396,7 @@ document.documentElement.classList.toggle('world3d',on);
 if(on){if(W.cv)W.cv.style.display='block';start();}
 else stop();
 }
-window.w3dSync=sync;
+window.w3dSync=sync;window.w3dApi={W:W,P:P,go:function(i){wGo(i);},cur:curIdx,tabs:function(){return TABS;},sp:SP};
 
 if(typeof RH_THEMES!=='undefined'&&!RH_THEMES.some(function(t){return t.id==='world3d';})){
 RH_THEMES.splice(4,0,{id:'world3d',n:'Κόσμος',s:'3D βάθος',a:'#22d3ee',b:'#0a0e24'});
@@ -8445,6 +8445,137 @@ setInterval(function(){if(W.on&&!W.drag)buildWorld();},6000);
 sync();
 })();
 /* ===== ΤΕΛΟΣ ΚΟΣΜΟΥ 3D v1 ===== */
+</script>
+
+<style>
+.w3d-eye{color:#7fe6f7}
+.w3d-eye:hover{background:linear-gradient(120deg,#22d3ee,#e879f9);color:#06121a;border-color:transparent}
+html.w3d-preview .app,html.w3d-preview #runningDock,html.w3d-preview .aud-fab,html.w3d-preview #healthBreakBar,html.w3d-preview .w3d-arrow,html.w3d-preview #bfSky,html.w3d-preview #focusOverlay,html.w3d-preview #modalOverlay{visibility:hidden!important;opacity:0!important;pointer-events:none!important}
+html.w3d-preview #w3d{cursor:grab}
+html.w3d-preview #w3d:active{cursor:grabbing}
+html.w3d-preview .w3d-rail{display:block}
+#w3dHud{position:fixed;top:calc(10px + env(safe-area-inset-top));left:0;right:0;z-index:68;display:none;align-items:center;justify-content:space-between;gap:8px;padding:0 12px;pointer-events:none}
+html.w3d-preview #w3dHud{display:flex}
+.w3d-hud-pill{pointer-events:auto;display:flex;align-items:center;gap:10px;padding:8px 13px;border-radius:999px;background:rgba(7,11,28,.62);border:1px solid rgba(120,180,255,.22);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);color:#cfe4ff;font:700 .74rem system-ui,sans-serif}
+.w3d-hud-pill b{color:#7fe6f7;letter-spacing:.06em;text-transform:uppercase;font-size:.68rem}
+.w3d-hud-dots{display:flex;gap:6px;align-items:center}
+.w3d-hud-dots button{width:9px;height:9px;border-radius:50%;border:0;background:rgba(160,190,255,.3);cursor:pointer;padding:0;transition:.18s}
+.w3d-hud-dots button:hover{background:rgba(160,190,255,.6)}
+.w3d-hud-dots button.on{background:linear-gradient(120deg,#22d3ee,#e879f9);transform:scale(1.3);box-shadow:0 0 10px rgba(34,211,238,.6)}
+.w3d-hud-exit{pointer-events:auto;display:flex;align-items:center;gap:7px;padding:9px 13px;border-radius:999px;border:1px solid rgba(120,180,255,.26);background:rgba(7,11,28,.66);color:#eaf9ff;font:800 .74rem system-ui,sans-serif;cursor:pointer;backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:.18s}
+.w3d-hud-exit:hover{background:rgba(251,113,133,.22);border-color:rgba(251,113,133,.5)}
+.w3d-hud-exit svg{width:16px;height:16px;display:block}
+</style>
+
+<script>
+/* ===== ΚΟΣΜΟΣ PREVIEW v1 ===== */
+(function(){
+var api=window.w3dApi;if(!api)return;
+var on=false,g=null;
+function cl(v,a,b){return v<a?a:v>b?b:v;}
+var EYE='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+var EYEOFF='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/><path d="M1 1l22 22"/></svg>';
+function injectEye(){
+var card=document.querySelector('#gearPanel [data-gp-theme="world3d"]');
+if(!card)return;
+card.classList.add('bf-card');
+if(card.querySelector('.w3d-eye'))return;
+var s=document.createElement('span');
+s.className='bf-cog w3d-eye';
+s.setAttribute('role','button');s.tabIndex=0;
+s.setAttribute('aria-label','Προεπισκόπηση κόσμου χωρίς πλαίσια');
+s.title='Προεπισκόπηση';
+s.innerHTML=EYE;
+s.onclick=function(e){e.stopPropagation();enter();};
+s.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopPropagation();enter();}};
+card.appendChild(s);
+}
+function hud(){
+if(document.getElementById('w3dHud'))return;
+var h=document.createElement('div');h.id='w3dHud';
+h.innerHTML='<div class="w3d-hud-pill"><b id="w3dHudName">Ημέρα</b><span class="w3d-hud-dots" id="w3dHudDots"></span></div>'
++'<button type="button" class="w3d-hud-exit" onclick="w3dPreviewExit()" aria-label="Έξοδος από προεπισκόπηση">'+EYEOFF+'Έξοδος</button>';
+document.body.appendChild(h);
+var d=h.querySelector('#w3dHudDots');
+d.innerHTML=api.tabs().map(function(t,i){return '<button type="button" data-i="'+i+'" aria-label="'+t.label+'" onclick="w3dApi.go('+i+')"></button>';}).join('');
+}
+function syncHud(){
+if(!on)return;
+var i=api.cur(),n=document.getElementById('w3dHudName'),d=document.getElementById('w3dHudDots');
+if(n)n.textContent=(api.tabs()[i]||{}).label||'';
+if(d)Array.prototype.forEach.call(d.children,function(b,k){b.classList.toggle('on',k===i);});
+}
+function enter(){
+if(state.settings.theme!=='world3d'&&typeof setTheme==='function')setTheme('world3d');
+if(typeof window.gpClose==='function')window.gpClose();
+if(typeof closeModal==='function')closeModal();
+on=true;
+document.documentElement.classList.add('w3d-preview');
+var r=document.getElementById('w3dRail');if(r)r.classList.add('open');
+document.documentElement.classList.add('rail-on');
+hud();syncHud();
+showToast('Προεπισκόπηση: σύρε οριζόντια για ταξίδι, κάθετα για βλέμμα, τροχός για ζουμ. Esc για έξοδο.');
+}
+function exit(){
+on=false;g=null;api.W.drag=null;
+document.documentElement.classList.remove('w3d-preview');
+}
+window.w3dPreview=enter;
+window.w3dPreviewExit=exit;
+var cv=document.getElementById('w3d');
+if(cv){
+cv.addEventListener('pointerdown',function(e){
+if(!on)return;
+g={x:e.clientX,y:e.clientY,mode:0,base:api.W.cam};
+try{cv.setPointerCapture(e.pointerId);}catch(err){}
+});
+cv.addEventListener('pointermove',function(e){
+if(!on||!g)return;
+var dx=e.clientX-g.x,dy=e.clientY-g.y;
+if(!g.mode){
+if(Math.abs(dx)>14&&Math.abs(dx)>Math.abs(dy))g.mode=1;
+else if(Math.abs(dy)>14)g.mode=2;
+}
+if(g.mode===1){api.W.drag={base:g.base,dx:dx};}
+else if(g.mode===2){
+api.W.orbitT.y=cl(-dy/240,-1,1)*.6;
+api.W.orbitT.x=cl(dx/400,-1,1)*.4;
+}
+});
+function up(){
+if(!g)return;
+var mode=g.mode,dx=api.W.drag?api.W.drag.dx:0;
+g=null;api.W.drag=null;
+if(mode===1){
+var v=dx/Math.max(1,innerWidth),from=api.cur(),to=from;
+if(v<-.14)to=from+1;else if(v>.14)to=from-1;
+to=cl(to,0,api.tabs().length-1);
+if(to!==from)api.go(to);else api.W.target=from;
+}
+syncHud();
+}
+cv.addEventListener('pointerup',up);
+cv.addEventListener('pointercancel',up);
+cv.addEventListener('wheel',function(e){
+if(!on)return;
+if(Math.abs(e.deltaY)>Math.abs(e.deltaX)){
+api.W.dist=cl(api.W.dist+(e.deltaY>0?.07:-.07),.6,1.7);
+if(e.cancelable)e.preventDefault();
+}
+},{passive:false});
+}
+document.addEventListener('keydown',function(e){
+if(e.key==='Escape'&&on)exit();
+});
+if(!window.__w3dPrev1){
+window.__w3dPrev1=true;
+injectEye();
+var gp=document.getElementById('gearPanel');
+if(gp&&typeof MutationObserver==='function')new MutationObserver(injectEye).observe(gp,{childList:true,subtree:true});
+setInterval(function(){injectEye();syncHud();},1200);
+}
+})();
+/* ===== ΤΕΛΟΣ ΚΟΣΜΟΥ PREVIEW v1 ===== */
 </script>
   
 </body>
