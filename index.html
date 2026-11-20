@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.4.50">
+<meta name="app-version" content="1.4.51">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -589,7 +589,7 @@ function renderDay(){
   const clean=focusUI();
   let html=`<div class="card"><div class="hero-top"><div><h2>${greeting()}</h2><p class="muted" style="margin-top:6px">Εβδομάδα: ${weekRangeText()}</p></div>
     <div class="ring-wrap"><svg viewBox="0 0 140 140"><defs><linearGradient id="homeGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#10b981"/></linearGradient></defs><circle class="ring-bg" cx="70" cy="70" r="58"/><circle id="homeRingFg" class="ring-fg" cx="70" cy="70" r="58" stroke-dasharray="${circ}" stroke-dashoffset="${off}"/></svg><div class="ring-center"><strong id="homeRemain" class="${remain<0?'text-danger':'text-success'}">${fmtHM(remain)}</strong><span>ελεύθερα τώρα</span></div></div></div>
-    <div class="hero-stats"><div class="stat-box"><span>Καταγραφή σήμερα</span><strong id="homeLogged">${fmtHM(logged)}</strong></div><div class="stat-box"><span>Ξύπνιος χρόνος</span><strong>${fmtHM(awake)}</strong></div></div></div><p cass="note">
+    <div class="hero-stats"><div class="stat-box"><span>Καταγραφή σήμερα</span><strong id="homeLogged">${fmtHM(logged)}</strong></div><div class="stat-box"><span>Ξύπνιος χρόνος</span><strong>${fmtHM(awake)}</strong></div></div></div><p cass="note">Το υπόλοιπο βασίζεται στην καταγραφή. Το προγραμματισμένο υπόλοιπο φαίνεται στο Πλάνο 24 ωρών.</p></div>`;
   if(heavy.heavy){html+=`<div class="card" style="--accent:#ef4444;--accent2:#f97316"><div class="heavy-warning"><strong>⚠ Βαρειά μέρα</strong><p>${fmtHM(heavy.load)} από ${fmtHM(awake)} ώρες. Σου μένουν ${fmtHM(heavy.remaining)}.</p></div>${upcomingHeavy.length?`<p class="note">Επίσης βαριές: ${upcomingHeavy.map(h=>DAY_FULL[h.day]).join(', ')}</p>`:''}</div>`;}
   html+=`<div class="card"><div class="row"><div><h3>🍅 Pomodoro</h3><p class="muted">${PM().focusMin}λ focus / ${PM().breakMin}λ διάλειμμα</p></div><button class="btn btn-primary" onclick="openPomodoroSetup()">Έναρξη κύκλου</button></div></div>`;
   const todaySlots=(typeof scheduleGetDay==='function')?scheduleGetDay(today):[];
@@ -855,7 +855,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.4.50';
+var APP_VERSION='1.4.51';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
