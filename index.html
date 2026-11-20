@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.7.3">
+<meta name="app-version" content="1.7.31">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -808,7 +808,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.7.3';
+var APP_VERSION='1.7.31';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -6643,64 +6643,40 @@ if(!sw){location.reload();return;}
 safeSetForce(false,function(){location.reload();});
 });
 }
-function rhSafeDiag(){
-var box=document.getElementById('rhSafeDiag');if(!box)return;
-var L=[];
-L.push('Έλεγχος σελίδας από worker: <b>'+(navigator.serviceWorker&&navigator.serviceWorker.controller?'ναι':'όχι — Hard reload ή ανενεργός')+'</b>');
-rhSWReg().then(function(r){
-L.push('Εγγραφή worker: <b>'+(r?'ναι':'όχι')+'</b>');
-if(r){
-L.push('Κατάσταση: '+(r.active?'ενεργός':(r.waiting?'σε αναμονή':(r.installing?'εγκαθίσταται':'καμία'))));
-L.push('Scope: '+r.scope.replace(location.origin,''));
-}
-var paths=['good/index.html.txt','good/index.html'];
-return (function probe(i){
-if(i>=paths.length){L.push('Αντίγραφο στο good/: <b>δεν βρέθηκε</b>');return null;}
-return fetch(paths[i]+'?v='+Date.now(),{cache:'no-store'}).then(function(x){
-if(!x.ok)throw 0;return x.text();
-}).then(function(t){
-var m=t.match(/name="app-version"\s+content="([^"]+)"/);
-L.push('Αντίγραφο: <b>'+paths[i]+'</b> — έκδοση '+(m?m[1]:'άγνωστη')+', '+Math.round(t.length/1024)+' KB');
-return true;
-}).catch(function(){return probe(i+1);});
-})(0);
-}).then(function(){
-L.push('Τρέχουσα έκδοση: <b>'+(typeof APP_VERSION!=='undefined'?APP_VERSION:';')+'</b>');
-box.innerHTML=L.map(function(x){return '<div>'+x+'</div>';}).join('');
-}).catch(function(){
-box.innerHTML=L.map(function(x){return '<div>'+x+'</div>';}).join('')+'<div>Σφάλμα ελέγχου.</div>';
-});
-}
-function rhSafeAugment(){
-var p=document.getElementById('safePanel');
-if(!p||p.querySelector('#rhSafeExtra'))return;
-var d=document.createElement('div');
-d.id='rhSafeExtra';
-d.style.cssText='margin:10px 0;padding-top:10px;border-top:1px solid rgba(255,255,255,.18)';
-d.innerHTML='<div id="rhSafeDiag" style="font-size:.72rem;line-height:1.65;opacity:.9;margin-bottom:10px">Έλεγχος…</div>'
-+'<button id="rhDirectBtn" style="display:block;width:100%;margin-bottom:8px;padding:12px;border:none;border-radius:14px;background:#2f7d4f;color:#fff;font:700 .9rem system-ui,sans-serif;cursor:pointer">Άμεση επαναφορά χωρίς worker</button>'
-+'<button id="rhDiagBtn" style="display:block;width:100%;padding:12px;border:none;border-radius:14px;background:#333a55;color:#fff;font:700 .9rem system-ui,sans-serif;cursor:pointer">Ανανέωση ελέγχου</button>'
-+'<p style="font-size:.68rem;opacity:.72;margin:9px 0 0;line-height:1.5">Το Ctrl+Shift+R παρακάμπτει τον worker για εκείνη τη φόρτωση, οπότε η σελίδα φαίνεται «μη ελεγχόμενη». Με απλό F5 αναλαμβάνει ξανά. Η άμεση επαναφορά διαβάζει το αντίγραφο και το εμφανίζει χωρίς καθόλου worker — ισχύει μέχρι την επόμενη ανανέωση.</p>';
-var last=p.lastElementChild;
-if(last)p.insertBefore(d,last);else p.appendChild(d);
-document.getElementById('rhDirectBtn').onclick=function(){rhDirectRollback();};
-document.getElementById('rhDiagBtn').onclick=function(){document.getElementById('rhSafeDiag').innerHTML='Έλεγχος…';rhSafeDiag();};
-rhSafeDiag();
-}
-if(!window.__rhSafe2){
-window.__rhSafe2=true;
-new MutationObserver(rhSafeAugment).observe(document.body,{childList:true});
+
+(function(){
+var x=document.getElementById('rhSafeExtra');
+if(x)x.remove();
+if(document.getElementById('rhSafeStyle'))return;
+var s=document.createElement('style');
+s.id='rhSafeStyle';
+s.textContent='#safePanel{position:fixed!important;left:50%!important;right:auto!important;top:auto!important;bottom:calc(18px + env(safe-area-inset-bottom))!important;transform:translateX(-50%)!important;width:min(420px,calc(100vw - 24px))!important;max-width:none!important;max-height:calc(100dvh - 96px)!important;overflow-y:auto!important;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;padding:18px!important;box-sizing:border-box!important;border-radius:22px!important;background:#1b2136!important;border:1px solid rgba(255,255,255,.12)!important;box-shadow:0 24px 60px rgba(0,0,0,.55)!important;z-index:390!important;color:#eef1f8!important;font-family:system-ui,sans-serif!important}'
++'#safePanel h2,#safePanel h3{margin:0 0 8px!important;font-size:1.08rem!important;line-height:1.25!important;font-weight:700!important}'
++'#safePanel p{margin:0 0 12px!important;font-size:.78rem!important;line-height:1.5!important}'
++'#safePanel button{display:block!important;width:100%!important;margin:0 0 8px!important;padding:13px 14px!important;border:0!important;border-radius:14px!important;font:700 .9rem/1.3 system-ui,sans-serif!important;color:#fff!important;cursor:pointer!important;text-align:center!important;transition:transform .15s,filter .15s}'
++'#safePanel button:last-child{margin-bottom:0!important}'
++'#safePanel button:active{transform:scale(.98)}'
++'#safePanel button:hover{filter:brightness(1.12)}'
++'#safePanel button[onclick*="safeRollback"]{background:linear-gradient(135deg,#6366f1,#8b5cf6)!important;box-shadow:0 8px 20px rgba(99,102,241,.28)!important}'
++'#safePanel button[onclick*="safeRetryLatest"]{background:#2b3350!important}'
++'#safePanel button[onclick*="safeExport"]{background:#2b3350!important}'
++'#safePanel button[onclick*="remove"]{background:#4a2b2b!important}'
++'#safePanel::-webkit-scrollbar{width:8px}'
++'#safePanel::-webkit-scrollbar-track{background:transparent}'
++'#safePanel::-webkit-scrollbar-thumb{background:rgba(255,255,255,.18);border-radius:999px}';
+document.head.appendChild(s);
+})();
 try{
-if(sessionStorage.getItem('r-direct-backup')){
+if(sessionStorage.getItem('r-direct-backup')&&!document.getElementById('rhDirectBanner')){
 var b=document.createElement('div');
-b.textContent='ΑΝΤΙΓΡΑΦΟ ΑΣΦΑΛΕΙΑΣ — άμεση φόρτωση, χωρίς worker';
-b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:400;background:#2f7d4f;color:#fff;font:700 .7rem system-ui,sans-serif;text-align:center;padding:5px 8px';
+b.id='rhDirectBanner';
+b.textContent='ΑΝΤΙΓΡΑΦΟ ΑΣΦΑΛΕΙΑΣ — άμεση φόρτωση, ισχύει μέχρι την επόμενη ανανέωση';
+b.style.cssText='position:fixed;top:0;left:0;right:0;z-index:400;background:#2f7d4f;color:#fff;font:700 .68rem system-ui,sans-serif;text-align:center;padding:5px 8px';
 document.body.appendChild(b);
 }
 }catch(e){}
-}
-rhSafeAugment();
 /* ===== ΤΕΛΟΣ ΑΣΦΑΛΕΙΑΣ v2 ===== */
+  
 </script>
 
 </body>
