@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.4.43">
+<meta name="app-version" content="1.4.44">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -855,7 +855,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.4.43';
+var APP_VERSION='1.4.44';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -2629,11 +2629,10 @@ function audOfferRelink(catId,trId){
   if(!c)return;
   var t=c.tracks.find(function(x){return x.id===trId;});
   if(!t)return;
-  if(confirm('Το τοπικό αρχείο "'+t.name+'" δεν βρέθηκε στη συσκευή. Επανασύνδεσέ το χωρίς να το σβήσεις;')){
+  if(confirm('Το τοπικό αρχείο "'+t.name+'" δεν βρέθηκε στη συσκευή. Επανασύνδεση;')){
     audRelinkPrompt(catId,trId);
   }
 }
-
 function audRelinkPrompt(catId,trId){
   if(!AUD_RELINK_INPUT){
     AUD_RELINK_INPUT=document.createElement('input');
@@ -3681,6 +3680,111 @@ if(state.lastTab)currentTab=state.lastTab;
 render();
 /* ===== ΤΕΛΟΣ ΚΑΤΗΓΟΡΙΩΝ v2 ===== */
 </script>
+
+<style>
+/* ===== ΟΠΤΙΚΟ v1: ΙΕΡΑΡΧΙΑ + ΣΤΟΙΒΑ + ΣΥΣΤΗΜΑ ΕΠΙΦΑΝΕΙΩΝ ===== */
+:root{
+--r-surface:20px;--r-control:12px;--r-pill:999px;--radius:20px;
+--shadow:0 1px 2px rgba(30,36,64,.06);
+--shadow-float:0 18px 44px rgba(23,30,61,.22);
+--band-nav:76px;--band-break:174px;
+}
+:root.blue,:root.dark{--shadow:0 1px 2px rgba(0,0,0,.45);--shadow-float:0 18px 44px rgba(0,0,0,.6)}
+
+body::before,body::after{display:none!important}
+.accent-glow{display:none!important}
+
+/* --- επιφάνειες --- */
+.card{border-radius:var(--r-surface);box-shadow:var(--shadow);border:1px solid var(--line);padding:16px;margin-bottom:12px;animation:fadeUp .32s both}
+html.compact .card{padding:13px;border-radius:16px;margin-bottom:10px}
+main>.card:nth-child(2){animation-delay:.03s}
+main>.card:nth-child(3){animation-delay:.06s}
+main>.card:nth-child(4){animation-delay:.09s}
+main>.card:nth-child(5){animation-delay:.12s}
+main>.card:nth-child(n+6){animation-delay:.15s}
+.metric,.stat-box,.stat-card,.choice,.appearance-choice,.plan-slot,.quick-btn,.pomo-option,.aud-cat,.heavy-warning,.form-error,.suggestion-card{border-radius:var(--r-control);box-shadow:none}
+.suggestion-card{background:var(--soft);border:1px solid var(--line)}
+.suggestion-card strong{color:var(--text)}
+input,select,.day-btn,.step-btn,.gear-btn,.update-btn,.aud-ico,.icon,.qicon,.pomo-option .picon{border-radius:var(--r-control)}
+.empty-icon,.onboarding-icon{box-shadow:none}
+.slot-empty{border-width:1px;border-style:dashed}
+
+/* --- εικονίδια: απόχρωση αντί για gradient --- */
+.icon{background:var(--soft);color:var(--accent,var(--primary));border:1px solid var(--line);box-shadow:none}
+.quick-btn .qicon,.pomo-option .picon{background:var(--soft);color:var(--accent,var(--primary));box-shadow:none}
+@supports (background:color-mix(in srgb,red 12%,transparent)){
+.icon{background:color-mix(in srgb,var(--accent,#6366f1) 14%,transparent);border-color:color-mix(in srgb,var(--accent,#6366f1) 32%,transparent)}
+.quick-btn .qicon,.pomo-option .picon{background:color-mix(in srgb,var(--accent,#6366f1) 16%,transparent)}
+}
+.progress span{background:var(--accent,var(--primary))}
+.progress.over span{background:var(--danger)}
+.day-chip.on{background:var(--accent,var(--primary))}
+.bar{background:linear-gradient(180deg,var(--primary2),var(--primary))}
+.bar.danger{background:linear-gradient(180deg,#fca5a5,var(--danger))}
+
+/* --- κουμπιά: ένα μόνο gradient, το κύριο --- */
+.btn-success{background:var(--success);box-shadow:none}
+.btn-stop{background:var(--danger);box-shadow:none}
+.btn-warn{background:var(--warn);color:#3a2200;box-shadow:none}
+.btn-primary{box-shadow:0 6px 16px rgba(99,102,241,.22)}
+
+/* --- τυπογραφική κλίμακα --- */
+h3{font-size:1rem;font-weight:700;letter-spacing:-.005em}
+.section-title{font-size:.74rem;font-weight:700;letter-spacing:.09em;text-transform:uppercase;margin:18px 4px 8px}
+.muted{font-size:.82rem}
+.note{font-size:.76rem}
+
+/* --- ήρωας Ημέρας --- */
+.hero-top{flex-direction:column;align-items:center;text-align:center;gap:12px}
+.hero-top h2{font-size:1.3rem;letter-spacing:-.015em}
+.ring-wrap{width:clamp(152px,44vw,178px);height:clamp(152px,44vw,178px)}
+.ring-wrap svg{width:100%;height:100%}
+html.compact .ring-wrap,html.compact .ring-wrap svg{width:clamp(132px,38vw,156px);height:clamp(132px,38vw,156px)}
+.ring-bg,.ring-fg{stroke-width:10}
+.ring-center strong{font-size:clamp(1.5rem,5.4vw,2rem);line-height:1;letter-spacing:-.025em}
+.ring-center span{font-size:.66rem;margin-top:7px;letter-spacing:.08em;text-transform:uppercase}
+#homeGrad stop:nth-child(1){stop-color:#4338ca}
+#homeGrad stop:nth-child(2){stop-color:#059669}
+.hero-stats{margin-top:14px;gap:8px}
+.stat-box{padding:10px 12px}
+.stat-box strong{font-size:1.05rem}
+
+/* --- κάτω στοίβα: καμία επικάλυψη --- */
+#runningDock{left:50%;transform:translateX(-50%);margin-left:-35px;width:calc(100% - 84px);max-width:346px;bottom:calc(var(--band-nav) + env(safe-area-inset-bottom))!important}
+html.compact #runningDock{bottom:calc(68px + env(safe-area-inset-bottom))!important;width:calc(100% - 80px)}
+.dock-card{gap:8px;padding:11px;border-radius:var(--r-surface);border:1px solid transparent;box-shadow:var(--shadow-float)}
+.dock-card .btn{padding:8px 10px;font-size:.76rem}
+.dock-info strong{font-size:1.15rem}
+.aud-fab{bottom:calc(var(--band-nav) + env(safe-area-inset-bottom));right:14px;border-radius:var(--r-control);box-shadow:var(--shadow-float)}
+html.compact .aud-fab{bottom:calc(68px + env(safe-area-inset-bottom))}
+#healthBreakBar{bottom:calc(var(--band-break) + env(safe-area-inset-bottom))!important;border-radius:var(--r-surface)!important;box-shadow:var(--shadow-float)!important}
+html.compact #healthBreakBar{bottom:calc(160px + env(safe-area-inset-bottom))!important}
+.hb-track{border-radius:var(--r-pill)}
+
+/* --- μηνύματα: πάνω ζώνη, τρεις διακριτές γραμμές --- */
+#toast{top:calc(72px + env(safe-area-inset-top));bottom:auto!important;max-width:min(340px,calc(100% - 28px));border-radius:var(--r-pill)}
+html.compact #toast{top:calc(64px + env(safe-area-inset-top));bottom:auto!important}
+#notifToast{top:calc(126px + env(safe-area-inset-top))!important;bottom:auto!important;max-width:min(340px,calc(100% - 28px))!important;border-radius:var(--r-control)!important;box-shadow:var(--shadow-float)!important}
+#undoToast{top:calc(184px + env(safe-area-inset-top))!important;bottom:auto!important;max-width:min(340px,calc(100% - 28px))!important;border-radius:var(--r-control)!important;box-shadow:var(--shadow-float)!important}
+
+/* --- φύλλα και γρανάζι --- */
+.sheet{border-radius:var(--r-surface) var(--r-surface) 0 0;box-shadow:var(--shadow-float)}
+@media(min-width:431px){.sheet{border-radius:var(--r-surface)}}
+.gear-panel{border-radius:var(--r-surface);box-shadow:var(--shadow-float)}
+.gp-section,.gp-choice{border-radius:var(--r-control)}
+.focus-overlay .fo-timer{letter-spacing:-.03em}
+
+/* --- μπάρες κύλισης στην παλέτα --- */
+html{scrollbar-width:thin;scrollbar-color:var(--primary) var(--soft)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-track{background:var(--soft)}
+::-webkit-scrollbar-thumb{background:linear-gradient(180deg,var(--primary),var(--primary2));border-radius:999px;border:2px solid var(--soft)}
+::-webkit-scrollbar-thumb:hover{background:var(--primary)}
+::-webkit-scrollbar-corner{background:var(--soft)}
+
+@media(max-width:380px){.dock-info small{display:none}.dock-card .btn{padding:7px 9px;font-size:.72rem}}
+@media(prefers-reduced-motion:reduce){.card{animation:none}.dock-card{animation:none}}
+</style>
   
 </body>
 
