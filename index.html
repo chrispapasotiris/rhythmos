@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="1.7.5">
+<meta name="app-version" content="1.7.6">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -808,7 +808,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='1.7.5';
+var APP_VERSION='1.7.6';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -7009,13 +7009,24 @@ render();
 .rh-pomo-head{display:flex;align-items:center;gap:11px;margin-bottom:12px}
 .rh-pomo-badge{width:42px;height:42px;border-radius:13px;display:grid;place-items:center;font-size:1.15rem;background:linear-gradient(140deg,#ef4444,#f97316);box-shadow:0 6px 16px rgba(239,68,68,.3);flex:0 0 auto}
 .rh-pomo-head h3{margin:0;font-size:1rem;line-height:1.2}
-.rh-pomo-head p{margin:2px 0 0;font-size:.73rem;color:var(--muted)}
+.rh-pomo-head p{margin:2px 0 0;font-size:.72rem;color:var(--muted)}
 .rh-pomo-head .pill{margin-left:auto;flex:0 0 auto}
 .rh-pomo-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
-.rh-pomo-stat{border:1px solid var(--line);background:var(--soft);border-radius:12px;padding:9px 8px;cursor:pointer;text-align:center;color:var(--text);font:inherit}
-.rh-pomo-stat span{display:block;font-size:.62rem;text-transform:uppercase;letter-spacing:.05em;color:var(--muted);font-weight:700}
-.rh-pomo-stat strong{display:block;font-size:1rem;margin-top:3px;font-variant-numeric:tabular-nums}
-.rh-pomo-stat:hover{border-color:var(--primary)}
+.rh-pstep{border:1px solid var(--line);background:var(--soft);border-radius:12px;padding:8px 6px;display:flex;flex-direction:column;align-items:center;gap:5px;min-width:0}
+.rh-pstep>span{font-size:.6rem;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.rh-pstep .row{display:flex;align-items:center;gap:4px;justify-content:center}
+.rh-pstep button{width:26px;height:26px;flex:0 0 auto;border-radius:8px;border:1px solid var(--line);background:var(--card);color:var(--text);font:700 .9rem system-ui,sans-serif;cursor:pointer;padding:0;display:grid;place-items:center}
+.rh-pstep button:hover{background:color-mix(in srgb,var(--primary) 16%,transparent);border-color:var(--primary)}
+.rh-pstep button:active{transform:scale(.9)}
+.rh-pstep b{font-size:.95rem;font-variant-numeric:tabular-nums;min-width:28px;text-align:center}
+.rh-cyc-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:9px;padding:9px 11px;border:1px solid var(--line);border-radius:12px;background:var(--soft)}
+.rh-cyc-row .lb{font-size:.7rem;color:var(--muted);line-height:1.3;min-width:0}
+.rh-cyc-row .lb b{display:block;color:var(--text);font-size:.8rem;margin-bottom:1px}
+.rh-cyc-ctl{display:flex;align-items:center;gap:5px;flex:0 0 auto}
+.rh-cyc-ctl button{width:28px;height:28px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--text);font:700 .95rem system-ui,sans-serif;cursor:pointer;padding:0;display:grid;place-items:center}
+.rh-cyc-ctl button:hover{background:color-mix(in srgb,var(--primary) 16%,transparent);border-color:var(--primary)}
+.rh-cyc-ctl button:active{transform:scale(.9)}
+.rh-cyc-ctl b{min-width:26px;text-align:center;font-size:.95rem;font-variant-numeric:tabular-nums}
 .rh-pomo-last{margin-top:10px;font-size:.76rem;color:var(--muted)}
 .rh-pomo-last b{color:var(--text)}
 .rh-mode{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px}
@@ -7048,18 +7059,21 @@ render();
 .rh-runbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 11px;border-radius:12px;background:color-mix(in srgb,var(--warn) 12%,transparent);border:1px solid color-mix(in srgb,var(--warn) 32%,transparent);margin-bottom:12px}
 .rh-runbar span{flex:1;min-width:150px;font-size:.75rem;line-height:1.4}
 .rh-runbar button{padding:7px 10px;border-radius:9px;border:1px solid var(--line);background:var(--card);color:var(--text);font:700 .72rem system-ui,sans-serif;cursor:pointer;flex:0 0 auto}
+#focusOverlay .fo-dots{display:flex;gap:7px;justify-content:center;flex-wrap:wrap;max-width:260px;margin:0 auto}
+#focusOverlay .fo-dots span{width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.22);display:block;transition:background .25s,transform .25s}
+#focusOverlay .fo-dots span.on{background:var(--primary2,#8b5cf6);transform:scale(1.25)}
 </style>
 
 <script>
-/* ===== POMODORO v2: ΠΛΗΡΕΣ SETUP ΠΑΝΤΑ ΟΡΑΤΟ ===== */
+/* ===== POMODORO v3: ΡΥΘΜΙΖΟΜΕΝΟΙ ΚΥΚΛΟΙ + ΜΗ ΔΙΠΛΟΤΥΠΑ ΚΟΥΜΠΙΑ ===== */
 var rhPomoOpts=[],rhPomoSelIdx=0,rhPomoModeVal='pomo';
+function rhCycles(){var pm=PM();return clamp(parseInt(pm.cyclesBeforeLong,10)||4,1,12);}
 function rhPhaseName(x){return x==='focus'?'Focus':x==='break'?'Διάλειμμα':x==='longbreak'?'Μεγάλο διάλειμμα':'Αναμονή νέου κύκλου';}
 function rhPomoRepair(){
-if(!state.__pomoRestored){
-state.__pomoRestored=true;
-if(state.settings.pomodoroEnabled===false)state.settings.pomodoroEnabled=true;
-saveState();
-}
+var pm=PM(),ch=false;
+if(typeof pm.cyclesBeforeLong==='undefined'){pm.cyclesBeforeLong=4;ch=true;}
+if(!state.__pomoRestored){state.__pomoRestored=true;if(state.settings.pomodoroEnabled===false){state.settings.pomodoroEnabled=true;ch=true;}}
+if(ch)saveState();
 }
 function rhBuildOpts(){
 var out=[],p=P(),seen={};
@@ -7088,10 +7102,7 @@ return '<button type="button" class="rh-opt'+(i===rhPomoSelIdx?' on':'')+'" oncl
 +'<i style="background:'+o.color+'"></i><span class="t"><b>'+esc(o.name)+'</b><small>'+esc(o.sub)+'</small></span><span class="ck"></span></button>';
 }).join('');
 }
-function rhPomoPick(i){
-rhPomoSelIdx=i;
-var w=document.getElementById('rhOpts');if(w)w.innerHTML=rhOptsHTML();
-}
+function rhPomoPick(i){rhPomoSelIdx=i;var w=document.getElementById('rhOpts');if(w)w.innerHTML=rhOptsHTML();}
 function rhPomoMode(m){
 rhPomoModeVal=m;
 var a=document.getElementById('rhModeP'),b=document.getElementById('rhModeS');
@@ -7101,6 +7112,39 @@ var w=document.getElementById('rhPomoCfgWrap');if(w)w.style.display=m==='pomo'?'
 var btn=document.querySelector('#modalOverlay .modal-actions .btn-primary');
 if(btn)btn.textContent=m==='plain'?'Έναρξη συνεδρίας':'Έναρξη κύκλου';
 }
+function rhPomoSetVal(kind,val){
+var pm=PM(),v=parseInt(val,10);
+if(kind==='focus')pm.focusMin=clamp(isNaN(v)?25:v,5,120);
+else if(kind==='break')pm.breakMin=clamp(isNaN(v)?5:v,1,30);
+else if(kind==='long')pm.longBreakMin=clamp(isNaN(v)?20:v,5,60);
+else if(kind==='cycles')pm.cyclesBeforeLong=clamp(isNaN(v)?4:v,1,12);
+saveState();rhPomoSyncInputs();rhPomoPreview();
+}
+function rhPomoAdj(kind,d){
+var pm=PM();
+var cur=kind==='focus'?pm.focusMin:kind==='break'?pm.breakMin:kind==='long'?pm.longBreakMin:rhCycles();
+rhPomoSetVal(kind,cur+d);
+}
+function rhPomoCardAdj(kind,d){rhPomoAdj(kind,d);rhPomoCardPass(true);}
+function rhPomoPreset(f,b,l,c){
+var pm=PM();pm.focusMin=f;pm.breakMin=b;pm.longBreakMin=l;pm.cyclesBeforeLong=c;
+saveState();rhPomoSyncInputs();rhPomoPreview();rhPomoCardPass(true);
+}
+function rhPomoSyncInputs(){
+var pm=PM();
+var a=document.getElementById('rhPFocus'),b=document.getElementById('rhPBreak'),c=document.getElementById('rhPLong'),d=document.getElementById('rhPCyc');
+if(a)a.value=pm.focusMin;if(b)b.value=pm.breakMin;if(c)c.value=pm.longBreakMin;
+if(d)d.textContent=rhCycles();
+var pr=document.getElementById('rhPresets');if(pr)pr.innerHTML=rhPresetsHTML();
+}
+function rhPresetsHTML(){
+var pm=PM(),n=rhCycles();
+var list=[{n:'25/5 · 4',f:25,b:5,l:20,c:4},{n:'50/10 · 3',f:50,b:10,l:25,c:3},{n:'90/15 · 2',f:90,b:15,l:30,c:2},{n:'15/3 · 6',f:15,b:3,l:15,c:6}];
+return list.map(function(x){
+var on=pm.focusMin===x.f&&pm.breakMin===x.b&&pm.longBreakMin===x.l&&n===x.c;
+return '<button type="button" class="'+(on?'on':'')+'" onclick="rhPomoPreset('+x.f+','+x.b+','+x.l+','+x.c+')">'+x.n+'</button>';
+}).join('');
+}
 function rhStep(k,label,val,min,max,st){
 var id=k==='focus'?'rhPFocus':k==='break'?'rhPBreak':'rhPLong';
 return '<div class="f"><label>'+label+'</label><div class="rh-stp">'
@@ -7108,50 +7152,20 @@ return '<div class="f"><label>'+label+'</label><div class="rh-stp">'
 +'<input id="'+id+'" type="number" min="'+min+'" max="'+max+'" step="'+st+'" value="'+val+'" onchange="rhPomoSetVal(\''+k+'\',this.value)">'
 +'<button type="button" onclick="rhPomoAdj(\''+k+'\','+st+')" aria-label="Αύξηση">+</button></div></div>';
 }
-function rhPresetsHTML(){
-var pm=PM();
-var list=[{n:'25 / 5',f:25,b:5,l:20},{n:'50 / 10',f:50,b:10,l:25},{n:'90 / 15',f:90,b:15,l:30},{n:'15 / 3',f:15,b:3,l:15}];
-return list.map(function(x){
-var on=pm.focusMin===x.f&&pm.breakMin===x.b&&pm.longBreakMin===x.l;
-return '<button type="button" class="'+(on?'on':'')+'" onclick="rhPomoPreset('+x.f+','+x.b+','+x.l+')">'+x.n+'</button>';
-}).join('');
-}
-function rhPomoSyncInputs(){
-var pm=PM();
-var a=document.getElementById('rhPFocus'),b=document.getElementById('rhPBreak'),c=document.getElementById('rhPLong');
-if(a)a.value=pm.focusMin;if(b)b.value=pm.breakMin;if(c)c.value=pm.longBreakMin;
-var pr=document.getElementById('rhPresets');if(pr)pr.innerHTML=rhPresetsHTML();
-}
-function rhPomoSetVal(kind,val){
-var pm=PM(),v=parseInt(val,10);
-if(kind==='focus')pm.focusMin=clamp(isNaN(v)?25:v,5,120);
-if(kind==='break')pm.breakMin=clamp(isNaN(v)?5:v,1,30);
-if(kind==='long')pm.longBreakMin=clamp(isNaN(v)?20:v,5,60);
-saveState();rhPomoSyncInputs();rhPomoPreview();
-}
-function rhPomoAdj(kind,d){
-var pm=PM();
-var cur=kind==='focus'?pm.focusMin:kind==='break'?pm.breakMin:pm.longBreakMin;
-rhPomoSetVal(kind,cur+d);
-}
-function rhPomoPreset(f,b,l){
-var pm=PM();pm.focusMin=f;pm.breakMin=b;pm.longBreakMin=l;
-saveState();rhPomoSyncInputs();rhPomoPreview();
-}
 function rhPomoPreview(){
 var el=document.getElementById('rhPrev');if(!el)return;
-var pm=PM(),seq=[],i;
-for(i=0;i<4;i++){
+var pm=PM(),n=rhCycles(),seq=[],i;
+for(i=0;i<n;i++){
 seq.push({m:pm.focusMin,c:'linear-gradient(180deg,var(--primary),var(--primary2))'});
-seq.push({m:i===3?pm.longBreakMin:pm.breakMin,c:i===3?'#0ea5e9':'var(--success)'});
+seq.push({m:i===n-1?pm.longBreakMin:pm.breakMin,c:i===n-1?'#0ea5e9':'var(--success)'});
 }
 var tot=seq.reduce(function(a,s){return a+s.m;},0);
 el.innerHTML=seq.map(function(s){return '<i style="flex:'+s.m+';background:'+s.c+'" title="'+s.m+' λεπτά"></i>';}).join('');
 var lb=document.getElementById('rhPrevLbl');
-if(lb)lb.innerHTML='<span>4 κύκλοι focus</span><span>'+fmtHM(tot)+' συνολικά</span>';
+if(lb)lb.innerHTML='<span>'+n+' '+(n===1?'κύκλος':'κύκλοι')+' focus</span><span>'+fmtHM(tot)+' συνολικά</span>';
 }
 function rhPomoBody(){
-var pm=PM(),p=P(),h='';
+var pm=PM(),p=P(),n=rhCycles(),h='';
 if(p.phase){
 h+='<div class="rh-runbar"><span>Τρέχει κύκλος σε φάση <b>'+rhPhaseName(p.phase)+'</b>. Αν ξεκινήσεις νέο, ο τρέχων τερματίζεται και ο χρόνος του καταγράφεται κανονικά.</span>'
 +'<button type="button" onclick="closeModal();openFocusOverlay()">Οθόνη</button>'
@@ -7161,10 +7175,12 @@ h+='<div class="rh-mode"><button type="button" id="rhModeP" class="'+(rhPomoMode
 +'<button type="button" id="rhModeS" class="'+(rhPomoModeVal==='plain'?'on':'')+'" onclick="rhPomoMode(\'plain\')">Απλή συνεδρία</button></div>'
 +'<div class="field"><label>Τι θα δουλέψεις</label><div class="rh-opts" id="rhOpts">'+rhOptsHTML()+'</div></div>'
 +'<div id="rhPomoCfgWrap" style="display:'+(rhPomoModeVal==='pomo'?'block':'none')+'">'
-+'<div class="field"><label>Προεπιλογές focus / διάλειμμα</label><div class="rh-presets" id="rhPresets">'+rhPresetsHTML()+'</div></div>'
++'<div class="field"><label>Προεπιλογές focus / διάλειμμα / κύκλοι</label><div class="rh-presets" id="rhPresets">'+rhPresetsHTML()+'</div></div>'
 +'<div class="rh-step3">'+rhStep('focus','Focus',pm.focusMin,5,120,5)+rhStep('break','Διάλειμμα',pm.breakMin,1,30,1)+rhStep('long','Μεγάλο',pm.longBreakMin,5,60,5)+'</div>'
-+'<div class="field" style="margin-top:12px"><label>Προεπισκόπηση κύκλου</label><div class="rh-prev" id="rhPrev"></div><div class="rh-prev-lbl" id="rhPrevLbl"></div></div>'
-+'<p class="note">Μετά από 4 κύκλους focus έρχεται το μεγάλο διάλειμμα. Ο χρόνος καταγράφεται αυτόματα σε ό,τι διάλεξες παραπάνω.</p></div>';
++'<div class="rh-cyc-row"><div class="lb"><b>Κύκλοι πριν το μεγάλο</b>Πόσα focus ολοκληρώνεις πριν τη μεγάλη ξεκούραση</div>'
++'<div class="rh-cyc-ctl"><button type="button" onclick="rhPomoAdj(\'cycles\',-1)" aria-label="Λιγότεροι κύκλοι">−</button><b id="rhPCyc">'+n+'</b><button type="button" onclick="rhPomoAdj(\'cycles\',1)" aria-label="Περισσότεροι κύκλοι">+</button></div></div>'
++'<div class="field" style="margin-top:12px"><label>Προεπισκόπηση</label><div class="rh-prev" id="rhPrev"></div><div class="rh-prev-lbl" id="rhPrevLbl"></div></div>'
++'<p class="note">Μετά από '+n+' '+(n===1?'κύκλο':'κύκλους')+' focus έρχεται το μεγάλο διάλειμμα των '+pm.longBreakMin+'λ. Ο χρόνος καταγράφεται αυτόματα σε ό,τι διάλεξες.</p></div>';
 return h;
 }
 function openPomodoroSetup(tab){
@@ -7201,31 +7217,35 @@ saveState();render();openFocusOverlay();
 }
 rhPomoCardPass(true);
 }
+function rhCardStep(k,label,val,st){
+return '<div class="rh-pstep"><span>'+label+'</span><div class="row">'
++'<button type="button" onclick="rhPomoCardAdj(\''+k+'\',-'+st+')" aria-label="Μείωση '+label+'">−</button>'
++'<b>'+val+'</b>'
++'<button type="button" onclick="rhPomoCardAdj(\''+k+'\','+st+')" aria-label="Αύξηση '+label+'">+</button>'
++'</div></div>';
+}
 function rhPomoCardHTML(){
-var pm=PM(),p=P(),off=state.settings.pomodoroEnabled===false;
+var pm=PM(),p=P(),n=rhCycles(),off=state.settings.pomodoroEnabled===false;
 if(off){
 return '<div class="rh-pomo-head"><div class="rh-pomo-badge" style="filter:grayscale(1);opacity:.55">🍅</div>'
 +'<div><h3>Pomodoro</h3><p>Ανενεργό — οι θέσεις ξεκινούν απλή συνεδρία</p></div></div>'
-+'<div class="actions"><button class="btn btn-primary" onclick="rhTogglePomodoro(true)">Ενεργοποίηση</button>'
-+'<button class="btn btn-ghost" onclick="openPomodoroSetup(\'settings\')">Ρυθμίσεις κύκλου</button></div>';
++'<div class="actions"><button class="btn btn-primary" onclick="rhTogglePomodoro(true)">Ενεργοποίηση</button></div>';
 }
 var ph=p.phase;
 var pill=ph==='focus'?'<span class="pill success">Focus</span>':ph==='break'?'<span class="pill info">Διάλειμμα</span>':ph==='longbreak'?'<span class="pill info">Μεγάλο</span>':ph==='proposal'?'<span class="pill warn">Νέος κύκλος;</span>':'<span class="pill info">Έτοιμο</span>';
 var last='';
 if(p.lastActivity&&p.lastActivity.type){
 var nm=p.lastActivity.type==='course'?((state.courses.find(function(x){return x.id===p.lastActivity.id;})||{}).name):((FIXED_DEFS.find(function(x){return x.id===p.lastActivity.id;})||{}).name);
-if(nm)last='<div class="rh-pomo-last">Τελευταίο: <b>'+esc(nm)+'</b></div>';
+if(nm)last='<div class="rh-pomo-last">Τελευταίο: <b>'+esc(nm)+'</b> · κύκλος '+((p.cycleCount||0)%n+1)+'/'+n+'</div>';
 }
 var acts='<button class="btn btn-primary" onclick="openPomodoroSetup(\'start\')">'+(ph?'Νέος κύκλος':'Έναρξη κύκλου')+'</button>';
 if(ph)acts+='<button class="btn btn-ghost" onclick="openFocusOverlay()">Οθόνη</button>';
-acts+='<button class="btn btn-ghost" onclick="openPomodoroSetup(\'settings\')" aria-label="Ρυθμίσεις κύκλου">⚙</button>';
 return '<div class="rh-pomo-head"><div class="rh-pomo-badge">🍅</div>'
-+'<div><h3>Pomodoro</h3><p>'+pm.focusMin+'λ focus · '+pm.breakMin+'λ διάλειμμα · '+pm.longBreakMin+'λ μεγάλο</p></div>'+pill+'</div>'
-+'<div class="rh-pomo-stats">'
-+'<button type="button" class="rh-pomo-stat" onclick="openPomodoroSetup(\'settings\')"><span>Focus</span><strong>'+pm.focusMin+'λ</strong></button>'
-+'<button type="button" class="rh-pomo-stat" onclick="openPomodoroSetup(\'settings\')"><span>Διάλειμμα</span><strong>'+pm.breakMin+'λ</strong></button>'
-+'<button type="button" class="rh-pomo-stat" onclick="openPomodoroSetup(\'settings\')"><span>Μεγάλο</span><strong>'+pm.longBreakMin+'λ</strong></button>'
-+'</div>'+last+'<div class="actions" style="margin-top:12px">'+acts+'</div>';
++'<div><h3>Pomodoro</h3><p>Άλλαξε τις τιμές επιτόπου · έναρξη από το κουμπί κάτω</p></div>'+pill+'</div>'
++'<div class="rh-pomo-stats">'+rhCardStep('focus','Focus',pm.focusMin,5)+rhCardStep('break','Διάλειμμα',pm.breakMin,1)+rhCardStep('long','Μεγάλο',pm.longBreakMin,5)+'</div>'
++'<div class="rh-cyc-row"><div class="lb"><b>Κύκλοι πριν το μεγάλο</b>Τώρα: '+n+' '+(n===1?'κύκλος':'κύκλοι')+'</div>'
++'<div class="rh-cyc-ctl"><button type="button" onclick="rhPomoCardAdj(\'cycles\',-1)" aria-label="Λιγότεροι κύκλοι">−</button><b>'+n+'</b><button type="button" onclick="rhPomoCardAdj(\'cycles\',1)" aria-label="Περισσότεροι κύκλοι">+</button></div></div>'
++last+'<div class="actions" style="margin-top:12px">'+acts+'</div>';
 }
 function rhPomoCardPass(force){
 var main=document.querySelector('main');if(!main)return;
@@ -7238,7 +7258,7 @@ if(h&&h.textContent.toLowerCase().indexOf('pomodoro')>=0)card=c;
 });
 if(!card)return;
 var pm=PM(),p=P();
-var sig=[pm.focusMin,pm.breakMin,pm.longBreakMin,p.phase||'-',p.activityId||'-',p.cycleCount,state.settings.pomodoroEnabled===false?0:1].join('|');
+var sig=[pm.focusMin,pm.breakMin,pm.longBreakMin,rhCycles(),p.phase||'-',p.activityId||'-',p.cycleCount,state.settings.pomodoroEnabled===false?0:1].join('|');
 if(!force&&card.dataset.rhPomo===sig)return;
 card.dataset.rhPomo=sig;
 card.innerHTML=rhPomoCardHTML();
@@ -7256,6 +7276,50 @@ if(sw)f.insertBefore(b,sw);else f.appendChild(b);
 var lb=f.querySelector('small');
 if(lb&&lb.textContent.indexOf('Ρυθμίσεις')<0)lb.textContent='Κύκλοι μελέτης · Ρυθμίσεις από το ⚙';
 }
+var rhCFOrig=(typeof window.completeFocus==='function')?window.completeFocus:null;
+window.completeFocus=function(){
+var p=P(),pm=PM(),before=p.cycleCount||0;
+if(rhCFOrig){rhCFOrig.apply(this,arguments);}
+else{
+if(state.active)endSession(true);
+p.cycleCount=before+1;
+p.phase='break';p.phaseEndsAt=Date.now()+pm.breakMin*60000;
+saveState();
+pushAlert({title:'Κύκλος ολοκληρώθηκε',message:'Διάλειμμα '+pm.breakMin+'λ.',buttons:[{text:'Εντάξει',class:'btn-primary'},{text:'Παράλειψη',class:'btn-ghost',onClick:function(){startNextCycle();}}]});
+render();try{updateFocusOverlay(true);}catch(e){}
+}
+var n=rhCycles(),cc=P().cycleCount||before+1;
+if(P().phase==='break'||P().phase==='longbreak'){
+var isLong=(cc%n===0),want=isLong?'longbreak':'break';
+var mins=isLong?PM().longBreakMin:PM().breakMin;
+if(P().phase!==want){
+P().phase=want;P().phaseEndsAt=Date.now()+mins*60000;saveState();
+var lbl=(isLong?'Μεγάλο διάλειμμα ':'Διάλειμμα ')+mins+'λ. Κύκλος '+cc+' από '+n+'.';
+var sh=document.querySelector('#modalOverlay .sheet');
+if(sh){var m=sh.querySelector('.modal-message')||sh.querySelector('p');if(m&&/διάλειμμα/i.test(m.textContent))m.textContent=lbl;}
+try{if(typeof alertQueue!=='undefined'&&alertQueue.length){var last=alertQueue[alertQueue.length-1];if(last&&last.message&&/διάλειμμα/i.test(last.message))last.message=lbl;}}catch(e){}
+try{updateFocusOverlay(true);}catch(e){}
+try{render();}catch(e){}
+}
+}
+rhPomoCardPass(true);
+};
+var rhUFOOrig=(typeof window.updateFocusOverlay==='function')?window.updateFocusOverlay:null;
+window.updateFocusOverlay=function(){
+var r=rhUFOOrig?rhUFOOrig.apply(this,arguments):null;
+try{
+var d=document.querySelector('#focusOverlay .fo-dots');
+if(d){
+var n=rhCycles(),done=(P().cycleCount||0)%n;
+if(d.dataset.n!==String(n)||d.dataset.done!==String(done)){
+d.dataset.n=String(n);d.dataset.done=String(done);
+var h='';for(var i=0;i<n;i++)h+='<span class="'+(i<done?'on':'')+'"></span>';
+d.innerHTML=h;
+}
+}
+}catch(e){}
+return r;
+};
 rhPomoRepair();
 rhPomoCardPass(true);
 rhPomoGear();
@@ -7263,7 +7327,7 @@ setTimeout(rhPomoGear,400);
 setTimeout(rhPomoGear,1500);
 setTimeout(function(){rhPomoCardPass(true);rhPomoGear();},3200);
 render();
-/* ===== ΤΕΛΟΣ POMODORO v2 ===== */
+/* ===== ΤΕΛΟΣ POMODORO v3 ===== */
 </script>
   
 </body>
