@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="2.2.0">
+<meta name="app-version" content="2.2.1">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -818,7 +818,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='2.2.0';
+var APP_VERSION='2.2.1';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -2806,8 +2806,6 @@ if(!window.__audV4Bound){
   });
 }
 
-notifBadgeUpdate();
-
 var _oaS6=openAudioSheet;
 openAudioSheet=function(){
   _oaS6();
@@ -2943,12 +2941,7 @@ function notifDel(id){
   closeModal();
   setTimeout(openNotifCenter,240);
 }
-
-if(!window.__notifV1Mounted){
-  window.__notifV1Mounted=true;
-  setInterval(notifBadgeUpdate,5000);
-  notifBadgeUpdate();
-}
+notifBadgeUpdate();
 saveState();
 /* ===== ΤΕΛΟΣ ΕΙΔΟΠΟΙΗΣΕΩΝ v1 ===== */
 </script>
@@ -4072,8 +4065,6 @@ openModal(cfg);
 if(cfg.alarm)rhSystemNotify(cfg.title,cfg.message);
 else notify(cfg.title,cfg.message,cfg.sticky);
 }
-
-render();
 /* ===== ΤΕΛΟΣ ΣΥΝΟΧΗΣ v1 ===== */
 </script>
 
@@ -4329,7 +4320,6 @@ return;
 }
 commit();
 }
-if(!window.__rhDayViewV1){
 /* ===== ΤΕΛΟΣ ΟΨΗΣ ΗΜΕΡΑΣ v1 ===== */
 </script>
 
@@ -8777,6 +8767,7 @@ PR.bh=mkProg(QVS,BHFS);PR.brt=mkProg(QVS,BRT);PR.blr=mkProg(QVS,BLR);PR.cmp=mkPr
 QB=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,QB);
 gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),gl.STATIC_DRAW);
 }catch(e){B.fb=true;B.gl=null;B.c2=B.cv.getContext('2d');}
+if(!window.__bhGest){window.__bhGest=true;gestures();}
 B.cv.addEventListener('webglcontextlost',function(e){e.preventDefault();B.lost=true;if(B.raf){cancelAnimationFrame(B.raf);B.raf=0;}},false);
 B.cv.addEventListener('webglcontextrestored',function(){
 B.lost=false;FB={};PR={};
@@ -9018,7 +9009,6 @@ var _st=(typeof window.setTheme==='function')?window.setTheme:null;
 window.setTheme=function(v){if(_st)_st.apply(this,arguments);sync();};
 if(!window.__bh1){
 window.__bh1=true;
-setTimeout(function(){if(B.cv)gestures();},60);
 window.addEventListener('resize',function(){if(B.on){resize();strip();}});
 document.addEventListener('visibilitychange',function(){
 if(document.hidden){if(B.raf){cancelAnimationFrame(B.raf);B.raf=0;}if(audio)audio.gain.gain.value=0;}
@@ -9359,6 +9349,124 @@ console.log('ΠΕΡΙΛΗΨΗ: '+dup+' γνωστά διπλότυπα, '+left+'
 },1800);
 }
 /* ===== ΤΕΛΟΣ ΑΥΤΟ-ΕΛΕΓΧΟΥ v1 ===== */
+</script>
+
+<script>
+/* ===== ΠΥΡΗΝΑΣ ΧΡΟΝΙΣΜΟΥ & RENDER v1 ===== */
+
+/* ---- 1. ΕΝΙΑΙΟ ΠΕΡΑΣΜΑ ΜΕΤΑ ΤΟ RENDER ---- */
+var rhPassBusy=false;
+function rhPostRender(){
+  if(rhPassBusy||window.__rhBooting)return;
+  if(!document.querySelector('main'))return;
+  rhPassBusy=true;
+  try{
+    declutterMount();
+    sleepExtrasMount();
+    scheduleMount();
+    nextSlotMount();
+    rhDomPass();
+    rhPass2();
+    rhUxPass();
+    rhPolishPass();
+    rhV6Pass();
+    rhEmptyPass();
+    rhHelpPass();
+    rhFixPass();
+  }catch(e){}
+  rhPassBusy=false;
+}
+
+/* ---- 2. ΑΠΟΛΟΓΙΣΜΟΣ ΗΜΕΡΑΣ (το setInterval 60 s που σβήστηκε) ---- */
+function rhReviewAsk(){
+  var h=new Date().getHours(),key=getDailyPlanKey();
+  if(h<21||state.reviews[key]||state.reviewAsk===key||modalOpen)return;
+  state.reviewAsk=key;saveState();
+  var logged=allTotalMin(startOfDay(),startOfNextDay());
+  openModal({title:'Απολογισμός ημέρας',
+    body:'<p class="muted">Καταγραφή: '+fmtHM(logged)+'</p>'
+        +'<p class="muted">Ύπνος: '+fmtHM(sleepTodayMin())+'</p>'
+        +'<p class="muted" style="margin:10px 0 6px">Βαθμολόγησε τη μέρα:</p>'
+        +'<div class="actions">'+[1,2,3,4,5].map(function(r){
+            return '<button class="btn btn-ghost" onclick="rateDay('+r+')">'+r+'</button>';
+          }).join('')+'</div>',
+    buttons:[{text:'Παράλειψη',class:'btn-ghost'}]});
+}
+
+/* ---- 3. ΕΝΑΣ ΧΡΟΝΟΜΕΤΡΗΤΗΣ ΓΙΑ ΟΛΑ ---- */
+var RH_JOBS=[];
+function rhJob(fn,ms,bg){RH_JOBS.push({f:fn,ms:ms,last:0,bg:!!bg});}
+function rhDispatch(){
+  var now=Date.now(),hid=document.hidden;
+  for(var i=0;i<RH_JOBS.length;i++){
+    var j=RH_JOBS[i];
+    if(hid&&!j.bg)continue;
+    if(now-j.last<j.ms)continue;
+    j.last=now;
+    try{j.f();}catch(e){}
+  }
+}
+function rhJobsInit(){
+  /* 250 ms — μόνο η μπάρα ήχου */
+  rhJob(function(){if(state.audio&&state.audio.playing&&!audDragging)audUpdateSeek();},250,false);
+
+  /* 1 s — πυρήνας, τρέχει και στο παρασκήνιο */
+  rhJob(tick,1000,true);
+  rhJob(function(){if(state.healthBreak)healthBreakFrame();},1000,true);
+  rhJob(function(){if(state.settings.theme==='butterflies')rhBfGate();},1000,false);
+
+  /* 5 s */
+  rhJob(slotUpdateOvertimeUI,5000,false);
+  rhJob(notifBadgeUpdate,5000,false);
+
+  /* 15 s */
+  rhJob(slotTick,15000,true);
+  rhJob(healthTick,15000,true);
+  rhJob(function(){var el=document.getElementById('rhNowLine');
+    if(el&&typeof rhPct==='function')el.style.left=rhPct(rhMinOfDay(Date.now()))+'%';},15000,false);
+  rhJob(function(){if(!rhDrag)rhV6Pass();},15000,false);
+  rhJob(rhPolishPass,15000,false);
+  rhJob(rhHelpPass,15000,false);
+  rhJob(rhFixPass,15000,false);
+
+  /* 30 s */
+  rhJob(nextSlotMount,30000,false);
+  rhJob(function(){var el=document.getElementById('goals-card-extra');if(!el)return;
+    var a=document.querySelector('.nav-btn.active');
+    if(a&&a.textContent.indexOf('Ημέρα')>=0)el.innerHTML=rhGoalsCardHTML();},30000,false);
+  rhJob(function(){var el=document.getElementById('rhPlannedStat');if(!el)return;
+    var a=document.querySelector('.nav-btn.active');
+    if(a&&a.textContent.indexOf('Ημέρα')>=0){var st=el.querySelector('strong');
+      if(st)st.textContent=fmtHM(rhTodayNums().planned);}},30000,false);
+  rhJob(function(){rhLightInit();rhColorInit();rhNoteBtn();rhPomoFrame();rhPomoGear();rhSndSync();},30000,false);
+  rhJob(function(){rhThemeApply();rhThemeGrid();bfCfgNode();},30000,false);
+  rhJob(function(){rhEmptyPass();rhObGuard();},30000,false);
+
+  /* 60 s */
+  rhJob(rhReviewAsk,60000,true);
+  rhJob(function(){var el=document.getElementById('rh-hour-card');if(!el)return;
+    var a=document.querySelector('.nav-btn.active');
+    if(a&&a.textContent.indexOf('Ανάλυση')>=0)el.innerHTML=rhHourCardHTML();},60000,false);
+}
+
+/* ---- 4. ΕΚΚΙΝΗΣΗ: το ΜΟΝΟ render της φόρτωσης ---- */
+function rhBoot(){
+  if(window.__rhBooted)return;
+  window.__rhBooted=true;
+  try{applyUi();}catch(e){}
+  try{gpBuildPanel();}catch(e){}
+  try{rhThemeApply();}catch(e){}
+  try{rhThemeGrid();rhPanelScrollFix();}catch(e){}
+  try{rhNoteBtn();rhPomoFrame();rhPomoGear();}catch(e){}
+  window.__rhBooting=false;
+  render();
+  rhJobsInit();
+  setInterval(rhDispatch,250);
+  try{rhObGuard();}catch(e){}
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',rhBoot);
+else setTimeout(rhBoot,0);
+/* ===== ΤΕΛΟΣ ΠΥΡΗΝΑ ===== */
 </script>
   
 </body>
