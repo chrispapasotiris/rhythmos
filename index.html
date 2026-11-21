@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="2.1.2">
+<meta name="app-version" content="2.2.0">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -305,6 +305,7 @@ html.compact .focus-overlay .fo-timer{font-size:3.4rem}
 
 <script>
 'use strict';
+window.__rhBooting=true;
 const STORE_KEY='rhythmos_time_app_v4';
 const DAY_SHORT=['Δε','Τρ','Τε','Πε','Πα','Σα','Κυ'];
 const DAY_FULL=['Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο','Κυριακή'];
@@ -559,7 +560,16 @@ b.classList.remove('hidden');
 }
 
 /* ===== RENDER ===== */
-function render(){ensureMonth();renderHeader();renderNav();renderView();renderRunningDock();updateFocusBadge();if(!state.onboardingComplete)showOnboarding();}
+var rhRenderDepth=0;
+function render(){
+  if(window.__rhBooting||rhRenderDepth>2)return;
+  rhRenderDepth++;
+  try{
+    ensureMonth();renderHeader();renderNav();renderView();renderRunningDock();updateFocusBadge();
+    if(!state.onboardingComplete)showOnboarding();
+    if(typeof rhPostRender==='function')rhPostRender();
+  }finally{rhRenderDepth--;}
+}
 function renderHeader(){$('#headerDate').textContent=formatDate(Date.now());}
 function renderNav(){document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.tab===currentTab));}
 function setTab(tab){currentTab=tab;render();window.scrollTo({top:0,behavior:'smooth'});}
@@ -808,7 +818,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='2.1.2';
+var APP_VERSION='2.2.0';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -843,7 +853,6 @@ function runUpdateCheck(){
 }
   
 (function(){var p=P();var now=Date.now(); if(p.phase==='focus'&&p.phaseEndsAt&&now>=p.phaseEndsAt){ if(state.active){var a=state.active;var end=Math.min(now,p.phaseEndsAt);if(end>a.start+500)addLogSplit(a.type,a.id,a.start,end);state.active=null;if(typeof healthClear==='function')healthClear();} p.cycleCount=(p.cycleCount||0)+1;p.phase='proposal';p.phaseEndsAt=0;saveState(); }else if((p.phase==='break'||p.phase==='longbreak')&&p.phaseEndsAt&&now>=p.phaseEndsAt){p.phase='proposal';p.phaseEndsAt=0;saveState();} if(p.phase==='focus'||p.phase==='break'||p.phase==='longbreak'){setTimeout(function(){openFocusOverlay();},0);} })();
-applyUi();render();setInterval(tick,1000);
 
 setTimeout(function(){try{var m=document.querySelector('main');var ok=!!(m&&m.children.length>0&&typeof render==='function'&&typeof state==='object'&&state);if(ok&&navigator.serviceWorker&&navigator.serviceWorker.controller)navigator.serviceWorker.controller.postMessage({type:'mark-good',ok:true});}catch(e){}},2500);  
   
@@ -1046,8 +1055,6 @@ function logEdit(i){var L=state.logs[i];if(!L)return;var m=prompt('Νέα διά
 function dayCompliant(ts){var s=startOfDay(ts),e=startOfNextDay(ts);return FIXED_DEFS.every(function(d){return totalMin('fixed',d.id,s,e)<=d.daily+0.5;});}
 function dayHasData(ts){var s=startOfDay(ts),e=startOfNextDay(s);return state.logs.some(function(l){return l.end>s&&l.start<e;});}
 function streakCount(){var day=86400000;var cur=startOfDay();if(!dayHasData(cur)||!dayCompliant(cur))cur-=day;var n=0;while(n<60&&dayHasData(cur)&&dayCompliant(cur)){n++;cur-=day;}return n;}
-setInterval(function(){var h=new Date().getHours();var key=getDailyPlanKey();if(h>=21&&!state.reviews[key]&&state.reviewAsk!==key&&!modalOpen){state.reviewAsk=key;saveState();var logged=allTotalMin(startOfDay(),startOfNextDay());
-openModal({title:'Απολογισμός ημέρας',body:'<p class="muted">Καταγραφή: '+fmtHM(logged)+'</p><p class="muted">Ύπνος: '+fmtHM(sleepTodayMin())+'</p><p class="muted" style="margin:10px 0 6px">Βαθμολόγησε τη μέρα:</p><div class="actions">'+[1,2,3,4,5].map(function(r){return '<button class="btn btn-ghost" onclick="rateDay('+r+')">'+r+'</button>';}).join('')+'</div>',buttons:[{text:'Παράλειψη',class:'btn-ghost'}]});}},60000);
 function rateDay(r){state.reviews[getDailyPlanKey()]=r;saveState();closeModal();showToast('Καταγράφηκε βαθμολογία '+r);}
 var _ss=safeSettings;safeSettings=function(){_ss();var p=document.getElementById('safePanel');if(p&&!p.querySelector('#impBtn')){var b=document.createElement('button');b.id='impBtn';b.textContent='Εισαγωγή backup';b.style.cssText='display:block;width:100%;margin-top:8px;padding:12px;border:none;border-radius:14px;background:#335533;color:#fff;font:700 .9rem system-ui,sans-serif';b.onclick=function(){var f=document.createElement('input');f.type='file';f.accept='.json';f.onchange=function(){var r=new FileReader();r.onload=function(){try{var j=JSON.parse(r.result);if(!j||!j.version||!Array.isArray(j.logs)){safeToast('Μη έγκυρο αρχείο.');return;}confirmModal('Εισαγωγή','Αντικατάσταση ΟΛΩΝ των δεδομένων με το αρχείο;',function(){localStorage.setItem(STORE_KEY,r.result);location.reload();},'Εισαγωγή');}catch(e){safeToast('Σφάλμα ανάγνωσης.');}};r.readAsText(f.files[0]);};p.appendChild(b);}};
 function setExam(id,v){var c=state.courses.find(function(x){return x.id===id});if(!c)return;c.examDate=v;saveState();render();}
@@ -1084,14 +1091,6 @@ if(label.indexOf('Δραστηριότητες')>=0){
  }
 }
 }
-
-var _renderSleepExtras=render;
-render=function(){
- _renderSleepExtras();
- setTimeout(sleepExtrasMount,0);
-};
-
-render();  
 
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(function(e){showToast('SW fail: '+(e&&e.message?e.message:String(e)));});}else{showToast('Ο browser δεν υποστηρίζει serviceWorker');}</script>
 
@@ -1463,25 +1462,8 @@ if(c)c.remove();
 }
 });
 }
-if(label.indexOf('Ανάλυση')>=0){
-if(!document.getElementById('weekplan-extra')){
-main.insertAdjacentHTML('afterbegin','<div id="weekplan-extra">'+weekPlanCardHTML()+'</div>');
 }
-}
-if(label.indexOf('Δραστηριότητες')>=0){
-if(!document.getElementById('monthly-extra')){
-main.insertAdjacentHTML('beforeend','<div id="monthly-extra">'+monthlyCardHTML()+'</div>');
-}
-}
-}
-var _renderSchedule5=render;
-render=function(){
-_renderSchedule5();
-declutterMount();
-setTimeout(scheduleMount,0);
-};
 saveState();
-render();
 /* ===== ΤΕΛΟΣ ΠΡΟΓΡΑΜΜΑΤΟΣ v5 ===== */
 </script>
 
@@ -1611,13 +1593,7 @@ if(t)t.insertAdjacentHTML('beforeend',' <span class="badge warn unplaced-badge">
 });
 });
 }
-var _renderSchedule6=render;
-render=function(){
-_renderSchedule6();
-setTimeout(unplacedBadgesMount,0);
-};
 saveState();
-render();
 /* ===== ΤΕΛΟΣ ΠΡΟΓΡΑΜΜΑΤΟΣ v6 ===== */
 </script>
 
@@ -2233,21 +2209,7 @@ abortPomodoro=function(silent){
   if(run)slotMarkDone(run.slotId,'abort');
 };
 
-var _renderSlot8=render;
-render=function(){
-  _renderSlot8();
-  setTimeout(nextSlotMount,0);
-};
-
-if(!window.__slotV8Timers){
-  window.__slotV8Timers=true;
-  setInterval(slotTick,15000);
-  setInterval(nextSlotMount,30000);
-  setInterval(slotUpdateOvertimeUI,5000);
-}
-
 saveState();
-render();
 /* ===== ΤΕΛΟΣ ΠΡΟΓΡΑΜΜΑΤΟΣ v8 ===== */
 </script>  
 
@@ -2844,14 +2806,7 @@ if(!window.__audV4Bound){
   });
 }
 
-if(!window.__audV4Ticker){
-  window.__audV4Ticker=true;
-  setInterval(function(){
-    if(state.audio.playing && !audDragging){
-      audUpdateSeek();
-    }
-  },350);
-}
+notifBadgeUpdate();
 
 var _oaS6=openAudioSheet;
 openAudioSheet=function(){
@@ -3396,8 +3351,6 @@ if(!window.__healthV3Mounted){
   healthEnsure();
   if(state.healthBreak&&!state.active)state.healthBreak=null;
   if(state.active)healthResync();else healthResetThresholds();
-  setInterval(healthTick,15000);
-  setInterval(function(){if(state.healthBreak)healthBreakFrame();},1000);
   if(document.readyState!=='loading')gpBuildPanel();
   else document.addEventListener('DOMContentLoaded',gpBuildPanel);
 }
@@ -3555,7 +3508,7 @@ for(var d=0;d<7;d++){var sleepD=(d===todayIdx?actualSleepToday:sleepHours*60);va
 return {weekRem:weekRem,days:days,sleepW:weeklySleep,plannedW:plannedW};
 }
 if(state.lastTab)currentTab=state.lastTab;
-render();
+
 /* ===== ΤΕΛΟΣ ΚΑΤΗΓΟΡΙΩΝ v2 ===== */
 </script>
 
@@ -4144,7 +4097,7 @@ if(a.empty||!a.ok)cur-=day;
 while(n<60){var x=dayAudit(cur);if(x.empty||!x.ok)break;n++;cur-=day;}
 return n;
 }
-render();
+
 /* ===== ΤΕΛΟΣ ΕΛΕΓΧΟΥ ΗΜΕΡΑΣ v1 ===== */
 </script>
 
@@ -4377,13 +4330,6 @@ return;
 commit();
 }
 if(!window.__rhDayViewV1){
-window.__rhDayViewV1=true;
-setInterval(function(){
-var el=document.getElementById('rhNowLine');
-if(el)el.style.left=rhPct(rhMinOfDay(Date.now()))+'%';
-},15000);
-}
-render();
 /* ===== ΤΕΛΟΣ ΟΨΗΣ ΗΜΕΡΑΣ v1 ===== */
 </script>
 
@@ -4492,16 +4438,7 @@ main.insertAdjacentHTML('beforeend',examCardHTML());
 }
 }
 }
-if(!window.__rhGoalsV1){
-window.__rhGoalsV1=true;
-setInterval(function(){
-var el=document.getElementById('goals-card-extra');
-if(!el)return;
-var act=document.querySelector('.nav-btn.active');
-if(act&&act.textContent.indexOf('Ημέρα')>=0)el.innerHTML=rhGoalsCardHTML();
-},30000);
-}
-render();
+
 /* ===== ΤΕΛΟΣ ΣΤΟΧΩΝ v1 ===== */
 </script>
 
@@ -4551,7 +4488,7 @@ if(label.indexOf('Δραστηριότητες')>=0){
 if(!document.getElementById('exam-card-extra')){main.insertAdjacentHTML('beforeend',examCardHTML());}
 }
 }
-render();
+
 /* ===== ΤΕΛΟΣ ΣΕΡΙ v2 ===== */
 </script>
 
@@ -4666,7 +4603,7 @@ rest.sort(function(a,b){var p={high:3,medium:2,low:1};return p[b.priority]-p[a.p
 }
 return out.concat(rest).slice(0,state.settings.suggestionLimit||3);
 }
-render();
+
 /* ===== ΤΕΛΟΣ ΛΗΞΗΣ ΗΜΕΡΑΣ v1 ===== */
 </script>
 
@@ -5259,13 +5196,6 @@ rhPanelScrollFix();
 bfApplyAll();
 if(!window.__rhTheme3){
 window.__rhTheme3=true;
-var mm=document.querySelector('main');
-if(mm&&typeof MutationObserver==='function')new MutationObserver(function(){rhDomPass();if(typeof rhPass2==='function')rhPass2();if(typeof rhUxPass==='function')rhUxPass();if(typeof rhPolishPass==='function')rhPolishPass();if(typeof rhEmptyPass==='function')rhEmptyPass();if(typeof rhHelpPass==='function')rhHelpPass();}).observe(mm,{childList:true});
-setInterval(function(){rhThemeApply();rhThemeGrid();rhPanelScrollFix();bfCfgNode();},4000);
-setInterval(function(){
-var el=document.getElementById('rh-hour-card');
-if(el){var a=document.querySelector('.nav-btn.active');if(a&&a.textContent.indexOf('Ανάλυση')>=0)el.innerHTML=rhHourCardHTML();}
-},60000);
 document.addEventListener('visibilitychange',function(){
 if(document.hidden){if(BF_FLY.raf){cancelAnimationFrame(BF_FLY.raf);BF_FLY.raf=0;}}
 else if(BF_FLY.on&&!BF_FLY.raf){BF_FLY.last=0;BF_FLY.raf=requestAnimationFrame(bfStep);}
@@ -5274,7 +5204,6 @@ var rz=0;
 window.addEventListener('resize',function(){clearTimeout(rz);rz=setTimeout(bfResizeFlight,180);});
 }
 rhDomPass();
-render();
 /* ===== ΤΕΛΟΣ ΘΕΜΑΤΩΝ v3 ===== */
 </script>
 
@@ -5473,9 +5402,8 @@ window.addEventListener('scroll',sndGuard,true);
 document.addEventListener('scroll',sndGuard,true);
 document.addEventListener('keydown',function(ev){if(ev.key==='Escape')rhSndClose();});
 window.addEventListener('resize',function(){rhSndClose();var b=document.getElementById('rhNoteBtn');if(b)rhSndSync();});
-setInterval(function(){rhLightInit();rhNoteBtn();rhPomoFrame();rhSndSync();},3000);
 }
-render();
+
 /* ===== ΤΕΛΟΣ ΡΥΘΜΟΥ v4 ===== */
 </script>
 
@@ -5848,17 +5776,11 @@ rhSleepNorm();
 saveState();
 if(!window.__rhV5){
 window.__rhV5=true;
-setInterval(rhBfGate,1000);
 var fo=document.getElementById('focusOverlay');
 if(fo&&typeof MutationObserver==='function')new MutationObserver(rhBfGate).observe(fo,{attributes:true,attributeFilter:['class']});
 document.addEventListener('visibilitychange',rhBfGate);
-setInterval(function(){
-var el=document.getElementById('rh-nums-card');
-if(el){var a=document.querySelector('.nav-btn.active');if(a&&a.textContent.indexOf('Ημέρα')>=0)el.innerHTML=rhNumsCardHTML();}
-},20000);
 }
 rhPass2();
-render();
 /* ===== ΤΕΛΟΣ ΡΥΘΜΟΥ v5 ===== */
 </script>
 
@@ -5962,20 +5884,7 @@ c.classList.toggle('rh-urgent',u);
 c.classList.toggle('rh-watch',wa);
 });
 }
-if(!window.__rhUx1){
-window.__rhUx1=true;
-setInterval(function(){
-var el=document.getElementById('rhPlannedStat');
-if(!el)return;
-var a=document.querySelector('.nav-btn.active');
-if(a&&a.textContent.indexOf('Ημέρα')>=0&&typeof rhTodayNums==='function'){
-var st=el.querySelector('strong');
-if(st)st.textContent=fmtHM(rhTodayNums().planned);
-}
-},20000);
-}
 rhUxPass();
-render();
 /* ===== ΤΕΛΟΣ UX v1 ===== */
 </script>
 
@@ -6245,11 +6154,7 @@ c.remove();
 });
 }
 rhStudyInit();
-if(!window.__rhStudy1){
-window.__rhStudy1=true;
-setInterval(rhStudyPass,1200);
-}
-render();
+
 /* ===== ΤΕΛΟΣ ΜΑΘΗΜΑΤΩΝ v1 ===== */
 </script>
 
@@ -6326,7 +6231,6 @@ function rhColorInit(){
 FIXED_DEFS.forEach(function(d){
 if(!d.color)d.color=rhPickColor();
 if(!d.color2||String(d.color2).toLowerCase()===String(d.color).toLowerCase())d.color2=rhPair(d.color).b;
-d.timeRange=[0,24];
 });
 state.courses.forEach(function(c){
 if(!c.color)c.color=rhPickColor();
@@ -6512,10 +6416,8 @@ rhColorInit();
 saveState();
 if(!window.__rhPolish1){
 window.__rhPolish1=true;
-setInterval(function(){rhColorInit();rhPolishPass();},4000);
 }
 rhPolishPass();
-render();
 /* ===== ΤΕΛΟΣ POLISH v1 ===== */
 </script>
 
@@ -6682,14 +6584,6 @@ d.id='rh-nums-card';d.hidden=true;d.style.display='none';
 document.body.appendChild(d);
 }
 })();
-if(!window.__rhFix1){
-window.__rhFix1=true;
-var mm=document.querySelector('main');
-if(mm&&typeof MutationObserver==='function')new MutationObserver(rhFixPass).observe(mm,{childList:true,subtree:true,attributes:true,attributeFilter:['class','style']});
-setInterval(rhFixPass,2500);
-}
-rhFixPass();
-render();
 /* ===== ΤΕΛΟΣ ΔΙΟΡΘΩΣΕΩΝ v1 ===== */
 </script>
 
@@ -6972,14 +6866,6 @@ rhApplyOrder();
 }
 rhOrderInit();
 saveState();
-if(!window.__rhV6){
-window.__rhV6=true;
-var mm=document.querySelector('main');
-if(mm&&typeof MutationObserver==='function')new MutationObserver(function(){if(!rhDrag)rhV6Pass();}).observe(mm,{childList:true});
-setInterval(function(){if(!rhDrag)rhV6Pass();},3000);
-}
-rhV6Pass();
-render();
 /* ===== ΤΕΛΟΣ ΡΥΘΜΟΥ v6 ===== */
 </script>
 
@@ -7304,7 +7190,6 @@ rhPomoGear();
 setTimeout(rhPomoGear,400);
 setTimeout(rhPomoGear,1500);
 setTimeout(function(){rhPomoCardPass(true);rhPomoGear();},3200);
-render();
 /* ===== ΤΕΛΟΣ POMODORO v3 ===== */
 </script>
 
@@ -7481,17 +7366,9 @@ state.__rhInitAt=state.__rhInitAt||Date.now();
 saveState();
 })();
 if(state.onboardingComplete){rhObNodes().forEach(function(n){try{n.remove();}catch(e){}});rhObUnlock();}
-if(!window.__rhFresh2){
-window.__rhFresh2=true;
-new MutationObserver(rhObGuard).observe(document.body,{childList:true});
 document.addEventListener('keydown',function(ev){
 if(ev.key==='Escape'&&rhObNodes().length)rhObFinish();
 });
-setInterval(function(){rhEmptyPass();rhObGuard();},2500);
-}
-rhObGuard();
-rhEmptyPass();
-render();
 /* ===== ΤΕΛΟΣ ΚΑΘΑΡΗΣ ΕΚΚΙΝΗΣΗΣ v2 ===== */
 </script>
 
@@ -7709,9 +7586,7 @@ rhHelpPass();
 rhFbFilesRender();
 if(!window.__rhHelp1){
 window.__rhHelp1=true;
-setInterval(rhHelpPass,2500);
 }
-render();
 /* ===== ΤΕΛΟΣ ΟΡΙΩΝ + FEEDBACK + ROADMAP v1 ===== */
 </script>
 
@@ -7873,6 +7748,26 @@ function push(o){o.rot=o.rot||[0,0,0];o.scale=o.scale||[1,1,1];o.base=hex(o.c||'
 o.ek=o.ek||0;o.rough=o.rough===undefined?.55:o.rough;o.metal=o.metal||0;o.floor=o.floor||0;OBJ.push(o);return o;}
 function glow(o){o.col=hex(o.c||'#22d3ee');o.k=o.k||1;o.size=o.size||[1,1];GLOW.push(o);return o;}
 
+var W_SIG='',W_BK=[],W_BK_T=0;
+function worldBuckets(){
+  var now=Date.now();
+  if(W_BK.length&&now-W_BK_T<60000)return W_BK;
+  W_BK_T=now;
+  W_BK=(typeof rhHourBuckets==='function')?rhHourBuckets():[];
+  return W_BK;
+}
+function worldSig(){
+  var s='',i,sl=(state.schedule&&state.schedule.slots)||[];
+  s+=sl.length+'|';
+  for(i=0;i<sl.length;i++)s+=sl[i].id+sl[i].day+sl[i].start+sl[i].end+sl[i].activityId+',';
+  s+='#';
+  for(i=0;i<FIXED_DEFS.length;i++)s+=FIXED_DEFS[i].id+(FIXED_DEFS[i].color||'')+(FIXED_DEFS[i].daily||0)+',';
+  s+='#';
+  for(i=0;i<state.courses.length;i++){var c=state.courses[i];s+=c.id+(c.color||'')+(c.hours||0)+(c.active?1:0)+',';}
+  s+='#'+state.logs.length+'|'+Math.floor(activeElapsedMs()/60000)+'|'+Math.floor(W_BK_T/60000);
+  return s;
+}
+  
 function buildWorld(){
 OBJ=[];GLOW=[];
 var st,cat=(typeof ACT_CATS!=='undefined')?ACT_CATS:[];
@@ -7936,7 +7831,7 @@ for(i=0;i<7;i++){(function(i){
 })(i);}
 var scan=push({g:'box',pos:[SP*2,1.4,0],scale:[.12,7,7],c:'#a3e635',e:'#a3e635',ek:1.2,rough:.2});
 scan.upd=function(t){this.pos[0]=SP*2+Math.sin(t*.45)*9;this.ek=.8+.6*Math.abs(Math.cos(t*.45));};
-var bk=(typeof rhHourBuckets==='function')?rhHourBuckets():[];
+var bk=worldBuckets();
 var mx=Math.max.apply(null,bk.concat([1]));
 for(i=0;i<24;i++){(function(i){
  var h=cl((bk[i]||0)/mx*6,.15,6);
@@ -8216,9 +8111,11 @@ wSyncRail();showToast('Νέα ατμόσφαιρα.');
 };
 window.wShot=function(){
 try{
- if(fallback){var u=W.cv.toDataURL('image/png');wDl(u);return;}
- var gl=W.gl;frame(performance.now());
- var u2=W.cv.toDataURL('image/png');wDl(u2);
+if(fallback){wDl(W.cv.toDataURL('image/png'));return;}
+if(W.raf){cancelAnimationFrame(W.raf);W.raf=0;}
+if(!W.last)W.last=performance.now()-16;
+frame(performance.now());
+wDl(W.cv.toDataURL('image/png'));
 }catch(e){showToast('Αποτυχία λήψης.');}
 };
 function wDl(u){var a=document.createElement('a');a.href=u;a.download='rhythmos-kosmos-'+Date.now()+'.png';document.body.appendChild(a);a.click();a.remove();showToast('Η εικόνα αποθηκεύτηκε.');}
@@ -8321,7 +8218,7 @@ document.addEventListener('keydown',function(e){
 function initGL(){
 W.cv=document.createElement('canvas');W.cv.id='w3d';document.body.appendChild(W.cv);
 var gl=null;
-try{gl=W.cv.getContext('webgl',{antialias:false,alpha:false,depth:true,powerPreference:'high-performance',preserveDrawingBuffer:true})||W.cv.getContext('experimental-webgl');}catch(e){}
+try{gl=W.cv.getContext('webgl',{antialias:false,alpha:false,depth:true,powerPreference:'high-performance',preserveDrawingBuffer:false})||W.cv.getContext('experimental-webgl');}catch(e){}
 if(!gl){fallback=true;ctx2=W.cv.getContext('2d');return true;}
 W.gl=gl;
 try{
@@ -8341,7 +8238,7 @@ W.cv.addEventListener('webglcontextrestored',function(){
   GEO.box=geoBox();GEO.sphere=geoSphere(22,14);GEO.torus=geoTorus(1,.16,44,10);GEO.cyl=geoCyl(22);GEO.plane=geoPlane();
   var qb=W.gl.createBuffer();W.gl.bindBuffer(W.gl.ARRAY_BUFFER,qb);
   W.gl.bufferData(W.gl.ARRAY_BUFFER,new Float32Array([-1,-1,1,-1,-1,1,1,1]),W.gl.STATIC_DRAW);GEO.quad=qb;
-  W.cv.width=0;resize();buildWorld();W.last=0;if(W.on&&!W.raf)W.raf=requestAnimationFrame(frame);
+  W.cv.width=0;resize();W_SIG=worldSig();buildWorld();W.last=0;if(W.on&&!W.raf)W.raf=requestAnimationFrame(frame);
  }catch(e){}
 },false);
 return true;
@@ -8350,19 +8247,45 @@ function start(){
 if(W.on)return;
 if(!W.cv)initGL();
 W.on=true;ready=true;
-tabs();buildWorld();resize();
+tabs();
+W.cv.style.display='block';
 W.idx=curIdx();W.target=W.idx;W.cam=W.idx*SP;
 rail();
 if(!state.settings.__w3dRailSeen){state.settings.__w3dRailSeen=true;saveState();q('w3dRail').classList.add('open');}
 document.documentElement.classList.toggle('rail-on',q('w3dRail').classList.contains('open'));
 strip();chrome();
+if(!fallback&&W.gl&&W.gl.isContextLost&&W.gl.isContextLost()){
+W.lost=true;
+if(W_LOSE){try{W_LOSE.restoreContext();}catch(e){}}
+return;
+}
+W.lost=false;
+W_SIG=worldSig();buildWorld();resize();
 W.last=0;if(!W.raf)W.raf=requestAnimationFrame(frame);
 }
+var W_LOSE=null;
+function releaseGL(){
+if(!W.gl||fallback)return;
+try{
+delFBO(FB.scene);delFBO(FB.a);delFBO(FB.b);
+Object.keys(GEO).forEach(function(k){
+var g=GEO[k];if(!g)return;
+if(g.b){W.gl.deleteBuffer(g.b);if(g.ib)W.gl.deleteBuffer(g.ib);}
+else W.gl.deleteBuffer(g);
+});
+Object.keys(PROG).forEach(function(k){if(PROG[k]&&PROG[k].p)W.gl.deleteProgram(PROG[k].p);});
+W_LOSE=W.gl.getExtension('WEBGL_lose_context');
+if(W_LOSE)W_LOSE.loseContext();
+}catch(e){}
+FB={};GEO={};PROG={};
+}
+  
 function stop(){
 W.on=false;
 if(W.raf){cancelAnimationFrame(W.raf);W.raf=0;}
 W.drag=null;
 if(W.cv)W.cv.style.display='none';
+releaseGL();
 document.documentElement.classList.remove('rail-on');
 var r=q('w3dRail');if(r)r.classList.remove('open');
 var s=q('w3dStrip');if(s)s.remove();
@@ -8418,7 +8341,12 @@ setInterval(function(){
  else if(!document.hidden&&!W.lost&&!W.raf){W.last=0;W.raf=requestAnimationFrame(frame);}
  strip();chrome();
 },1200);
-setInterval(function(){if(W.on&&!W.drag)buildWorld();},6000);
+setInterval(function(){
+if(!W.on||W.drag)return;
+var s=worldSig();
+if(s===W_SIG)return;
+W_SIG=s;buildWorld();
+},6000);
 }
 sync();
 })();
@@ -8841,7 +8769,7 @@ c.restore();c.globalCompositeOperation='source-over';
 function initGL(){
 B.cv=document.createElement('canvas');B.cv.id='bhCv';document.body.appendChild(B.cv);
 var gl=null;
-try{gl=B.cv.getContext('webgl',{antialias:false,alpha:false,depth:false,preserveDrawingBuffer:true,powerPreference:'high-performance'});}catch(e){}
+try{gl=B.cv.getContext('webgl',{antialias:false,alpha:false,depth:false,preserveDrawingBuffer:false,powerPreference:'high-performance'});}catch(e){}
 if(!gl){B.fb=true;B.c2=B.cv.getContext('2d');return;}
 B.gl=gl;
 try{
@@ -8914,9 +8842,17 @@ P.bloom=50+Math.round(Math.random()*95);
 syncRail();showToast('Νέο σύστημα.');
 };
 window.bhShot=function(){
-try{if(!B.fb)frame(performance.now());
-var u=B.cv.toDataURL('image/png');var a=document.createElement('a');a.href=u;a.download='mavri-trypa-'+Date.now()+'.png';
-document.body.appendChild(a);a.click();a.remove();showToast('Η εικόνα αποθηκεύτηκε.');}catch(e){showToast('Αποτυχία λήψης.');}
+try{
+if(!B.fb){
+if(B.raf){cancelAnimationFrame(B.raf);B.raf=0;}
+if(!B.last)B.last=performance.now()-16;
+frame(performance.now());
+}
+var u=B.cv.toDataURL('image/png');
+var a=document.createElement('a');a.href=u;a.download='mavri-trypa-'+Date.now()+'.png';
+document.body.appendChild(a);a.click();a.remove();
+showToast('Η εικόνα αποθηκεύτηκε.');
+}catch(e){showToast('Αποτυχία λήψης.');}
 };
 window.bhSound=function(){P.sound=P.sound?0:1;syncRail();if(P.sound)startAudio();else if(audio)audio.gain.gain.value=0;};
 function startAudio(){
@@ -9029,15 +8965,38 @@ function start(){
 if(B.on)return;
 if(!B.cv)initGL();
 B.on=true;B.cv.style.display='block';
-applyQ();resize();rail();strip();
+B.cv.style.display='block';
+rail();strip();
 if(!state.settings.__bhSeen){state.settings.__bhSeen=true;saveState();q('bhRail').classList.add('open');}
 document.documentElement.classList.toggle('bh-rail-on',q('bhRail').classList.contains('open'));
+if(!B.fb&&B.gl&&B.gl.isContextLost&&B.gl.isContextLost()){
+B.lost=true;
+if(B_LOSE){try{B_LOSE.restoreContext();}catch(e){}}
+return;
+}
+B.lost=false;
+applyQ();resize();
 B.last=0;if(!B.raf)B.raf=requestAnimationFrame(frame);
 }
+
+var B_LOSE=null;
+function releaseGL(){
+if(!B.gl||B.fb)return;
+try{
+delFBO(FB.scene);delFBO(FB.a);delFBO(FB.b);
+if(QB)B.gl.deleteBuffer(QB);
+Object.keys(PR).forEach(function(k){if(PR[k]&&PR[k].p)B.gl.deleteProgram(PR[k].p);});
+B_LOSE=B.gl.getExtension('WEBGL_lose_context');
+if(B_LOSE)B_LOSE.loseContext();
+}catch(e){}
+FB={};PR={};QB=null;
+}
+  
 function stop(){
 B.on=false;B.prev=false;
 if(B.raf){cancelAnimationFrame(B.raf);B.raf=0;}
 if(B.cv)B.cv.style.display='none';
+releaseGL();
 if(audio)audio.gain.gain.value=0;
 document.documentElement.classList.remove('bh-preview','bh-rail-on');
 var r=q('bhRail');if(r)r.classList.remove('open');
