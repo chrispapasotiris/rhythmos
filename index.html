@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="2.1.1">
+<meta name="app-version" content="2.1.2">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -808,7 +808,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='2.1.1';
+var APP_VERSION='2.1.2';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -6675,28 +6675,6 @@ if(!isFinite(t))return;
 rhHistOff=Math.max(0,Math.min(3650,Math.round((startOfDay()-t)/86400000)));
 var w=document.getElementById('rh-hist-card');if(w)w.innerHTML=rhHistCardHTML();
 }
-function rhA11yPass(){
-Array.prototype.forEach.call(document.querySelectorAll('.switch'),function(b){
-if(!b.getAttribute('role'))b.setAttribute('role','switch');
-b.setAttribute('aria-checked',b.classList.contains('on')?'true':'false');
-if(!b.getAttribute('aria-label')){
-var row=b.closest('.setting-row')||b.closest('.gp-flat')||b.closest('.rh-mk-bar')||b.closest('.gp-check');
-var t=row?row.querySelector('strong'):null;
-if(t)b.setAttribute('aria-label',t.textContent.trim());
-}
-});
-Array.prototype.forEach.call(document.querySelectorAll('.activity .icon'),function(i){i.setAttribute('aria-hidden','true');});
-}
-function rhFixPass(){
-var main=document.querySelector('main');
-if(main){
-Array.prototype.forEach.call(main.querySelectorAll('.card.activity'),function(c){
-var a=(c.style.getPropertyValue('--accent')||'').trim();
-if(a)c.style.setProperty('--ink',rhInk(a));
-});
-}
-rhA11yPass();
-}
 (function(){
 if(!document.getElementById('rh-nums-card')){
 var d=document.createElement('div');
@@ -9305,6 +9283,123 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 else setTimeout(boot,0);
 })();
 /* ===== ΤΕΛΟΣ ΗΧΩΝ v4 ===== */
+</script>
+
+<script>
+/* ===== ΑΥΤΟ-ΕΛΕΓΧΟΣ v1 ===== */
+function rhA11yPass(){
+try{
+var sw=document.querySelectorAll('.switch'),i;
+for(i=0;i<sw.length;i++){
+var b=sw[i];
+if(b.getAttribute('role')!=='switch')b.setAttribute('role','switch');
+var v=b.classList.contains('on')?'true':'false';
+if(b.getAttribute('aria-checked')!==v)b.setAttribute('aria-checked',v);
+if(!b.getAttribute('aria-label')){
+var row=b.closest('.setting-row')||b.closest('.gp-flat')||b.closest('.rh-mk-bar')||b.closest('.gp-check');
+var t=row?row.querySelector('strong'):null;
+if(t)b.setAttribute('aria-label',t.textContent.trim());
+}
+}
+var ic=document.querySelectorAll('.activity .icon');
+for(i=0;i<ic.length;i++)if(ic[i].getAttribute('aria-hidden')!=='true')ic[i].setAttribute('aria-hidden','true');
+}catch(e){}
+}
+function rhFixPass(){
+try{
+var main=document.querySelector('main');
+if(main){
+var cs=main.querySelectorAll('.card.activity'),i;
+for(i=0;i<cs.length;i++){
+var c=cs[i],a=(c.style.getPropertyValue('--accent')||'').trim();
+if(!a)continue;
+var ink=(typeof rhInk==='function')?rhInk(a):'#fff';
+if(c.style.getPropertyValue('--ink')!==ink)c.style.setProperty('--ink',ink);
+}
+}
+rhA11yPass();
+}catch(e){}
+}
+function rhAudit(){
+var L=[],scripts=[].slice.call(document.scripts),styles=[].slice.call(document.querySelectorAll('style')),i,t,m;
+var defs={},blocks=[],total=0,obs=0,timers=0;
+for(i=0;i<scripts.length;i++){
+t=scripts[i].textContent||'';
+if(!t.trim())continue;
+total+=t.length;
+m=t.match(/\/\* ===== ([^=]+?) =====/);
+var nm=m?m[1].trim():('inline #'+i);
+blocks.push({n:nm,b:t.length});
+var re=/function\s+([A-Za-z_$][\w$]*)\s*\(/g,mm;
+while((mm=re.exec(t))){(defs[mm[1]]=defs[mm[1]]||[]).push(nm);}
+var re2=/window\.([A-Za-z_$][\w$]*)\s*=\s*function/g;
+while((mm=re2.exec(t))){(defs[mm[1]]=defs[mm[1]]||[]).push(nm+' [assign]');}
+obs+=(t.match(/new MutationObserver/g)||[]).length;
+timers+=(t.match(/setInterval\(/g)||[]).length;
+}
+var css=0;for(i=0;i<styles.length;i++)css+=(styles[i].textContent||'').length;
+L.push('ΣΥΝΟΛΟ: '+scripts.length+' scripts · '+Math.round(total/1024)+' KB JS · '+styles.length+' styles · '+Math.round(css/1024)+' KB CSS');
+L.push('MutationObservers: '+obs+' · setInterval: '+timers);
+L.push('');
+L.push('— ΒΑΡΟΣ ΑΝΑ ΜΠΛΟΚ (bytes, φθίνουσα) —');
+blocks.slice().sort(function(a,b){return b.b-a.b;}).forEach(function(x){L.push(String(x.b).padStart(7)+'  '+x.n);});
+L.push('');
+var watch=['openFixedEditor','rhStudyEditor','renderActivities','fixedCard','rhActColor','rhInk','rhActFilter','rhHistCardHTML','rhNotesCardHTML','rhFbAdd','dayAudit','dayAuditCardHTML','streakCount','sleepTodayMin','sleepMinForDay','processAlertQueue','buildFixedAlerts','healthApplies','budgetSnapshotExact','budgetBad','budgetPanelHTML','logEdit','logsTodayHTML','scheduleAdd','getSmartSuggestions','sleepExtrasMount','rhGoalsCardHTML','unplacedBadgesMount','deleteCourse','safeRollback','safeRetryLatest','safeSetForce','safeCtl','openPomodoroSetup','startPomodoro','rhSoundStart','rhSoundStop','beep','rhSndSync','setTheme','rhThemeApply','rhDomPass'];
+L.push('— ΠΑΡΑΚΟΛΟΥΘΗΣΗ ΓΝΩΣΤΩΝ ΑΝΤΙΚΑΤΑΣΤΑΣΕΩΝ —');
+watch.forEach(function(n){
+var d=defs[n]||[];
+L.push((d.length>1?'[ΔΙΠΛΟ] ':'[ok]    ')+n+' ×'+d.length+(d.length?'  → '+d.join(' | '):'  → δεν υπάρχει'));
+});
+L.push('');
+L.push('— ΟΛΟΙ ΟΙ ΠΟΛΛΑΠΛΟΙ ΟΡΙΣΜΟΙ (περιλαμβάνονται και εμφωλευμένοι) —');
+Object.keys(defs).filter(function(n){return defs[n].length>1;}).sort(function(a,b){return defs[b].length-defs[a].length;}).forEach(function(n){
+L.push(n+' ×'+defs[n].length+'  → '+defs[n].join(' | '));
+});
+L.push('');
+L.push('— ΠΙΘΑΝΑ ΟΡΦΑΝΑ CSS CLASSES —');
+var hay='';for(i=0;i<scripts.length;i++)hay+=(scripts[i].textContent||'');
+var app=document.querySelector('.app');if(app)hay+=app.outerHTML;
+var seen={},orph=[];
+for(i=0;i<styles.length;i++){
+var ct=styles[i].textContent||'',rc=/\.((?:rh|bf|w3d|bh|gp|qs|aud|fo|rh)-[a-zA-Z0-9_-]+)/g,mc;
+while((mc=rc.exec(ct))){
+var cl=mc[1];
+if(seen[cl])continue;seen[cl]=1;
+if(hay.indexOf(cl)<0)orph.push(cl);
+}
+}
+L.push(orph.length?orph.join(', '):'κανένα');
+L.push('');
+L.push('— ΝΕΚΡΑ ΣΗΜΕΙΑ (πρέπει να είναι 0) —');
+['rhApplyNature','rhEnsureNatureChoice','rhThemeClasses','rhSafeDiag','rhSafeAugment','sleepMinForDay','studyDailyMaxHours','TAB_TITLES','noiseStart','PAUSE_RESET','__rhNatureV1','__rhThemesV2','__rhThemesV3','__rhSndV3','__rhSndV4'].forEach(function(n){
+var c=0;for(i=0;i<scripts.length;i++){var tt=scripts[i].textContent||'';c+=(tt.split(n).length-1);}
+L.push((c?'[ΜΕΝΕΙ] ':'[ok]    ')+n+' ×'+c);
+});
+return L.join('\n');
+}
+function rhAuditDownload(){
+try{
+var txt=rhAudit();
+var b=new Blob([txt],{type:'text/plain;charset=utf-8'});
+var u=URL.createObjectURL(b),a=document.createElement('a');
+a.href=u;a.download='rhythmos-audit-'+new Date().toISOString().slice(0,10)+'.txt';
+document.body.appendChild(a);a.click();a.remove();
+setTimeout(function(){URL.revokeObjectURL(u);},2500);
+if(typeof showToast==='function')showToast('Η αναφορά κατέβηκε.');
+}catch(e){}
+}
+if(!window.__rhAudit1){
+window.__rhAudit1=true;
+setTimeout(function(){
+try{
+var s=rhAudit();
+console.log(s);
+var dup=(s.match(/\[ΔΙΠΛΟ\]/g)||[]).length,left=(s.match(/\[ΜΕΝΕΙ\]/g)||[]).length;
+console.log('ΠΕΡΙΛΗΨΗ: '+dup+' γνωστά διπλότυπα, '+left+' νεκρά σημεία που μένουν. Πλήρης αναφορά: rhAudit() · λήψη: rhAuditDownload()');
+}catch(e){}
+},1800);
+}
+/* ===== ΤΕΛΟΣ ΑΥΤΟ-ΕΛΕΓΧΟΥ v1 ===== */
 </script>
   
 </body>
