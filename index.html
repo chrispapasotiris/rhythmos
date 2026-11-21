@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="2.0.4">
+<meta name="app-version" content="2.1.0">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -809,7 +809,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='2.0.4';
+var APP_VERSION='2.1.0';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -9067,7 +9067,7 @@ var r=q('bhRail');if(r)r.classList.remove('open');
 var s=q('bhStrip');if(s)s.remove();
 }
 function sync(){
-var on=false;
+var on=state.settings.theme==='blackhole'&&window.__bhAllow===true;
 document.documentElement.classList.toggle('blackhole',on);
 if(on)start();else stop();
 }
@@ -9116,6 +9116,160 @@ sync();
 .rh-snd-pick small{display:block;margin-top:5px;font-size:.66rem;color:var(--muted);line-height:1.4}
 </style>
 
+<script>
+/* ===== ΘΕΜΑ-ΑΣΦΑΛΕΙΑ v1: ΚΑΝΕΝΑ ΒΑΡΥ ΘΕΜΑ ΔΕΝ ΞΕΚΙΝΑ ΣΤΟ LOAD ===== */
+(function(){
+window.__bhAllow=false;
+var _bp=window.bhPreview,_be=window.bhPreviewExit,_st=window.setTheme;
+window.bhPreview=function(){
+window.__bhAllow=true;
+if(_bp)_bp.apply(this,arguments);
+if(typeof window.setTheme==='function')window.setTheme(state.settings.theme);
+};
+window.bhPreviewExit=function(){
+window.__bhAllow=false;
+if(_be)_be.apply(this,arguments);
+if(typeof window.setTheme==='function')window.setTheme(state.settings.theme);
+};
+window.setTheme=function(v){
+if(v!=='blackhole')window.__bhAllow=false;
+if(_st)_st.apply(this,arguments);
+};
+})();
+/* ===== ΤΕΛΟΣ ΘΕΜΑ-ΑΣΦΑΛΕΙΑΣ v1 ===== */
+</script>
+
+<style>
+.rh-snd-pick{margin-top:11px}
+.rh-snd-pick>label{display:block;font-size:.64rem;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.rh-snd-pick .row{display:flex;gap:6px;align-items:center}
+.rh-snd-pick select{flex:1;min-width:0;padding:9px 8px;border-radius:10px;border:1px solid var(--line);background:var(--input-bg);color:var(--text);font:600 .78rem system-ui,sans-serif}
+.rh-snd-pick button{flex:0 0 auto;width:38px;height:38px;border-radius:10px;border:1px solid var(--line);background:var(--soft);color:var(--primary);display:grid;place-items:center;cursor:pointer;padding:0}
+.rh-snd-pick button:hover{background:color-mix(in srgb,var(--primary) 14%,transparent)}
+.rh-snd-pick button:active{transform:scale(.92)}
+.rh-snd-pick button svg{width:15px;height:15px;display:block}
+.rh-snd-pick small{display:block;margin-top:5px;font-size:.66rem;color:var(--muted);line-height:1.4}
+</style>
+
+<script>
+/* ===== ΗΧΟΙ ΕΙΔΟΠΟΙΗΣΕΩΝ v1: 10 ΣΥΝΤΑΓΕΣ, 2 ΚΑΤΗΓΟΡΙΕΣ ===== */
+var rhN=[];
+function rhOsc(c,type,f,t,d,g,slide){
+var o=c.createOscillator(),gn=c.createGain();
+o.type=type;o.frequency.setValueAtTime(f,t);
+if(slide)o.frequency.exponentialRampToValueAtTime(Math.max(30,slide),t+d);
+gn.gain.setValueAtTime(0.0001,t);
+gn.gain.exponentialRampToValueAtTime(g,t+0.012);
+gn.gain.exponentialRampToValueAtTime(0.0001,t+d);
+o.connect(gn);gn.connect(c.destination);
+o.start(t);o.stop(t+d+0.06);
+rhN.push(o);return o;
+}
+function rhNoise(c,t,d,g,fc){
+var n=Math.max(1,Math.floor(c.sampleRate*d)),b=c.createBuffer(1,n,c.sampleRate),ch=b.getChannelData(0);
+for(var i=0;i<n;i++)ch[i]=(Math.random()*2-1)*(1-i/n);
+var s=c.createBufferSource();s.buffer=b;
+var f=c.createBiquadFilter();f.type='bandpass';f.frequency.value=fc;f.Q.value=1.3;
+var gn=c.createGain();gn.gain.value=g;
+s.connect(f);f.connect(gn);gn.connect(c.destination);
+s.start(t);rhN.push(s);return s;
+}
+var RH_SOUNDS=[
+{n:'Δίτονο',f:function(c,t,g){rhOsc(c,'sine',760,t,.14,g);rhOsc(c,'sine',1040,t+.16,.2,g);}},
+{n:'Καμπανάκι',f:function(c,t,g){rhOsc(c,'triangle',880,t,.5,g*.9);rhOsc(c,'triangle',1760,t,.35,g*.35);rhOsc(c,'triangle',2640,t,.22,g*.14);}},
+{n:'Ξύλινο κλικ',f:function(c,t,g){rhNoise(c,t,.06,g*.9,1800);rhOsc(c,'sine',220,t,.09,g*.8);}},
+{n:'Σφυρίχτρα',f:function(c,t,g){rhOsc(c,'sine',620,t,.28,g,1500);}},
+{n:'Πλοπ',f:function(c,t,g){rhOsc(c,'sine',540,t,.16,g,300);}},
+{n:'Κρύσταλλο',f:function(c,t,g){rhOsc(c,'sine',1560,t,.6,g*.7);rhOsc(c,'sine',2080,t+.03,.5,g*.4);rhOsc(c,'sine',3120,t+.06,.35,g*.2);}},
+{n:'Ρετρό',f:function(c,t,g){rhOsc(c,'square',523,t,.09,g*.55);rhOsc(c,'square',659,t+.1,.09,g*.55);rhOsc(c,'square',784,t+.2,.16,g*.6);}},
+{n:'Βελούδο',f:function(c,t,g){rhOsc(c,'triangle',330,t,.5,g*.6);rhOsc(c,'triangle',415,t+.02,.5,g*.5);rhOsc(c,'triangle',494,t+.04,.5,g*.4);}},
+{n:'Τικ-τακ',f:function(c,t,g){rhNoise(c,t,.045,g,2600);rhNoise(c,t+.18,.045,g*.8,2000);}},
+{n:'Κύμα',f:function(c,t,g){rhNoise(c,t,.5,g*.5,700);rhOsc(c,'sine',240,t,.5,g*.5);}}
+];
+function rhSndIdx(kind){
+var v=kind==='alert'?state.settings.sndAlert:state.settings.sndSimple;
+v=parseInt(v,10);
+if(!isFinite(v)||v<0||v>=RH_SOUNDS.length)v=kind==='alert'?1:0;
+return v;
+}
+function rhPlay(idx,mode,c){
+var r=RH_SOUNDS[idx]||RH_SOUNDS[0];
+var t=c.currentTime+0.02;
+if(mode==='alarm'){
+for(var i=0;i<6;i++){
+r.f(c,t+i*1.1,0.30);
+rhOsc(c,'sine',110,t+i*1.1,.3,0.16);
+}
+}else{
+r.f(c,t,0.26);
+}
+}
+var rhBeepOrig=(typeof window.beep==='function')?window.beep:null;
+window.beep=function(){
+if(!state.settings.sound)return;
+var c=(typeof rhCtx==='function')?rhCtx():null;
+if(!c||c.state!=='running'){if(rhBeepOrig)return rhBeepOrig.apply(this,arguments);return;}
+rhPlay(rhSndIdx('simple'),'short',c);
+};
+var rhSSOrig=(typeof window.rhSoundStart==='function')?window.rhSoundStart:null;
+var rhStopOrig=(typeof window.rhSoundStop==='function')?window.rhSoundStop:null;
+window.rhSoundStart=function(){
+if(!state.settings.sound)return;
+var c=(typeof rhCtx==='function')?rhCtx():null;
+if(!c||c.state!=='running'){if(rhSSOrig)return rhSSOrig.apply(this,arguments);return;}
+rhN.length=0;
+rhPlay(rhSndIdx('alert'),'alarm',c);
+};
+window.rhSoundStop=function(){
+for(var i=0;i<rhN.length;i++){try{rhN[i].stop();}catch(e){}}
+rhN.length=0;
+if(rhStopOrig)rhStopOrig.apply(this,arguments);
+};
+window.rhSetSnd=function(kind,v){
+if(kind==='alert')state.settings.sndAlert=parseInt(v,10)||0;
+else state.settings.sndSimple=parseInt(v,10)||0;
+saveState();
+};
+window.rhPrevSnd=function(kind){
+var c=(typeof rhCtx==='function')?rhCtx():null;
+if(!c){showToast('Δεν υπάρχει διαθέσιμη ηχοκάρτα.');return;}
+if(c.state==='suspended'){try{c.resume();}catch(e){}}
+rhN.length=0;
+rhPlay(rhSndIdx(kind),'short',c);
+};
+function rhSndOpts(sel){
+return RH_SOUNDS.map(function(s,i){return '<option value="'+i+'"'+(i===sel?' selected':'')+'>'+s.n+'</option>';}).join('');
+}
+var PLAYSVG='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l12 8-12 8z"/></svg>';
+function rhSndPickers(){
+var p=document.getElementById('rhSoundPanel');
+if(!p||document.getElementById('rhSndPickers'))return;
+var d=document.createElement('div');
+d.id='rhSndPickers';
+d.innerHTML='<div class="rh-snd-pick"><label>Ήχος απλής ειδοποίησης</label>'
++'<div class="row"><select id="rhSelSimple" onchange="rhSetSnd(\'simple\',this.value)" aria-label="Ήχος απλής ειδοποίησης">'+rhSndOpts(rhSndIdx('simple'))+'</select>'
++'<button type="button" onclick="rhPrevSnd(\'simple\')" aria-label="Ακρόαση απλής ειδοποίησης">'+PLAYSVG+'</button></div>'
++'<small>Όρια, ολοκληρώσεις, προτάσεις, εξαγωγές.</small></div>'
++'<div class="rh-snd-pick"><label>Ήχος που απαιτεί προσοχή</label>'
++'<div class="row"><select id="rhSelAlert" onchange="rhSetSnd(\'alert\',this.value)" aria-label="Ήχος ειδοποίησης προσοχής">'+rhSndOpts(rhSndIdx('alert'))+'</select>'
++'<button type="button" onclick="rhPrevSnd(\'alert\')" aria-label="Ακρόαση ειδοποίησης προσοχής">'+PLAYSVG+'</button></div>'
++'<small>Διαλείμματα ματιών και σηκώματος. Παίζεται ως μοτίβο μέσα στα επτά δευτερόλεπτα, μαζί με τη δόνηση.</small></div>';
+var act=p.querySelector('.rh-snd-act');
+if(act)p.insertBefore(d,act);else p.appendChild(d);
+}
+(function(){
+if(typeof state.settings.sndSimple==='undefined')state.settings.sndSimple=0;
+if(typeof state.settings.sndAlert==='undefined')state.settings.sndAlert=1;
+saveState();
+})();
+if(!window.__rhSndPick1){
+window.__rhSndPick1=true;
+setInterval(rhSndPickers,1200);
+}
+rhSndPickers();
+/* ===== ΤΕΛΟΣ ΗΧΩΝ ΕΙΔΟΠΟΙΗΣΕΩΝ v1 ===== */
+</script>
+  
 </body>
 
 </html>
