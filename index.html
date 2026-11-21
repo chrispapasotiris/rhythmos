@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="2.1.0">
+<meta name="app-version" content="2.1.1">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -808,7 +808,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='2.1.0';
+var APP_VERSION='2.1.1';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -9105,7 +9105,8 @@ sync();
 
 <style>
 .rh-snd-pick{margin-top:12px}
-.rh-snd-pick>label{display:block;font-size:.63rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:5px}
+.rh-snd-pick>label{display:block;font-size:.63rem;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:2px}
+.rh-snd-pick .cat{display:block;font-size:.62rem;color:var(--muted);margin-bottom:6px;line-height:1.35}
 .rh-snd-pick .row{display:flex;gap:6px;align-items:stretch}
 .rh-snd-pick select{flex:1;min-width:0;padding:9px 8px;border-radius:11px;border:1px solid var(--line);background:var(--input-bg);color:var(--text);font:600 .78rem system-ui,sans-serif}
 .rh-snd-pick select:focus-visible{outline:2px solid var(--primary);outline-offset:1px}
@@ -9122,12 +9123,12 @@ sync();
 </style>
 
 <script>
-/* ===== ΗΧΟΙ ΕΙΔΟΠΟΙΗΣΕΩΝ v3 ===== */
+/* ===== ΗΧΟΙ v4: 5 ΑΠΛΟΙ + 5 ΚΡΟΥΣΗΣ ===== */
 (function(){
 function boot(){
 try{
-if(window.__rhSndV3)return;
-window.__rhSndV3=true;
+if(window.__rhSndV4)return;
+window.__rhSndV4=true;
 if(typeof state==='undefined'||!state||!state.settings)return;
 var A=[],P=[];
 function tone(c,t,type,f,d,g,slide,L){
@@ -9143,61 +9144,67 @@ o.start(t);o.stop(t+d+0.06);
 L.push(o);
 }catch(e){}
 }
-function noise(c,t,d,g,fc,L){
+function sweep(c,t,f0,f1,f2,d,g,L){
 try{
-var n=Math.max(1,Math.floor(c.sampleRate*d));
-var b=c.createBuffer(1,n,c.sampleRate),ch=b.getChannelData(0);
-for(var i=0;i<n;i++)ch[i]=(Math.random()*2-1)*(1-i/n);
-var s=c.createBufferSource();s.buffer=b;
-var f=c.createBiquadFilter();f.type='bandpass';f.frequency.value=fc;f.Q.value=1.3;
-var gn=c.createGain();gn.gain.value=g;
-s.connect(f);f.connect(gn);gn.connect(c.destination);
-s.start(t);L.push(s);
+var o=c.createOscillator(),gn=c.createGain();
+o.type='sine';
+o.frequency.setValueAtTime(f0,t);
+o.frequency.linearRampToValueAtTime(f1,t+d*.5);
+o.frequency.linearRampToValueAtTime(f2,t+d);
+gn.gain.setValueAtTime(0.0001,t);
+gn.gain.exponentialRampToValueAtTime(Math.max(0.0002,g),t+0.03);
+gn.gain.setValueAtTime(Math.max(0.0002,g),t+d-0.06);
+gn.gain.exponentialRampToValueAtTime(0.0001,t+d);
+o.connect(gn);gn.connect(c.destination);
+o.start(t);o.stop(t+d+0.05);
+L.push(o);
 }catch(e){}
 }
-var S=[
-{n:'Δίτονο',d:'Δύο καθαροί τόνοι, ουδέτερο.',f:function(c,t,g,L){tone(c,t,'sine',760,.14,g,0,L);tone(c,t+.16,'sine',1040,.20,g,0,L);}},
-{n:'Καμπανάκι',d:'Μεταλλική αντήχηση, διαπεραστικό.',f:function(c,t,g,L){tone(c,t,'triangle',880,.50,g*.9,0,L);tone(c,t,'triangle',1760,.35,g*.35,0,L);tone(c,t,'triangle',2640,.22,g*.14,0,L);}},
-{n:'Ξύλινο κλικ',d:'Στεγνό κρούσιμο, πολύ διακριτικό.',f:function(c,t,g,L){noise(c,t,.06,g*.9,1800,L);tone(c,t,'sine',220,.09,g*.8,0,L);}},
-{n:'Σφυρίχτρα',d:'Ανοδική γλιστρητή σφύριξη.',f:function(c,t,g,L){tone(c,t,'sine',620,.28,g,1500,L);}},
-{n:'Πλοπ',d:'Μαλακός βυθιζόμενος τόνος.',f:function(c,t,g,L){tone(c,t,'sine',540,.16,g,300,L);}},
-{n:'Κρύσταλλο',d:'Ψηλοί κρύσταλλοι, μεγάλη διάρκεια.',f:function(c,t,g,L){tone(c,t,'sine',1560,.60,g*.7,0,L);tone(c,t+.03,'sine',2080,.50,g*.4,0,L);tone(c,t+.06,'sine',3120,.35,g*.2,0,L);}},
-{n:'Ρετρό',d:'Τρεις νότες, παιχνιδιάρικο.',f:function(c,t,g,L){tone(c,t,'square',523,.09,g*.55,0,L);tone(c,t+.10,'square',659,.09,g*.55,0,L);tone(c,t+.20,'square',784,.16,g*.6,0,L);}},
-{n:'Βελούδο',d:'Ζεστή συγχορδία, ήπιο.',f:function(c,t,g,L){tone(c,t,'triangle',330,.50,g*.6,0,L);tone(c,t+.02,'triangle',415,.50,g*.5,0,L);tone(c,t+.04,'triangle',494,.50,g*.4,0,L);}},
-{n:'Τικ-τακ',d:'Δύο στεγνά τικ, ρυθμικό.',f:function(c,t,g,L){noise(c,t,.045,g,2600,L);noise(c,t+.18,.045,g*.8,2000,L);}},
-{n:'Κύμα',d:'Απαλό κύμα θορύβου με χαμηλό τόνο.',f:function(c,t,g,L){noise(c,t,.50,g*.5,700,L);tone(c,t,'sine',240,.50,g*.5,0,L);}}
+var SIMPLE=[
+{id:'ditono',n:'Δίτονο',d:'Δύο καθαροί τόνοι, ουδέτερο. Σαν το κλασικό Tri-tone του iPhone.',f:function(c,t,g,L){tone(c,t,'sine',760,.14,g,0,L);tone(c,t+.16,'sine',1040,.20,g,0,L);}},
+{id:'arpa',n:'Άρπα',d:'Πλεγμένη χορδή που σβήνει απαλά. Σαν την Άρπα της Samsung.',f:function(c,t,g,L){tone(c,t,'triangle',880,.50,g*.9,0,L);tone(c,t,'triangle',1760,.35,g*.35,0,L);tone(c,t,'triangle',2640,.22,g*.14,0,L);}},
+{id:'plop',n:'Πλοπ',d:'Μαλακός βυθιζόμενος τόνος, πολύ διακριτικός. Σαν το Note του iPhone.',f:function(c,t,g,L){tone(c,t,'sine',540,.16,g,300,L);}},
+{id:'krystallo',n:'Κρύσταλλο',d:'Ψηλοί κρύσταλλοι με αντήχηση. Σαν το Crystals των σημείων ειδοποίησης.',f:function(c,t,g,L){tone(c,t,'sine',1560,.60,g*.7,0,L);tone(c,t+.03,'sine',2080,.50,g*.4,0,L);tone(c,t+.06,'sine',3120,.35,g*.2,0,L);}},
+{id:'veloudo',n:'Βελούδο',d:'Ζεστή συγχορδία, ήπια. Σαν τα Gentle και Soft του Pixel.',f:function(c,t,g,L){tone(c,t,'triangle',330,.50,g*.6,0,L);tone(c,t+.02,'triangle',415,.50,g*.5,0,L);tone(c,t+.04,'triangle',494,.50,g*.4,0,L);}}
 ];
-function idx(k){
-var v=parseInt(k==='alert'?state.settings.sndAlert:state.settings.sndSimple,10);
-if(!isFinite(v)||v<0||v>=S.length)v=(k==='alert')?1:0;
-return v;
+var ALARM=[
+{id:'radar',n:'Ραντάρ',d:'Τρεις παλμοί σόναρ και χαμηλή απόηχη. Σαν το Radar, το κλασικό ξυπνητήρι του iPhone.',f:function(c,t,g,L){for(var i=0;i<3;i++)tone(c,t+i*.17,'sine',1245,.11,g,0,L);tone(c,t+.55,'sine',932,.28,g*.55,0,L);}},
+{id:'seirina',n:'Σειρήνα',d:'Ανεβοκατέβασμα που δεν αγνοείται. Σαν το Alarm του iOS.',f:function(c,t,g,L){sweep(c,t,700,1250,700,1.0,g*.8,L);}},
+{id:'xypnitiri',n:'Ξυπνητήρι',d:'Μεταλλικό τριλ, το κλασικό ξυπνητήρι με τα δύο κουδούνια.',f:function(c,t,g,L){for(var b=0;b<2;b++){var t0=t+b*.55;for(var i=0;i<8;i++)tone(c,t0+i*.055,'square',2093,.032,g*.42,0,L);}}},
+{id:'triplo',n:'Τριπλό μπιπ',d:'Τρία κοφτά ψηφιακά μπιπ. Σαν το Beep-beep της Samsung.',f:function(c,t,g,L){for(var i=0;i<3;i++){tone(c,t+i*.16,'square',1568,.085,g*.5,0,L);tone(c,t+i*.16,'sine',1568,.085,g*.5,0,L);}}},
+{id:'avgi',n:'Αυγή',d:'Ξεκινά απαλά και δυναμώνει σε κάθε κύκλο. Σαν το Slow rise — για όσους μισούν τα απότομα ξυπνήματα.',f:function(c,t,g,L,rep){var k=g*(0.3+(rep||0)*0.14);tone(c,t,'sine',659,.30,k,0,L);tone(c,t+.25,'sine',880,.30,k,0,L);tone(c,t+.5,'sine',1319,.45,k,0,L);}}
+];
+function cur(kind){
+var bank=kind==='alert'?ALARM:SIMPLE;
+var key=kind==='alert'?'sndAlert':'sndSimple';
+var v=state.settings[key],s=null,i;
+for(i=0;i<bank.length;i++)if(bank[i].id===v)s=bank[i];
+if(!s){s=bank[0];state.settings[key]=s.id;}
+return s;
 }
 function stopList(L){
 for(var i=0;i<L.length;i++){try{L[i].stop();}catch(e){}}
 L.length=0;
 }
-function play(i,mode,c){
-var r=S[i]||S[0],t=c.currentTime+0.03,k;
-if(mode==='alarm'){
-stopList(A);
-for(k=0;k<6;k++){r.f(c,t+k*1.12,0.30,A);tone(c,t+k*1.12,'sine',110,.30,0.15,0,A);}
-}else{
-stopList(P);
-r.f(c,t,0.26,P);
-}
-}
 function ctx(){
 try{return (typeof rhCtx==='function')?rhCtx():null;}catch(e){return null;}
 }
-if(typeof state.settings.sndSimple!=='number')state.settings.sndSimple=idx('simple');
-if(typeof state.settings.sndAlert!=='number')state.settings.sndAlert=idx('alert');
+function playSimple(c){stopList(P);cur('simple').f(c,c.currentTime+0.03,0.26,P,0);}
+function playAlarmPreview(c){stopList(P);cur('alert').f(c,c.currentTime+0.03,0.30,P,2);}
+function playAlarm(c){
+stopList(A);
+var s=cur('alert'),t=c.currentTime+0.03,k;
+for(k=0;k<6;k++)s.f(c,t+k*1.12,0.30,A,k);
+}
+cur('simple');cur('alert');
+try{saveState();}catch(e){}
 var bO=window.beep,ssO=window.rhSoundStart,stO=window.rhSoundStop,syO=window.rhSndSync;
 window.beep=function(){
 try{
 if(!state.settings.sound)return;
 var c=ctx();
 if(!c||c.state!=='running'){if(bO)return bO.apply(this,arguments);return;}
-play(idx('simple'),'short',c);
+playSimple(c);
 }catch(e){try{if(bO)bO.apply(this,arguments);}catch(e2){}}
 };
 window.rhSoundStart=function(){
@@ -9205,41 +9212,42 @@ try{
 if(!state.settings.sound)return;
 var c=ctx();
 if(!c||c.state!=='running'){if(ssO)return ssO.apply(this,arguments);return;}
-play(idx('alert'),'alarm',c);
+playAlarm(c);
 }catch(e){try{if(ssO)ssO.apply(this,arguments);}catch(e2){}}
 };
 window.rhSoundStop=function(){
 try{stopList(A);}catch(e){}
 try{if(stO)stO.apply(this,arguments);}catch(e){}
 };
-window.rhSndSet=function(k,v){
+window.rhSndSet=function(kind,id){
 try{
-var n=parseInt(v,10);
-if(!isFinite(n)||n<0||n>=S.length)return;
-if(k==='alert')state.settings.sndAlert=n;else state.settings.sndSimple=n;
+var bank=kind==='alert'?ALARM:SIMPLE,ok=false,i;
+for(i=0;i<bank.length;i++)if(bank[i].id===id)ok=true;
+if(!ok)return;
+if(kind==='alert')state.settings.sndAlert=id;else state.settings.sndSimple=id;
 saveState();sync();
 }catch(e){}
 };
-window.rhSndPrev=function(k){
+window.rhSndPrev=function(kind){
 try{
 var c=ctx();
 if(!c){if(typeof showToast==='function')showToast('Δεν υπάρχει διαθέσιμη ηχοκάρτα.');return;}
 if(c.state==='suspended'){try{c.resume();}catch(e){}}
-play(idx(k),'short',c);
-var b=document.getElementById(k==='alert'?'rhPvAlert':'rhPvSimple');
+if(kind==='alert')playAlarmPreview(c);else playSimple(c);
+var b=document.getElementById(kind==='alert'?'rhPvAlert':'rhPvSimple');
 if(b){b.classList.remove('on');void b.offsetWidth;b.classList.add('on');setTimeout(function(){try{b.classList.remove('on');}catch(e){}},520);}
 }catch(e){}
 };
 window.rhSndReset=function(){
 try{
-state.settings.sndSimple=0;state.settings.sndAlert=1;
+state.settings.sndSimple='ditono';state.settings.sndAlert='radar';
 saveState();sync();
-if(typeof showToast==='function')showToast('Οι ήχοι επανήλθαν στις προεπιλογές.');
+if(typeof showToast==='function')showToast('Δίτονο και Ραντάρ, όπως στην αρχή.');
 }catch(e){}
 };
-function opts(sel){
+function opts(bank,sel){
 var h='',i;
-for(i=0;i<S.length;i++)h+='<option value="'+i+'"'+(i===sel?' selected':'')+'>'+S[i].n+'</option>';
+for(i=0;i<bank.length;i++)h+='<option value="'+bank[i].id+'"'+(bank[i].id===sel?' selected':'')+'>'+bank[i].n+'</option>';
 return h;
 }
 var PLAY='<svg viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l12 8-12 8z"/></svg>';
@@ -9249,16 +9257,18 @@ var p=document.getElementById('rhSoundPanel');
 if(!p||document.getElementById('rhSndPickers'))return;
 var d=document.createElement('div');
 d.id='rhSndPickers';
-d.innerHTML='<div class="rh-snd-pick"><label>Ήχος απλής ειδοποίησης</label>'
-+'<div class="row"><select id="rhSelSimple" onchange="rhSndSet(\'simple\',this.value)" aria-label="Ήχος απλής ειδοποίησης">'+opts(idx('simple'))+'</select>'
+d.innerHTML='<div class="rh-snd-pick"><label>Απλή ειδοποίηση</label>'
++'<span class="cat">Σύντομοι, διακριτικοί ήχοι — παίζουν μία φορά.</span>'
++'<div class="row"><select id="rhSelSimple" onchange="rhSndSet(\'simple\',this.value)" aria-label="Ήχος απλής ειδοποίησης">'+opts(SIMPLE,cur('simple').id)+'</select>'
 +'<button type="button" class="rh-snd-pv" id="rhPvSimple" onclick="rhSndPrev(\'simple\')" aria-label="Ακρόαση απλής ειδοποίησης">'+PLAY+'</button></div>'
 +'<div class="rh-snd-desc" id="rhDescSimple"></div></div>'
-+'<div class="rh-snd-pick"><label>Ήχος που απαιτεί προσοχή</label>'
-+'<div class="row"><select id="rhSelAlert" onchange="rhSndSet(\'alert\',this.value)" aria-label="Ήχος ειδοποίησης προσοχής">'+opts(idx('alert'))+'</select>'
-+'<button type="button" class="rh-snd-pv" id="rhPvAlert" onclick="rhSndPrev(\'alert\')" aria-label="Ακρόαση ειδοποίησης προσοχής">'+PLAY+'</button></div>'
++'<div class="rh-snd-pick"><label>Συνεχής κρούση</label>'
++'<span class="cat">Διαπεραστικοί, επαναλαμβανόμενοι για 7″ με δόνηση — διαλείμματα ματιών και σηκώματος. Η ακρόαση παίζει έναν κύκλο.</span>'
++'<div class="row"><select id="rhSelAlert" onchange="rhSndSet(\'alert\',this.value)" aria-label="Ήχος συνεχούς κρούσης">'+opts(ALARM,cur('alert').id)+'</select>'
++'<button type="button" class="rh-snd-pv" id="rhPvAlert" onclick="rhSndPrev(\'alert\')" aria-label="Ακρόαση ενός κύκλου κρούσης">'+PLAY+'</button></div>'
 +'<div class="rh-snd-desc" id="rhDescAlert"></div></div>'
 +'<button type="button" class="rh-snd-reset" onclick="rhSndReset()">Επαναφορά ήχων</button>'
-+'<p class="rh-snd-note">Οι απλές ειδοποιήσεις είναι όρια, ολοκληρώσεις και προτάσεις. Οι ειδοποιήσεις προσοχής είναι τα διαλείμματα ματιών και σηκώματος, και παίζονται ως μοτίβο μέσα στα επτά δευτερόλεπτα μαζί με τη δόνηση.</p>';
++'<p class="rh-snd-note">Οι απλοί ήχοι πάνε σε όρια, ολοκληρώσεις και προτάσεις. Οι ήχοι κρούσης επαναλαμβάνονται έξι φορές μέσα στα επτά δευτερόλεπτα και κόβονται αμέσως με την Αποδοχή.</p>';
 var act=p.querySelector('.rh-snd-act');
 if(act&&act.parentNode===p)p.insertBefore(d,act);else p.appendChild(d);
 sync();
@@ -9267,12 +9277,12 @@ sync();
 function sync(){
 try{
 var a=document.getElementById('rhSelSimple'),b=document.getElementById('rhSelAlert');
-var ia=idx('simple'),ib=idx('alert');
-if(a&&a.value!==String(ia))a.value=String(ia);
-if(b&&b.value!==String(ib))b.value=String(ib);
+var sa=cur('simple'),sb=cur('alert');
+if(a&&a.value!==sa.id)a.value=sa.id;
+if(b&&b.value!==sb.id)b.value=sb.id;
 var da=document.getElementById('rhDescSimple'),db=document.getElementById('rhDescAlert');
-if(da)da.textContent=S[ia].d;
-if(db)db.textContent=S[ib].d;
+if(da)da.textContent=sa.d;
+if(db)db.textContent=sb.d;
 }catch(e){}
 }
 function fit(){
@@ -9294,7 +9304,7 @@ inject();sync();
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(boot,0);});
 else setTimeout(boot,0);
 })();
-/* ===== ΤΕΛΟΣ ΗΧΩΝ ΕΙΔΟΠΟΙΗΣΕΩΝ v3 ===== */
+/* ===== ΤΕΛΟΣ ΗΧΩΝ v4 ===== */
 </script>
   
 </body>
