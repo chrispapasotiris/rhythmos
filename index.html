@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="2.2.70">
+<meta name="app-version" content="2.2.80">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -785,7 +785,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='2.2.70';
+var APP_VERSION='2.2.80';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -10091,6 +10091,150 @@ if(startBtn)acts.insertBefore(inf,startBtn);else acts.appendChild(inf);
 }
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(rhDataPanelBuild,60);});
 else setTimeout(rhDataPanelBuild,60);
+/* ===== ΤΕΛΟΣ ===== */
+</script>
+
+<style>
+.rh-ghost-float{position:fixed;z-index:320;pointer-events:none;margin:0;opacity:.95;transform:rotate(1.2deg) scale(1.02);box-shadow:0 18px 44px rgba(20,25,60,.4);border-radius:18px}
+.rh-drop-indicator{height:52px;border:2px dashed var(--primary);background:rgba(99,102,241,.08);border-radius:18px;margin:0 0 10px}
+html.dusk .gear-panel{background:rgba(32,24,48,.93)}
+</style>
+
+<script>
+/* ===== ΣΥΡΣΙΜΟ ΔΡΑΣΤΗΡΙΟΤΗΤΩΝ v2 ===== */
+var rhDrag2=null;
+function rhGripDown(ev,card){
+var main=document.querySelector('main');if(!main)return;
+var grp=null;
+rhGroupsAll(main).forEach(function(g){if(g.cards.indexOf(card)>=0)grp=g;});
+if(!grp||grp.cards.length<2){showToast('Μία μόνο κάρτα σε αυτή την ομάδα.');return;}
+ev.preventDefault();
+if(rhDrag2)return;
+var d={el:card,x0:ev.clientX,y0:ev.clientY,lastX:ev.clientX,lastY:ev.clientY,
+started:false,index:null,from:null,clone:null,ind:null,main:main,h:0,offY:0,
+raf:0,timer:0,grp:grp};
+d.onMove=function(e){
+d.lastX=e.clientX;d.lastY=e.clientY;
+if(!d.started){
+if(Math.abs(e.clientX-d.x0)+Math.abs(e.clientY-d.y0)>12)rhCancelDrag2(d);
+}else{rhMoveDrag2(d,e.clientY);}
+};
+d.onUp=function(e){rhUpDrag2(d,e);};
+d.onCancel=function(e){if(d.started){rhUpDrag2(d,e);}else{rhCancelDrag2(d);}};
+d.onTouchMove=function(e){if(d.started&&e.cancelable)e.preventDefault();};
+d.timer=setTimeout(function(){rhStartDrag2(d);},280);
+window.addEventListener('pointermove',d.onMove);
+window.addEventListener('pointerup',d.onUp);
+window.addEventListener('pointercancel',d.onCancel);
+document.addEventListener('touchmove',d.onTouchMove,{passive:false});
+try{ev.currentTarget.setPointerCapture(ev.pointerId);}catch(e){}
+rhDrag2=d;
+}
+function rhStartDrag2(d){
+d.started=true;
+var r=d.el.getBoundingClientRect();
+d.offY=d.lastY-r.top;
+d.h=r.height;
+d.from=d.grp.cards.indexOf(d.el);
+d.clone=rhMakeClone2(d.el,r);
+document.body.appendChild(d.clone);
+d.el.classList.add('rh-dragging');
+d.ind=rhMakeIndicator2();
+rhMoveDrag2(d,d.lastY);
+var loop=function(){if(!rhDrag2||rhDrag2!==d)return;rhEdgeScroll2(d);d.raf=requestAnimationFrame(loop);};
+d.raf=requestAnimationFrame(loop);
+}
+function rhMakeClone2(el,r){
+var c=el.cloneNode(true);
+c.style.position='fixed';
+c.style.zIndex='320';
+c.style.pointerEvents='none';
+c.style.margin='0';
+c.style.opacity='0.95';
+c.style.transform='none';
+c.style.boxShadow='0 18px 44px rgba(20,25,60,.4)';
+c.style.borderRadius='18px';
+c.style.width=r.width+'px';
+c.style.left=r.left+'px';
+c.style.top=r.top+'px';
+c.classList.add('rh-ghost-float');
+return c;
+}
+function rhMakeIndicator2(){
+var el=document.createElement('div');
+el.className='rh-drop-indicator';
+el.style.height='52px';
+el.style.border='2px dashed var(--primary)';
+el.style.background='rgba(99,102,241,.08)';
+el.style.borderRadius='18px';
+el.style.margin='0 0 10px';
+return el;
+}
+function rhMoveDrag2(d,y){
+if(!d.started)return;
+d.clone.style.top=Math.max(4,Math.min(window.innerHeight-d.h-4,y-d.offY))+'px';
+var rows=Array.prototype.slice.call(d.grp.cards).filter(function(c){return c!==d.el&&c.style.display!=='none';});
+if(!rows.length)return;
+var idx=rows.length;
+for(var i=0;i<rows.length;i++){
+var rr=rows[i].getBoundingClientRect();
+if(y<rr.top+rr.height/2){idx=i;break;}
+}
+var to=idx>d.from?idx-1:idx;
+if(to===d.from){
+if(d.ind.parentNode)d.ind.parentNode.removeChild(d.ind);
+d.index=null;
+}else{
+d.index=idx;
+var parent=rows[0].parentNode;
+if(idx<rows.length)parent.insertBefore(d.ind,rows[idx]);else parent.appendChild(d.ind);
+}
+}
+function rhEdgeScroll2(d){
+var zone=56;
+var y=d.lastY;
+var v=0;
+if(y<zone)v=-Math.min(12,Math.ceil((zone-y)/zone*12));
+else if(y>window.innerHeight-zone)v=Math.min(12,Math.ceil((y-(window.innerHeight-zone))/zone*12));
+if(v){
+window.scrollBy(0,v);
+rhMoveDrag2(d,d.lastY);
+}
+}
+function rhUpDrag2(d,ev){
+window.removeEventListener('pointermove',d.onMove);
+window.removeEventListener('pointerup',d.onUp);
+window.removeEventListener('pointercancel',d.onCancel);
+document.removeEventListener('touchmove',d.onTouchMove);
+clearTimeout(d.timer);
+cancelAnimationFrame(d.raf);
+if(!d.started){rhDrag2=null;return;}
+var rows=Array.prototype.slice.call(d.grp.cards).filter(function(c){return c!==d.el&&c.style.display!=='none';});
+var from=d.from;
+var to=null;
+if(d.index!=null){to=d.index>from?d.index-1:d.index;if(to===from)to=null;}
+if(from>=0&&to!=null&&to!==from&&to>=0&&to<rows.length){
+var all=d.grp.cards.slice();
+var moved=all.splice(from,1)[0];
+all.splice(to,0,moved);
+all.forEach(function(c,i){var o=rhActObj(rhCardKey(c));if(o)o.rhOrder=i+1;});
+saveState();
+showToast('Η σειρά αποθηκεύτηκε.');
+}
+if(d.clone)d.clone.remove();
+if(d.ind&&d.ind.parentNode)d.ind.parentNode.removeChild(d.ind);
+d.el.classList.remove('rh-dragging');
+rhDrag2=null;
+}
+function rhCancelDrag2(d){
+clearTimeout(d.timer);
+cancelAnimationFrame(d.raf);
+window.removeEventListener('pointermove',d.onMove);
+window.removeEventListener('pointerup',d.onUp);
+window.removeEventListener('pointercancel',d.onCancel);
+document.removeEventListener('touchmove',d.onTouchMove);
+if(rhDrag2===d)rhDrag2=null;
+}
 /* ===== ΤΕΛΟΣ ===== */
 </script>
   
