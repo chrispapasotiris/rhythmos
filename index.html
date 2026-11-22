@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="2.2.5">
+<meta name="app-version" content="2.2.6">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -785,7 +785,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='2.2.5';
+var APP_VERSION='2.2.6';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -9536,6 +9536,421 @@ b.textContent='Σπασμένο μπλοκ κώδικα — λείπουν: '+mi
 document.body.appendChild(b);
 })();
 /* ===== ΤΕΛΟΣ ΕΛΕΓΧΟΥ ΟΡΙΣΜΩΝ ===== */
+</script>
+
+<style>
+.rh-act-tools{margin:0 0 12px}
+.rh-act-tools input{width:100%;padding:13px 15px;border-radius:15px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:500 .9rem/1.2 system-ui,sans-serif}
+.rh-act-tools input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px color-mix(in srgb,var(--primary) 18%,transparent)}
+.rh-chips{display:flex;gap:7px;overflow-x:auto;padding:10px 0 4px;scrollbar-width:thin;scrollbar-color:var(--primary) transparent}
+.rh-chips::-webkit-scrollbar{height:5px}
+.rh-chips::-webkit-scrollbar-track{background:transparent}
+.rh-chips::-webkit-scrollbar-thumb{background:color-mix(in srgb,var(--primary) 55%,transparent);border-radius:99px}
+.rh-chip{flex:0 0 auto;padding:7px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--muted);font:700 .76rem/1 system-ui,sans-serif;cursor:pointer;transition:background .16s,color .16s,border-color .16s}
+.rh-chip.on{background:var(--primary);border-color:transparent;color:#fff}
+.rh-sortbar{display:flex;gap:6px;margin-top:6px}
+.rh-sortbar button{flex:1;padding:7px 4px;border-radius:11px;border:1px solid var(--line);background:var(--soft);color:var(--muted);font:700 .7rem/1 system-ui,sans-serif;cursor:pointer}
+.rh-sortbar button:active{background:var(--primary);color:#fff;border-color:transparent}
+.rh-study-head{display:flex;align-items:center;gap:10px;margin:20px 2px 10px}
+.rh-study-head .t{flex:1;min-width:0;font:800 .78rem/1 system-ui,sans-serif;letter-spacing:.07em;text-transform:uppercase;color:var(--text)}
+.rh-study-head .ops{display:flex;gap:6px}
+.rh-icon-btn{width:30px;height:30px;border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--text);font:800 1rem/1 system-ui,sans-serif;cursor:pointer;display:grid;place-items:center;padding:0}
+.rh-icon-btn:active{background:var(--primary);color:#fff;border-color:transparent}
+.rh-empty{padding:16px;border-radius:16px;border:1px dashed var(--line);background:var(--soft);color:var(--muted);font-size:.82rem;line-height:1.5;margin-bottom:10px}
+.rh-mk-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px;border-radius:14px;border:1px solid var(--line);background:var(--soft);margin:12px 0;font-size:.8rem;font-weight:600;color:var(--muted)}
+.rh-row-ops{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.rh-row-ops .btn{padding:8px 10px;min-width:0}
+.rh-cat-dot{display:inline-block;width:7px;height:7px;border-radius:50%;margin-right:6px;vertical-align:middle}
+.rh-grip{flex:0 0 auto;width:34px;height:34px;display:grid;place-items:center;border-radius:11px;border:1px solid var(--line);background:var(--soft);color:var(--muted);font-size:.95rem;cursor:grab;touch-action:none;user-select:none}
+.rh-grip:active{cursor:grabbing;background:var(--primary);color:#fff;border-color:transparent}
+</style>
+<script>
+/* ===== ΔΡΑΣΤΗΡΙΟΤΗΤΕΣ v2: ΑΥΤΟΝΟΜΟ ΥΠΟΣΥΣΤΗΜΑ ===== */
+
+/* --- Κατηγορία μαθημάτων και σωστή προεπιλογή κατηγορίας --- */
+if(!ACT_CATS.some(function(c){return c.id==='study';}))
+  ACT_CATS.splice(1,0,{id:'study',name:'Μαθήματα',color:'#6366f1'});
+function catById(id){
+  for(var i=0;i<ACT_CATS.length;i++)if(ACT_CATS[i].id===id)return ACT_CATS[i];
+  for(var j=0;j<ACT_CATS.length;j++)if(ACT_CATS[j].id==='organize')return ACT_CATS[j];
+  return ACT_CATS[0];
+}
+
+/* --- Εργαλεία λίστας --- */
+var RH_GRIP=(typeof rhGripDown==='function')
+  ?'<span class="rh-grip" role="button" tabindex="0" aria-label="Σύρε για αλλαγή σειράς" onpointerdown="rhGripDown(event,this.closest(\'.card.activity\'))">⠿</span>':'';
+function rhOrdCmp(a,b){return (a.rhOrder||0)-(b.rhOrder||0);}
+var rhActQ='',rhActCat='';
+function rhActSetCat(c){rhActCat=c;rhActFilter();}
+function rhActToolsHTML(){
+  var chips='<button type="button" class="rh-chip" data-rh-cat="" onclick="rhActSetCat(\'\')">Όλα</button>';
+  ACT_CATS.forEach(function(k){
+    if(k.id==='study')return;
+    chips+='<button type="button" class="rh-chip" data-rh-cat="'+k.id+'" onclick="rhActSetCat(\''+k.id+'\')">'+esc(k.name)+'</button>';
+  });
+  chips+='<button type="button" class="rh-chip" data-rh-cat="study" onclick="rhActSetCat(\'study\')">Μαθήματα</button>'
+    +'<button type="button" class="rh-chip" data-rh-cat="makeup" onclick="rhActSetCat(\'makeup\')">Εμβόλιμες</button>';
+  return '<div id="rhActTools" class="rh-act-tools">'
+    +'<input id="rhActSearch" placeholder="Αναζήτηση δραστηριότητας ή μαθήματος…" value="'+esc(rhActQ)+'" oninput="rhActFilter()">'
+    +'<div class="rh-chips">'+chips+'</div>'
+    +'<div id="rhSortBar" class="rh-sortbar">'
+    +'<button type="button" onclick="rhSortBy(\'name\')">Όνομα</button>'
+    +'<button type="button" onclick="rhSortBy(\'today\')">Σήμερα</button>'
+    +'<button type="button" onclick="rhSortBy(\'week\')">Εβδομάδα</button>'
+    +'<button type="button" onclick="rhSortBy(\'left\')">Υπόλοιπο</button>'
+    +'</div></div>';
+}
+function rhActFilter(){
+  var inp=document.getElementById('rhActSearch');
+  if(inp)rhActQ=inp.value||'';
+  var q=rhActQ.trim().toLowerCase(),main=document.querySelector('main');
+  if(!main)return;
+  Array.prototype.forEach.call(main.querySelectorAll('.card.activity'),function(c){
+    var nm=c.getAttribute('data-name')||'',ct=c.getAttribute('data-cat')||'';
+    c.style.display=(!q||nm.indexOf(q)>=0)&&(!rhActCat||ct===rhActCat)?'':'none';
+  });
+  Array.prototype.forEach.call(main.querySelectorAll('.section-title,.rh-study-head'),function(h){
+    var n=h.nextElementSibling,seen=0,any=false;
+    while(n&&!n.classList.contains('section-title')&&!n.classList.contains('rh-study-head')
+          &&!n.classList.contains('rh-mk-bar')&&n.id!=='rh-monthly-card'){
+      if(n.classList.contains('activity')){seen++;if(n.style.display!=='none')any=true;}
+      n=n.nextElementSibling;
+    }
+    h.style.display=(seen&&!any)?'none':'';
+  });
+  Array.prototype.forEach.call(main.querySelectorAll('.rh-chip'),function(b){
+    b.classList.toggle('on',(b.getAttribute('data-rh-cat')||'')===rhActCat);
+  });
+}
+function rhSortBy(k){
+  var now=Date.now(),ws=startOfWeek(),ds=startOfDay();
+  function val(o,isCourse){
+    var t=isCourse?'course':'fixed';
+    if(k==='today')return totalMin(t,o.id,ds,now);
+    if(k==='week')return totalMin(t,o.id,ws,now);
+    var cap=isCourse?(o.hours||0)*60:(o.weekly||0)/7;
+    return Math.max(0,cap-totalMin(t,o.id,k==='left'?ws:ds,now));
+  }
+  var all=FIXED_DEFS.concat(state.courses);
+  if(k==='name')all.sort(function(a,b){return String(a.name).localeCompare(String(b.name),'el');});
+  else all.sort(function(a,b){
+    return val(b,state.courses.indexOf(b)>=0)-val(a,state.courses.indexOf(a)>=0);
+  });
+  all.forEach(function(o,i){o.rhOrder=i+1;});
+  saveState();render();showToast('Η σειρά αποθηκεύτηκε.');
+}
+
+/* --- Μαθήματα --- */
+function rhCourseLogged(id){
+  var t=0;
+  for(var i=0;i<state.logs.length;i++){
+    var l=state.logs[i];
+    if(l.type==='course'&&l.id===id)t+=(l.dur||0);
+  }
+  return t;
+}
+function rhStudyInit(){
+  var SEED=['osy','qm1','mech1','comp','elec','makeup1','makeup2','mk1','mk2'];
+  var before=state.courses.length;
+  state.courses=state.courses.filter(function(c){
+    return c&&!(SEED.indexOf(c.id)>=0&&rhCourseLogged(c.id)<=0.01);
+  });
+  state.courses.forEach(function(c){
+    if(typeof c.hours!=='number')c.hours=0;
+    if(typeof c.totalHours!=='number')c.totalHours=0;
+    if(!Array.isArray(c.off))c.off=[];
+    if(c.type!=='makeup')c.type='core';
+    if(typeof c.active!=='boolean')c.active=true;
+    if(!c.color)c.color='#6366f1';
+    if(!c.color2)c.color2=c.color;
+    if(typeof c.examDate!=='string')c.examDate='';
+  });
+  if(state.courses.length!==before)saveState();
+}
+function rhMakeupAdd(){
+  var n=state.courses.filter(function(c){return c.type==='makeup';}).length+1;
+  var id='mk_'+Date.now();
+  state.courses.push({id:id,name:'Εμβόλιμη '+n,short:'Ε'+n,hours:0,totalHours:0,off:[],
+    type:'makeup',active:true,color:'#0ea5e9',color2:'#0284c7',examDate:''});
+  state.settings.showMakeup=true;saveState();render();
+  setTimeout(function(){rhStudyEditor(id);},80);
+}
+function rhMakeupTrim(){
+  var mk=state.courses.filter(function(c){return c.type==='makeup';});
+  for(var i=mk.length-1;i>=0;i--){
+    if(rhCourseLogged(mk[i].id)<=0.01){
+      var gone=mk[i];
+      state.courses=state.courses.filter(function(c){return c.id!==gone.id;});
+      saveState();render();showToast('Αφαιρέθηκε η κενή «'+gone.name+'».');return;
+    }
+  }
+  showToast('Καμία κενή εμβόλιμη για αφαίρεση.');
+}
+function rhToggleMakeup(){
+  state.settings.showMakeup=!state.settings.showMakeup;saveState();render();
+}
+function rhCourseDel(id){
+  var c=null;
+  for(var i=0;i<state.courses.length;i++)if(state.courses[i].id===id)c=state.courses[i];
+  if(!c)return;
+  var logged=rhCourseLogged(id);
+  openModal({title:'Διαγραφή μαθήματος',
+    body:'<p>Το «'+esc(c.name)+'» φεύγει από τη λίστα και από το πρόγραμμα.</p>'
+      +(logged>0.01?'<p class="note">Έχει '+fmtHM(logged)+' καταγεγραμμένα. Οι καταγραφές μένουν στο ιστορικό και στους στόχους εξαμήνου.</p>'
+                   :'<p class="note">Δεν έχει καταγραφές.</p>'),
+    buttons:[{text:'Άκυρο',class:'btn-ghost'},{text:'Διαγραφή',class:'btn-danger',onClick:function(){
+      state.courses=state.courses.filter(function(x){return x.id!==id;});
+      if(state.schedule&&state.schedule.slots)
+        state.schedule.slots=state.schedule.slots.filter(function(s){return s.activityId!=='course:'+id;});
+      try{if(pomoSel&&pomoSel.type==='course'&&pomoSel.id===id)pomoSel=null;}catch(e){}
+      saveState();closeModal();render();
+      if(typeof undoShow==='function')undoShow('Διαγράφηκε «'+c.name+'»',function(){
+        state.courses.push(c);saveState();render();
+      });
+      else showToast('Διαγράφηκε «'+c.name+'».');
+    }}]});
+}
+function rhStudyCard(c,index){
+  var now=Date.now(),ws=startOfWeek();
+  var wk=totalMin('course',c.id,ws,now),target=(c.hours||0)*60;
+  var pct=target>0?clamp(wk/target*100,0,100):0;
+  var done=totalMin('course',c.id,state.semesterStart||0,now),tot=(c.totalHours||0)*60;
+  var tp=tot>0?clamp(done/tot*100,0,100):0;
+  var on=state.active&&state.active.type==='course'&&state.active.id===c.id;
+  var mk=c.type==='makeup';
+  var exam='—',exsub='χωρίς ημερομηνία';
+  if(c.examDate){
+    var t=startOfDay(new Date(c.examDate+'T12:00:00').getTime());
+    if(isFinite(t)){
+      var dd=Math.round((t-startOfDay())/86400000);
+      exam=dd>=0?dd+' ημέρες':'πέρασε';exsub=shortDate(t);
+    }
+  }
+  var btn=on?'<button class="btn btn-warn" onclick="stopActive(false)">Διακοπή</button>'
+            :'<button class="btn btn-primary" onclick="startCourse(\''+c.id+'\')">Έναρξη</button>';
+  var ink=(typeof rhInk==='function')?rhInk(c.color):'#fff';
+  return '<article class="card activity'+(on?' running':'')+'" data-cat="'+(mk?'makeup':'study')
+    +'" data-name="'+esc(String(c.name||'').toLowerCase())+'" style="--accent:'+c.color
+    +';--accent2:'+(c.color2||c.color)+';--ink:'+ink+';animation-delay:'+(index*0.03)+'s">'
+    +'<div class="activity-head"><div class="icon">'+esc(c.short||c.name.charAt(0))+'</div>'
+    +'<div class="activity-title"><h3>'+esc(c.name)+'</h3><p><span class="rh-cat-dot" style="background:'
+    +(mk?'#0ea5e9':'#6366f1')+'"></span>'+(mk?'Εμβόλιμη':'Μάθημα')+' · '+(c.hours||0)+'ω / εβδομάδα</p></div>'
+    +'<span class="pill '+(c.active?'info':'')+'">'+(c.active?'Ενεργό':'Ανενεργό')+'</span></div>'
+    +'<div class="metrics">'
+    +'<div class="metric"><span>ΕΒΔΟΜΑΔΑ</span><strong>'+fmtHM(wk)+'</strong>'
+    +'<div class="progress"><span style="width:'+pct+'%"></span></div>'
+    +'<small>'+fmtHM(wk)+' / '+(target>0?fmtHM(target):'—')+'</small></div>'
+    +'<div class="metric"><span>ΕΞΑΜΗΝΟ</span><strong>'+(tot>0?Math.round(tp)+'%':fmtHM(done))+'</strong>'
+    +'<div class="progress"><span style="width:'+tp+'%"></span></div>'
+    +'<small>'+fmtHM(done)+' / '+(tot>0?fmtHM(tot):'—')+'</small></div>'
+    +'<div class="metric"><span>ΕΞΕΤΑΣΗ</span><strong>'+exam+'</strong><small>'+exsub+'</small></div>'
+    +'</div>'
+    +'<div class="actions">'+RH_GRIP+btn
+    +'<button class="btn btn-ghost" onclick="rhStudyEditor(\''+c.id+'\')" aria-label="Επεξεργασία">✎</button>'
+    +'<button class="btn btn-danger" onclick="rhCourseDel(\''+c.id+'\')" aria-label="Διαγραφή">✕</button>'
+    +'</div></article>';
+}
+function rhStudyEditor(id){
+  var c=null;
+  for(var i=0;i<state.courses.length;i++)if(state.courses[i].id===id)c=state.courses[i];
+  var mk=c?c.type==='makeup':false,act=c?c.active!==false:true;
+  var col=c?(c.color||'#6366f1'):'#6366f1';
+  var body='<div class="field"><label>Όνομα μαθήματος</label><input id="sName" value="'
+    +(c?esc(c.name):'')+'" placeholder="π.χ. Κβαντική Μηχανική" maxlength="48"></div>'
+    +'<div class="field"><label>Σύντομο (1–3 γράμματα)</label><input id="sShort" value="'
+    +(c?esc(c.short||''):'')+'" maxlength="3"></div>'
+    +'<div class="field"><label>Εβδομαδιαίος στόχος (ώρες)</label><input id="sHours" type="number" min="0" max="80" step="0.5" value="'
+    +(c?(c.hours||0):8)+'"></div>'
+    +'<div class="field"><label>Συνολικός στόχος εξαμήνου (ώρες)</label><input id="sTotal" type="number" min="0" max="600" step="1" value="'
+    +(c?(c.totalHours||0):60)+'"><small class="muted">Αυτό μετράει στους «Στόχους Εξαμήνου».</small></div>'
+    +'<div class="field"><label>Ημερομηνία εξέτασης</label><input id="sExam" type="date" value="'
+    +(c?(c.examDate||''):'')+'"></div>'
+    +'<div class="field"><label>Χρώμα</label><input id="sColor" type="color" value="'+col+'"></div>'
+    +'<div class="setting-row"><div><strong>Εμβόλιμη</strong><span class="muted">Πάει στην υποκατηγορία εμβόλιμων.</span></div>'
+    +'<button type="button" id="sMk" class="switch '+(mk?'on':'')+'"></button></div>'
+    +'<div class="setting-row"><div><strong>Ενεργό</strong><span class="muted">Μετράει στους στόχους και στην εφικτότητα.</span></div>'
+    +'<button type="button" id="sAct" class="switch '+(act?'on':'')+'"></button></div>'
+    +'<div id="sErr" class="form-error"></div>';
+  openModal({title:c?'Επεξεργασία μαθήματος':'Νέο μάθημα',body:body,onMount:function(){
+    ['sMk','sAct'].forEach(function(k){
+      var b=document.getElementById(k);
+      if(b)b.onclick=function(){b.classList.toggle('on');};
+    });
+  },buttons:[{text:'Άκυρο',class:'btn-ghost'},{text:c?'Αποθήκευση':'Δημιουργία',class:'btn-primary',onClick:function(){
+    var name=(document.getElementById('sName').value||'').trim();
+    var err=document.getElementById('sErr');
+    if(!name){err.textContent='Δώσε όνομα.';err.classList.add('show');return false;}
+    var hours=parseFloat(document.getElementById('sHours').value||'0')||0;
+    var total=parseFloat(document.getElementById('sTotal').value||'0')||0;
+    var color=document.getElementById('sColor').value||'#6366f1';
+    var short=(document.getElementById('sShort').value||'').trim()||name.charAt(0);
+    var exam=document.getElementById('sExam').value||'';
+    var isMk=document.getElementById('sMk').classList.contains('on');
+    var isAct=document.getElementById('sAct').classList.contains('on');
+    if(c){
+      c.name=name;c.short=short;c.hours=hours;c.totalHours=total;
+      c.color=color;c.color2=color;c.examDate=exam;
+      c.type=isMk?'makeup':'core';c.active=isAct;
+    }else{
+      state.courses.push({id:'cs_'+Date.now(),name:name,short:short,hours:hours,
+        totalHours:total,off:[],type:isMk?'makeup':'core',active:isAct,
+        color:color,color2:color,examDate:exam});
+    }
+    saveState();closeModal();render();
+    showToast(c?'Αποθηκεύτηκε.':'Το «'+name+'» δημιουργήθηκε.');
+  }}]});
+}
+
+/* --- Δραστηριότητες --- */
+function openFixedEditor(id){
+  var d=null;
+  for(var i=0;i<FIXED_DEFS.length;i++)if(FIXED_DEFS[i].id===id)d=FIXED_DEFS[i];
+  var cat=d?(d.categoryId||'organize'):'organize';
+  var opts=ACT_CATS.filter(function(c){return c.id!=='study';}).map(function(c){
+    return '<option value="'+c.id+'"'+(c.id===cat?' selected':'')+'>'+esc(c.name)+'</option>';
+  }).join('');
+  var col=d?(d.color||'#6366f1'):'#6366f1';
+  var body='<div class="field"><label>Όνομα</label><input id="fName" value="'
+    +(d?esc(d.name):'')+'" placeholder="π.χ. Γυμναστήριο" maxlength="40"></div>'
+    +'<div class="field"><label>Σύντομο (1–3 γράμματα)</label><input id="fShort" value="'
+    +(d?esc(d.short||''):'')+'" maxlength="3"></div>'
+    +'<div class="field"><label>Κατηγορία</label><select id="fCat">'+opts+'</select>'
+    +'<small class="muted">Η «Επαναφορά» παίρνει λογική υπερβάσεων και διπλασιασμού.</small></div>'
+    +'<div class="field"><label>Εβδομαδιαίο όριο (ώρες)</label><input id="fWeekly" type="number" min="0.5" max="168" step="0.5" value="'
+    +(d?(d.weekly||0):7)+'"></div>'
+    +'<div class="field"><label>Στόχος συχνότητας (φορές / εβδομάδα, 0 = κανένας)</label>'
+    +'<input id="fTarget" type="number" min="0" max="21" step="1" value="'+(d?(d.target||0):0)+'"></div>'
+    +'<div class="field"><label>Χρώμα</label><input id="fColor" type="color" value="'+col+'"></div>'
+    +'<div class="setting-row"><div><strong>Σκληρό όριο</strong><span class="muted">Μπλοκάρει την έναρξη όταν κλείσει το ημερήσιο.</span></div>'
+    +'<button type="button" id="fHard" class="switch '+((d&&d.hard)?'on':'')+'"></button></div>'
+    +'<div class="field"><label>Περιγραφή (προαιρετικό)</label><input id="fDesc" value="'
+    +(d?esc(d.desc||''):'')+'" maxlength="80"></div>'
+    +'<div id="fErr" class="form-error"></div>';
+  openModal({title:d?'Επεξεργασία δραστηριότητας':'Νέα δραστηριότητα',body:body,onMount:function(){
+    var hb=document.getElementById('fHard');
+    if(hb)hb.onclick=function(){hb.classList.toggle('on');};
+  },buttons:[{text:'Άκυρο',class:'btn-ghost'},{text:d?'Αποθήκευση':'Δημιουργία',class:'btn-primary',onClick:function(){
+    var name=(document.getElementById('fName').value||'').trim();
+    var err=document.getElementById('fErr');
+    if(!name){err.textContent='Δώσε όνομα.';err.classList.add('show');return false;}
+    var weekly=parseFloat(document.getElementById('fWeekly').value||'0');
+    if(!(weekly>0)){err.textContent='Το εβδομαδιαίο όριο πρέπει να είναι πάνω από 0.';err.classList.add('show');return false;}
+    var target=parseInt(document.getElementById('fTarget').value||'0',10)||0;
+    var color=document.getElementById('fColor').value||'#6366f1';
+    var short=(document.getElementById('fShort').value||'').trim()||name.charAt(0);
+    var catId=document.getElementById('fCat').value;
+    var hard=document.getElementById('fHard').classList.contains('on');
+    var desc=(document.getElementById('fDesc').value||'').trim();
+    if(d){
+      d.name=name;d.short=short;d.weekly=weekly;d.target=target;
+      d.color=color;d.color2=color;d.categoryId=catId;d.hard=hard;d.desc=desc;
+      d.restorative=catId==='recover';
+      if(!Array.isArray(d.milestones))d.milestones=[];
+    }else{
+      FIXED_DEFS.push({id:'fx_'+Date.now(),name:name,short:short,weekly:weekly,
+        target:target,color:color,color2:color,categoryId:catId,hard:hard,desc:desc,
+        milestones:[],restorative:catId==='recover',timeRange:[0,24]});
+    }
+    saveState();closeModal();render();
+    showToast(d?'Αποθηκεύτηκε.':'Η «'+name+'» δημιουργήθηκε.');
+  }}]});
+}
+
+/* --- Μηνιαίες επιλογές --- */
+function rhMonthlyInner(){
+  if(!state.monthly||state.monthly.key!==monthKey())state.monthly={key:monthKey(),items:{}};
+  var sel=selectedMonthlyMin(),free=monthlyFreeMin();
+  var h='<div class="summary-grid"><div class="stat-box"><span>Επιλεγμένες</span><strong>'+fmtHM(sel)+'</strong></div>'
+    +'<div class="stat-box"><span>Διαθέσιμο τον μήνα</span><strong class="'+(free-sel<0?'text-danger':'text-success')+'">'
+    +fmtHM(Math.max(0,free-sel))+'</strong></div></div>';
+  if(!MONTHLY_DEFS.length)
+    return h+'<div class="rh-empty">Καμία μηνιαία επιλογή. Πάτα «+ Νέα μηνιαία» για κάτι που κάνεις λίγες φορές τον μήνα.</div>';
+  h+='<div class="stack" style="margin-top:10px">';
+  MONTHLY_DEFS.forEach(function(m){
+    var on=!!state.monthly.items[m.id];
+    h+='<div class="list-row"><div class="list-left"><strong>'+esc(m.name)+'</strong>'
+      +'<span class="muted" style="font-size:.72rem">'+fmtHM((m.hours||0)*60)+' τον μήνα</span></div>'
+      +'<div class="rh-row-ops">'
+      +'<button type="button" class="switch '+(on?'on':'')+'" onclick="rhMonthlyPick(\''+m.id+'\')" aria-label="Επιλογή '+esc(m.name)+'"></button>'
+      +'<button class="btn btn-ghost" onclick="rhMonthlyEditor(\''+m.id+'\')" aria-label="Επεξεργασία">✎</button>'
+      +'<button class="btn btn-danger" onclick="rhMonthlyDel(\''+m.id+'\')" aria-label="Διαγραφή">✕</button>'
+      +'</div></div>';
+  });
+  return h+'</div>';
+}
+function rhMonthlyPick(id){
+  if(!state.monthly||state.monthly.key!==monthKey())state.monthly={key:monthKey(),items:{}};
+  if(state.monthly.items[id])delete state.monthly.items[id];
+  else state.monthly.items[id]=true;
+  saveState();render();
+}
+function rhMonthlyEditor(id){
+  var m=null;
+  for(var i=0;i<MONTHLY_DEFS.length;i++)if(MONTHLY_DEFS[i].id===id)m=MONTHLY_DEFS[i];
+  var body='<div class="field"><label>Όνομα</label><input id="mName" value="'
+    +(m?esc(m.name):'')+'" placeholder="π.χ. Σινεμά" maxlength="40"></div>'
+    +'<div class="field"><label>Ώρες τον μήνα</label><input id="mHours" type="number" min="0.5" max="80" step="0.5" value="'
+    +(m?(m.hours||2):2)+'"></div><div id="mErr" class="form-error"></div>';
+  openModal({title:m?'Επεξεργασία μηνιαίας':'Νέα μηνιαία επιλογή',body:body,
+    buttons:[{text:'Άκυρο',class:'btn-ghost'},{text:m?'Αποθήκευση':'Δημιουργία',class:'btn-primary',onClick:function(){
+      var name=(document.getElementById('mName').value||'').trim();
+      var hrs=parseFloat(document.getElementById('mHours').value||'0');
+      var err=document.getElementById('mErr');
+      if(!name){err.textContent='Δώσε όνομα.';err.classList.add('show');return false;}
+      if(!(hrs>0)){err.textContent='Ώρες πάνω από 0.';err.classList.add('show');return false;}
+      if(m){m.name=name;m.hours=hrs;}
+      else MONTHLY_DEFS.push({id:'mo_'+Date.now(),name:name,hours:hrs});
+      saveState();closeModal();render();showToast('Αποθηκεύτηκε.');
+    }}]});
+}
+function rhMonthlyDel(id){
+  var m=null;
+  for(var i=0;i<MONTHLY_DEFS.length;i++)if(MONTHLY_DEFS[i].id===id)m=MONTHLY_DEFS[i];
+  if(!m)return;
+  MONTHLY_DEFS.splice(MONTHLY_DEFS.indexOf(m),1);
+  if(state.monthly&&state.monthly.items)delete state.monthly.items[id];
+  saveState();render();showToast('Αφαιρέθηκε «'+m.name+'».');
+}
+
+/* --- Η καρτέλα --- */
+function renderActivities(){
+  var core=state.courses.filter(function(c){return c.type!=='makeup';});
+  var mk=state.courses.filter(function(c){return c.type==='makeup';});
+  if(!FIXED_DEFS.length&&!state.courses.length)
+    html+='<div class="rh-empty">Καμία δραστηριότητα ακόμα. Φτιάξε μία και διάλεξε κατηγορία — τα μαθήματα πάνε στην κατηγορία «Μαθήματα».</div>';
+  ACT_CATS.forEach(function(cat){
+    if(cat.id==='study')return;
+    var list=FIXED_DEFS.filter(function(d){return (d.categoryId||'organize')===cat.id;});
+    if(!list.length)return;
+    html+='<div class="section-title" style="color:'+cat.color+'">'+esc(cat.name)
+      +' <span class="muted" style="font-size:.78rem">· '+list.length+'</span></div>';
+    html+=list.slice().sort(rhOrdCmp).map(function(d,i){return fixedCard(d,i);}).join('');
+  });
+  html+='<div class="rh-study-head"><span class="t">Μαθήματα · '+core.length+'</span>'
+    +'<div class="ops"><button class="rh-icon-btn" onclick="rhStudyEditor(null)" aria-label="Νέο μάθημα">+</button></div></div>';
+  html+=core.length
+    ?core.slice().sort(rhOrdCmp).map(function(c,i){return rhStudyCard(c,i);}).join('')
+    :'<div class="rh-empty">Δεν έχεις ορίσει μαθήματα. Πάτα + και όρισε εβδομαδιαίο και συνολικό στόχο.</div>';
+  if(mk.length||state.settings.showMakeup){
+    html+='<div class="rh-study-head"><span class="t" style="color:#0ea5e9">Εμβόλιμες · '+mk.length+'</span>'
+      +'<div class="ops"><button class="rh-icon-btn" onclick="rhMakeupTrim()" aria-label="Αφαίρεση κενής">−</button>'
+      +'<button class="rh-icon-btn" onclick="rhMakeupAdd()" aria-label="Προσθήκη">+</button></div></div>';
+    html+=mk.length
+      ?mk.slice().sort(rhOrdCmp).map(function(c,i){return rhStudyCard(c,i);}).join('')
+      :'<div class="rh-empty">Καμία εμβόλιμη. Πάτα + για να προσθέσεις.</div>';
+  }
+  html+='<div class="rh-mk-bar"><span>Εμφάνιση ενότητας εμβόλιμων</span>'
+    +'<button type="button" class="switch '+(state.settings.showMakeup?'on':'')
+    +'" onclick="rhToggleMakeup()" aria-label="Εμφάνιση εμβόλιμων"></button></div>';
+  html+='<div class="card" id="rh-monthly-card"><h3>Μηνιαίες επιλογές</h3>'+rhMonthlyInner()
+    +'<div class="actions" style="margin-top:12px">'
+    +'<button class="btn btn-ghost" onclick="rhMonthlyEditor(null)">+ Νέα μηνιαία</button></div></div>';
+  return html;
+}
+
+rhStudyInit();
+saveState();
+/* ===== ΤΕΛΟΣ ΔΡΑΣΤΗΡΙΟΤΗΤΩΝ v2 ===== */
 </script>
   
 </body>
