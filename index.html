@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="2.2.1">
+<meta name="app-version" content="2.2.2">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -818,7 +818,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='2.2.1';
+var APP_VERSION='2.2.2';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -4334,30 +4334,6 @@ commit();
 
 <script>
 /* ===== ΣΤΟΧΟΙ v1: ΤΩΡΑ + ΠΡΟΟΔΟΣ ΕΝΑΝΤΙ ΣΤΟΧΩΝ ===== */
-function rhNowNextHTML(){
-var h='<div class="rh-gn">';
-var a=state.active;
-if(a){
-var nm=(a.type==='course')?((state.courses.find(function(x){return x.id===a.id;})||{name:'Μάθημα'}).name):((FIXED_DEFS.find(function(x){return x.id===a.id;})||{name:'Δραστηριότητα'}).name);
-h+='<div class="rh-gn-row"><span class="rh-gn-label">Τρέχει</span><strong style="color:var(--success)">'+esc(nm)+(a.pausedAt?' · παύση':'')+'</strong><span class="rh-gn-time">'+fmtClock(activeElapsedMs())+'</span></div>';
-}else{
-h+='<div class="rh-gn-row"><span class="rh-gn-label">Τρέχει</span><strong class="muted">Τίποτα</strong><span class="rh-gn-time">—</span></div>';
-}
-var next=null;
-if(typeof slotLatePending==='function')next=slotLatePending();
-if(!next&&typeof slotNextPending==='function')next=slotNextPending();
-if(next){
-var eff=(typeof slotEff==='function')?slotEff(next):next;
-h+='<div class="rh-gn-row"><span class="rh-gn-label">Επόμενη</span><strong>'+esc((typeof slotName==='function')?slotName(next):'')+'</strong><span class="rh-gn-time">'+eff.start+'</span></div>';
-}else{
-var sg=(typeof getSmartSuggestions==='function')?getSmartSuggestions():[];
-if(sg.length)h+='<div class="rh-gn-row"><span class="rh-gn-label">Πρόταση</span><strong>'+esc(sg[0].name)+'</strong><span class="rh-gn-time">'+fmtHM(sg[0].duration)+'</span></div>';
-else h+='<div class="rh-gn-row"><span class="rh-gn-label">Επόμενη</span><strong class="muted">Καμία</strong><span class="rh-gn-time">—</span></div>';
-}
-var m=(typeof dayModel==='function')?dayModel(mondayIndex()):null;
-if(m)h+='<div class="rh-gn-row"><span class="rh-gn-label">Ελεύθερα</span><strong>'+fmtHM(m.freeLogged)+'</strong><span class="rh-gn-time">προγρ. '+fmtHM(m.freePlanned)+'</span></div>';
-return h+'</div>';
-}
 function rhGoalsHTML(){
 var h='',now=Date.now(),ws=startOfWeek(),weekFrac=clamp((now-ws)/(7*86400000),0,1);
 var courses=state.courses.filter(function(c){return c.active&&c.hours>0;});
@@ -4401,32 +4377,9 @@ h+='<div class="rh-g-label">Ύπνος</div><div class="list-row"><div class="li
 if(!courses.length&&!targets.length&&n===0)h+='<p class="note">Δεν έχεις ορίσει στόχους ακόμα. Βάλε ώρες σε μάθημα ή στόχο συχνότητας σε δραστηριότητα για να εμφανιστεί πρόοδος εδώ.</p>';
 return h;
 }
-function rhGoalsCardHTML(){
-return '<div class="card"><h3>Τώρα · Στόχοι · Πρόοδος</h3>'+rhNowNextHTML()+rhGoalsHTML()+'</div>';
-}
-function sleepExtrasMount(){
-var main=document.querySelector('main');
-if(!main)return;
-var active=document.querySelector('.nav-btn.active');
-var label=active?active.textContent:'';
-if(label.indexOf('Ημέρα')>=0){
-if(!document.getElementById('goals-card-extra')){
-main.insertAdjacentHTML('afterbegin','<div id="goals-card-extra">'+rhGoalsCardHTML()+'</div>');
-}
-if(!document.getElementById('sleep-card-extra')){
-main.insertAdjacentHTML('beforeend','<div id="sleep-card-extra">'+sleepCardHTML()+logsTodayHTML()+'</div>');
-}
-}
-if(label.indexOf('Ανάλυση')>=0){
-if(!document.getElementById('streak-card-extra')){
-main.insertAdjacentHTML('afterbegin','<div id="streak-card-extra"><div class="card"><h3>Σερί συμμόρφωσης</h3><div class="stat-card"><div class="stat-value">'+streakCount()+' ημέρες</div><div class="stat-sub">πλήρης τήρηση</div></div></div></div>');
-}
-}
-if(label.indexOf('Δραστηριότητες')>=0){
-if(!document.getElementById('exam-card-extra')){
-main.insertAdjacentHTML('beforeend',examCardHTML());
-}
-}
+
+function rhWeekGoalsCardHTML(){
+  return '<div class="card"><h3>Εβδομαδιαία πρόοδος</h3>'+rhGoalsHTML()+'</div>';
 }
 
 /* ===== ΤΕΛΟΣ ΣΤΟΧΩΝ v1 ===== */
@@ -4457,26 +4410,33 @@ tot++;if(a.ok)ok++;
 return {ok:ok,tot:tot};
 }
 function sleepExtrasMount(){
-var main=document.querySelector('main');
-if(!main)return;
-var active=document.querySelector('.nav-btn.active');
-var label=active?active.textContent:'';
-if(label.indexOf('Ημέρα')>=0){
-if(!document.getElementById('goals-card-extra')){main.insertAdjacentHTML('afterbegin','<div id="goals-card-extra">'+rhGoalsCardHTML()+'</div>');}
-if(!document.getElementById('sleep-card-extra')){main.insertAdjacentHTML('beforeend','<div id="sleep-card-extra">'+sleepCardHTML()+logsTodayHTML()+'</div>');}
-}
-if(label.indexOf('Ανάλυση')>=0){
-if(!document.getElementById('streak-card-extra')){
-var c14=consistency14();
-main.insertAdjacentHTML('afterbegin','<div id="streak-card-extra"><div class="card"><h3>Σερί και συνέπεια</h3>'
-+'<div class="stat-card"><div class="stat-value">'+streakCount()+' ημέρες</div><div class="stat-sub">σερί με κανόνα δύο ημερών</div></div>'
-+'<div class="plan-row" style="margin-top:8px"><span>Συνέπεια 14 ημερών</span><strong>'+c14.ok+'/'+c14.tot+'</strong></div>'
-+'<p class="note">Μία μη συμμορφωμένη ημέρα δεν σπάει το σερί· δύο διαδοχικές το σπάνε. Ημέρες χωρίς καταγραφές είναι ουδέτερες, ούτε μετρούν ούτε σπάνε.</p></div></div>');
-}
-}
-if(label.indexOf('Δραστηριότητες')>=0){
-if(!document.getElementById('exam-card-extra')){main.insertAdjacentHTML('beforeend',examCardHTML());}
-}
+  var main=document.querySelector('main');
+  if(!main)return;
+  var active=document.querySelector('.nav-btn.active');
+  var label=active?active.textContent:'';
+  if(label.indexOf('Ημέρα')>=0){
+    if(!document.getElementById('sleep-card-extra')){
+      main.insertAdjacentHTML('beforeend','<div id="sleep-card-extra">'+sleepCardHTML()+logsTodayHTML()+'</div>');
+    }
+    if(!document.getElementById('goals-card-extra')){
+      main.insertAdjacentHTML('beforeend','<div id="goals-card-extra">'+rhGoalsCardHTML()+'</div>');
+    }
+  }
+  if(label.indexOf('Ανάλυση')>=0){
+    if(!document.getElementById('streak-card-extra')){
+      var c14=consistency14();
+      main.insertAdjacentHTML('afterbegin','<div id="streak-card-extra"><div class="card"><h3>Σερί και συνέπεια</h3>'
+        +'<div class="stat-card"><div class="stat-value">'+streakCount()+' ημέρες</div><div class="stat-sub">σερί με κανόνα δύο ημερών</div></div>'
+        +'<div class="plan-row" style="margin-top:8px"><span>Συνέπεια 14 ημερών</span><strong>'+c14.ok+'/'+c14.tot+'</strong></div>'
+        +'<p class="note">Μία μη συμμορφωμένη ημέρα δεν σπάει το σερί· δύο διαδοχικές το σπάνε. Ημέρες χωρίς καταγραφές είναι ουδέτερες.</p></div></div>');
+    }
+    if(!document.getElementById('rh-weekgoals-card')){
+      main.insertAdjacentHTML('beforeend','<div id="rh-weekgoals-card">'+rhWeekGoalsCardHTML()+'</div>');
+    }
+  }
+  if(label.indexOf('Δραστηριότητες')>=0){
+    if(!document.getElementById('exam-card-extra')){main.insertAdjacentHTML('beforeend',examCardHTML());}
+  }
 }
 
 /* ===== ΤΕΛΟΣ ΣΕΡΙ v2 ===== */
@@ -5544,15 +5504,6 @@ planned+=Math.max(0,rhHM2(eff.end)-rhHM2(eff.start));
 }
 return {awake:awake,planned:planned,logged:logged,free:awake-logged};
 }
-function rhNumsCardHTML(){
-var n=rhTodayNums();
-return '<div class="card"><h3>Σήμερα</h3><div class="rh-num">'
-+'<div class="stat-box"><span>Ξύπνιος χρόνος</span><strong>'+fmtHM(n.awake)+'</strong></div>'
-+'<div class="stat-box"><span>Προγραμματισμένα</span><strong>'+fmtHM(n.planned)+'</strong></div>'
-+'<div class="stat-box"><span>Καταγεγραμμένα</span><strong>'+fmtHM(n.logged)+'</strong></div>'
-+'<div class="stat-box"><span>Απομένουν</span><strong class="'+(n.free<0?'text-danger':'text-success')+'">'+fmtHM(n.free)+'</strong></div>'
-+'</div><p class="note">Ξύπνιος από πραγματικό ύπνο, προγραμματισμένα από τις θέσεις της ημέρας, καταγεγραμμένα από το ημερολόγιο. Κανένα εκτιμώμενο εβδομαδιαίο μερίδιο.</p></div>';
-}
 
 /* ---------- ΕΦΙΚΤΟΤΗΤΑ ΕΞΕΤΑΣΤΙΚΗΣ ---------- */
 function rhFeasibility(){
@@ -5729,11 +5680,6 @@ main.appendChild(t);main.appendChild(w);
 }
 }
 if(label.indexOf('Ημέρα')>=0){
-if(!document.getElementById('rh-nums-card')){
-var n=document.createElement('div');n.id='rh-nums-card';n.innerHTML=rhNumsCardHTML();
-var g=document.getElementById('goals-card-extra');
-if(g&&g.nextSibling)main.insertBefore(n,g.nextSibling);else main.insertBefore(n,main.firstChild);
-}
 if(!document.getElementById('rhAddLogBtn')){
 var csv=null;
 Array.prototype.slice.call(main.querySelectorAll('button')).forEach(function(b){
@@ -5780,7 +5726,6 @@ rhPass2();
 .hero-stats.rh-3 .stat-box strong{font-size:.95rem}
 .hero-stats.rh-3 .stat-box span{font-size:.64rem}
 #rh-nums-card{display:none!important}
-#goals-card-extra .rh-gn .rh-gn-row:first-child{display:none}
 .card.rh-urgent{border-left:3px solid var(--danger)}
 .card.rh-watch{border-left:3px solid var(--warn)}
 .rh-step{display:flex;align-items:center;gap:6px}
@@ -5857,9 +5802,9 @@ if(st)st.textContent=fmtHM(nn.planned);
 }
 var nums=document.getElementById('rh-nums-card');
 if(nums)nums.style.display='none';
-var ns=document.getElementById('next-slot-card'),goals=document.getElementById('goals-card-extra');
-if(ns&&goals&&goals.parentNode&&ns.previousElementSibling!==goals){
-goals.parentNode.insertBefore(ns,goals.nextSibling);
+var ns=document.getElementById('next-slot-card'),hero=main.querySelector('.card');
+if(ns&&hero&&hero.parentNode&&ns.previousElementSibling!==hero){
+hero.parentNode.insertBefore(ns,hero.nextSibling);
 }
 }
 if(label.indexOf('Ρυθμίσεις')>=0)rhSteppers(main);
@@ -5997,13 +5942,13 @@ return '<article class="card activity '+(isActive?'running':'')+'" style="--acce
 +'<div class="metric"><span>Συνολικός στόχος</span><strong>'+(tot?fmtHM(Math.max(0,tot-done)):'—')+'</strong><div class="progress '+(tot&&done>=tot?'':'')+'"><span style="width:'+tp+'%"></span></div><small>'+fmtHM(done)+(tot?' / '+fmtHM(tot)+' · '+Math.round(tp)+'%':' · χωρίς στόχο')+'</small></div>'
 +'<div class="metric"><span>Εξέταση</span><strong>'+ex+'</strong><small>'+exSub+'</small></div>'
 +'</div>'
-+'<div class="actions">'+btn
++'<div class="actions">'+RH_GRIP+btn
 +'<button class="btn btn-ghost" onclick="rhStudyEditor(\''+c.id+'\')">✎</button>'
 +'<button class="btn btn-ghost-danger" onclick="rhCourseDel(\''+c.id+'\')">✕</button>'
 +'</div></article>';
 }
 function renderActivities(){
-var html='<div class="actions" style="margin:0 0 12px"><button class="btn btn-primary" onclick="openFixedEditor(null)">+ Νέα δραστηριότητα</button>'
+var html=rhActToolsHTML()+'<div class="actions" style="margin:0 0 12px"><button class="btn btn-primary" onclick="openFixedEditor(null)">+ Νέα δραστηριότητα</button>'<button class="btn btn-primary" onclick="openFixedEditor(null)">+ Νέα δραστηριότητα</button>'
 +'<button class="btn btn-ghost" onclick="rhStudyEditor(null)">+ Νέο μάθημα</button></div>';
 if(!FIXED_DEFS.length&&!state.courses.length){
 html+='<div class="rh-empty">Καμία δραστηριότητα ακόμα. Φτιάξε μία και διάλεξε κατηγορία — τα μαθήματα πάνε στην κατηγορία «Μαθήματα».</div>';
@@ -6013,14 +5958,14 @@ if(cat.id==='study')return;
 var list=FIXED_DEFS.filter(function(d){return (d.categoryId||'organize')===cat.id;});
 if(!list.length)return;
 html+='<div class="section-title" style="color:'+cat.color+'">'+cat.name+' <span class="muted" style="font-size:.78rem">· '+list.length+'</span></div>';
-html+=list.map(function(d,i){return fixedCard(d,i);}).join('');
+html+=list.slice().sort(rhOrdCmp).map(function(d,i){return fixedCard(d,i);}).join('');
 });
 var core=state.courses.filter(function(c){return c.type!=='makeup';});
 var mk=state.courses.filter(function(c){return c.type==='makeup';});
 html+='<div class="rh-study-head"><span class="t" style="color:#4f46e5">Μαθήματα · '+core.length+'</span>'
 +'<div class="ops"><button class="rh-icon-btn" onclick="rhStudyEditor(null)" aria-label="Νέο μάθημα">+</button></div></div>';
 if(!core.length)html+='<div class="rh-empty">Δεν έχεις ορίσει μαθήματα. Πάτα + και όρισε εβδομαδιαίο και συνολικό στόχο.</div>';
-else html+=core.map(function(c,i){return rhStudyCard(c,i);}).join('');
+else html+=core.slice().sort(rhOrdCmp).map(function(c,i){return rhStudyCard(c,i);}).join('');
 html+='<div class="rh-study-head"><span class="t" style="color:#0ea5e9">Εμβόλιμες · '+mk.length+'</span>'
 +'<div class="ops"><button class="rh-icon-btn" onclick="rhMakeupTrim()" aria-label="Αφαίρεση κενής">−</button>'
 +'<button class="rh-icon-btn" onclick="rhMakeupAdd()" aria-label="Προσθήκη">+</button></div></div>';
@@ -6028,7 +5973,7 @@ html+='<div class="rh-mk-bar"><div><strong>Εμφάνιση εμβόλιμων</
 +'<button class="switch '+(state.settings.showMakeup?'on':'')+'" onclick="rhToggleMakeup()"></button></div>';
 if(state.settings.showMakeup){
 if(!mk.length)html+='<div class="rh-empty">Καμία εμβόλιμη θέση. Πάτα + για να προσθέσεις.</div>';
-else html+=mk.map(function(c,i){return rhStudyCard(c,i);}).join('');
+else html+=mk.slice().sort(rhOrdCmp).map(function(c,i){return rhStudyCard(c,i);}).join('');
 }
 html+='<div class="rh-study-head"><span class="t" style="color:#f59e0b">Μηνιαίες επιλογές</span>'
 +'<div class="ops"><button class="rh-icon-btn" onclick="rhMonthlyEditor(null)" aria-label="Νέα μηνιαία">+</button></div></div>';
@@ -6306,7 +6251,7 @@ return '<article class="card activity '+(isActive?'running':'')+'" data-cat="'+(
 +'<div class="metric"><span>'+tl+'</span><strong>'+tv+'</strong><small>'+(ts||'&nbsp;')+'</small></div>'
 +'</div>'
 +(note?'<p class="note">'+note+'</p>':'')
-+'<div class="actions">'+button
++'<div class="actions">'+RH_GRIP+button
 +'<button class="btn btn-ghost" onclick="openFixedEditor(\''+def.id+'\')" aria-label="Επεξεργασία">✎</button>'
 +'<button class="btn btn-ghost-danger" onclick="deleteFixed(\''+def.id+'\')" aria-label="Διαγραφή">✕</button>'
 +'</div></article>';
@@ -6358,6 +6303,26 @@ var k=s2.querySelector('#fCat');if(k)k.value=v;
 }
 var rhActQ='',rhActCat='';
 function rhActSetCat(c){rhActCat=c;rhActFilter();}
+function rhActToolsHTML(){
+  var chips='<button type="button" class="rh-chip" data-rh-cat="" onclick="rhActSetCat(\'\')">Όλα</button>';
+  ACT_CATS.forEach(function(k){
+    if(k.id==='study')return;
+    chips+='<button type="button" class="rh-chip" data-rh-cat="'+k.id+'" onclick="rhActSetCat(\''+k.id+'\')">'+esc(k.name)+'</button>';
+  });
+  chips+='<button type="button" class="rh-chip" data-rh-cat="study" onclick="rhActSetCat(\'study\')">Μαθήματα</button>'
+    +'<button type="button" class="rh-chip" data-rh-cat="makeup" onclick="rhActSetCat(\'makeup\')">Εμβόλιμες</button>';
+  return '<div id="rhActTools" class="rh-act-tools">'
+    +'<input id="rhActSearch" placeholder="Αναζήτηση δραστηριότητας ή μαθήματος…" value="'+esc(rhActQ)+'" oninput="rhActFilter()">'
+    +'<div class="rh-chips">'+chips+'</div>'
+    +'<div id="rhSortBar" class="rh-sortbar">'
+    +'<button type="button" onclick="rhSortBy(\'name\')">Όνομα</button>'
+    +'<button type="button" onclick="rhSortBy(\'today\')">Σήμερα</button>'
+    +'<button type="button" onclick="rhSortBy(\'week\')">Εβδομάδα</button>'
+    +'<button type="button" onclick="rhSortBy(\'left\')">Υπόλοιπο</button>'
+    +'</div></div>';
+}
+function rhOrdCmp(a,b){return (a.rhOrder||0)-(b.rhOrder||0);}
+var RH_GRIP='<span class="rh-grip" role="button" tabindex="0" aria-label="Σύρε για αλλαγή σειράς" onpointerdown="rhGripDown(event,this.closest(\'.card.activity\'))">⠿</span>';  
 function rhPolishPass(){
 var main=document.querySelector('main');if(!main)return;
 Array.prototype.forEach.call(main.querySelectorAll('.unplaced-badge'),function(b){b.remove();});
@@ -6567,13 +6532,6 @@ if(!isFinite(t))return;
 rhHistOff=Math.max(0,Math.min(3650,Math.round((startOfDay()-t)/86400000)));
 var w=document.getElementById('rh-hist-card');if(w)w.innerHTML=rhHistCardHTML();
 }
-(function(){
-if(!document.getElementById('rh-nums-card')){
-var d=document.createElement('div');
-d.id='rh-nums-card';d.hidden=true;d.style.display='none';
-document.body.appendChild(d);
-}
-})();
 /* ===== ΤΕΛΟΣ ΔΙΟΡΘΩΣΕΩΝ v1 ===== */
 </script>
 
@@ -9360,20 +9318,12 @@ function rhPostRender(){
   if(rhPassBusy||window.__rhBooting)return;
   if(!document.querySelector('main'))return;
   rhPassBusy=true;
-  try{
-    declutterMount();
-    sleepExtrasMount();
-    scheduleMount();
-    nextSlotMount();
-    rhDomPass();
-    rhPass2();
-    rhUxPass();
-    rhPolishPass();
-    rhV6Pass();
-    rhEmptyPass();
-    rhHelpPass();
-    rhFixPass();
-  }catch(e){}
+  var steps=[declutterMount,sleepExtrasMount,scheduleMount,nextSlotMount,
+             rhDomPass,rhPass2,rhUxPass,rhPolishPass,rhV6Pass,
+             rhEmptyPass,rhHelpPass,rhFixPass];
+  for(var i=0;i<steps.length;i++){
+    try{steps[i]();}catch(e){}
+  }
   rhPassBusy=false;
 }
 
