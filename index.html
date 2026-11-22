@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="2.2.4">
+<meta name="app-version" content="2.2.5">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -311,6 +311,7 @@ const DAY_SHORT=['Δε','Τρ','Τε','Πε','Πα','Σα','Κυ'];
 const DAY_FULL=['Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο','Κυριακή'];
 const MONTH_GEN=['Ιανουαρίου','Φεβρουαρίου','Μαρτίου','Απριλίου','Μαΐου','Ιουνίου','Ιουλίου','Αυγούστου','Σεπτεμβρίου','Οκτωβρίου','Νοεμβρίου','Δεκεμβρίου'];
 
+const RELAX_WEEK=0;
 let state=loadState();
 let FIXED_DEFS=state.fixedDefs;
 let MONTHLY_DEFS=state.monthlyDefs;
@@ -784,7 +785,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='2.2.4';
+var APP_VERSION='2.2.5';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -4488,8 +4489,14 @@ b.classList.add('on','btn-primary');b.classList.remove('btn-ghost');
 function rhGoalsCardHTML(){
 var key=getDailyPlanKey();
 var closed=!!(state.dayClose&&state.dayClose[key]);
-return '<div class="card"><h3>Τώρα · Στόχοι · Πρόοδος</h3>'+rhNowNextHTML()+rhGoalsHTML()
-+'<div class="actions" style="margin-top:12px"><button class="btn '+(closed?'btn-ghost':'btn-warn')+'" onclick="openDayShutdown()">'+(closed?'Ανακεφαλαίωση ημέρας':'Λήξη ημέρας')+'</button></div></div>';
+return '<div class="card"><h3>Κλείσιμο ημέρας</h3>'
++'<p class="muted" style="margin-top:6px">'
++(closed?'Η ημέρα έχει κλείσει. Μπορείς να δεις τη σύνοψη.'
+        :'Βαθμολόγησε τη μέρα και μετέφερε στο αύριο ό,τι δεν έγινε.')
++'</p>'
++'<div class="actions" style="margin-top:12px"><button class="btn '
++(closed?'btn-ghost':'btn-warn')+'" onclick="openDayShutdown()">'
++(closed?'Ανακεφαλαίωση':'Λήξη ημέρας')+'</button></div></div>';
 }
 function getSmartSuggestions(){
 var out=[],today=mondayIndex();
@@ -5943,7 +5950,6 @@ return '<article class="card activity '+(isActive?'running':'')+'" style="--acce
 +'</div></article>';
 }
 function renderActivities(){
-var html=rhActToolsHTML()+'<div class="actions" style="margin:0 0 12px"><button class="btn btn-primary" onclick="openFixedEditor(null)">+ Νέα δραστηριότητα</button>'<button class="btn btn-primary" onclick="openFixedEditor(null)">+ Νέα δραστηριότητα</button>'<button class="btn btn-primary" onclick="openFixedEditor(null)">+ Νέα δραστηριότητα</button>'<button class="btn btn-primary" onclick="openFixedEditor(null)">+ Νέα δραστηριότητα</button>'<button class="btn btn-primary" onclick="openFixedEditor(null)">+ Νέα δραστηριότητα</button>'
 +'<button class="btn btn-ghost" onclick="rhStudyEditor(null)">+ Νέο μάθημα</button></div>';
 if(!FIXED_DEFS.length&&!state.courses.length){
 html+='<div class="rh-empty">Καμία δραστηριότητα ακόμα. Φτιάξε μία και διάλεξε κατηγορία — τα μαθήματα πάνε στην κατηγορία «Μαθήματα».</div>';
@@ -9508,6 +9514,28 @@ MONTHLY_DEFS.splice(i,1);
 if(state.courses.length!==c0||MONTHLY_DEFS.length!==m0)saveState();
 })();
 /* ===== ΤΕΛΟΣ ΚΑΘΑΡΩΝ ΟΡΙΣΜΩΝ ===== */
+</script>
+
+<script>
+/* ===== ΕΛΕΓΧΟΣ ΟΡΙΣΜΩΝ v1 ===== */
+(function(){
+var fns=['renderActivities','openFixedEditor','rhStudyEditor','rhStudyCard',
+'rhMonthlyEditor','rhMonthlyInner','rhMakeupAdd','rhMakeupTrim','rhCourseDel',
+'rhStudyInit','rhActToolsHTML','rhActFilter','rhInk','rhHistCardHTML',
+'rhSemesterCardHTML','rhGoalsCardHTML','sleepExtrasMount','rhPostRender'];
+var miss=[];
+fns.forEach(function(n){if(typeof window[n]!=='function')miss.push(n);});
+try{if(typeof RELAX_WEEK==='undefined')miss.push('RELAX_WEEK');}catch(e){miss.push('RELAX_WEEK');}
+if(typeof window.RH_GRIP!=='string')miss.push('RH_GRIP');
+if(typeof window.ACT_CATS==='object'&&window.ACT_CATS&&!window.ACT_CATS.some(function(c){return c.id==='study';}))miss.push('κατηγορία Μαθήματα');
+if(!miss.length)return;
+var b=document.createElement('div');
+b.id='rhMissing';
+b.style.cssText='position:fixed;left:0;right:0;top:0;z-index:500;background:#b91c1c;color:#fff;font:700 .72rem/1.45 system-ui,sans-serif;padding:9px 12px;box-shadow:0 4px 18px rgba(0,0,0,.4)';
+b.textContent='Σπασμένο μπλοκ κώδικα — λείπουν: '+miss.join(', ')+'. Άνοιξε την κονσόλα και κοίτα το πρώτο SyntaxError.';
+document.body.appendChild(b);
+})();
+/* ===== ΤΕΛΟΣ ΕΛΕΓΧΟΥ ΟΡΙΣΜΩΝ ===== */
 </script>
   
 </body>
