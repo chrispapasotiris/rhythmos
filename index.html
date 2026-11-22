@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="2.2.62">
+<meta name="app-version" content="2.2.70">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -785,7 +785,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='2.2.62';
+var APP_VERSION='2.2.70';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -925,7 +925,7 @@ function safeRollback(){var sw=safeCtl();if(!sw){safeToast('Χωρίς ενερ�
 function safeRetryLatest(){safeSetForce(false,function(){location.reload();});}
 function safeSettings(){var old=document.getElementById('safePanel');if(old)old.remove();var v='άγνωστη';try{var m=document.documentElement.outerHTML.match(/name="app-version"\s+content="([^"]+)"/);if(m)v=m[1];}catch(e){}
 var on=window.__force===true;var p=document.createElement('div');p.id='safePanel';p.style.cssText='position:fixed;inset:0;z-index:390;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center';
-p.innerHTML='<div style="width:100%;max-width:430px;background:#1e1e2e;color:#fff;border-radius:28px 28px 0 0;padding:18px 18px 26px;font-family:system-ui,sans-serif"><h3 style="margin:0 0 6px;font-size:1.1rem">Ασφαλής λειτουργία</h3><p style="margin:0 0 14px;font-size:.82rem;opacity:.75">Έκδοση αρχείου: '+v+'. Αυτός ο πίνακας λειτουργεί ακόμα κι αν η εφαρμογή έχει σπάσει.</p><p style="margin:0 0 14px;font-size:.82rem;font-weight:700;color:'+(on?'#fbbf24':'#34d399')+'">Τρέχει τώρα: '+(on?'ΑΝΤΙΓΡΑΦΟ ΑΣΦΑΛΕΙΑΣ (good/)':'ΖΩΝΤΑΝΗ ΕΚΔΟΣΗ (server)')+'</p><button style="display:block;width:100%;margin-bottom:8px;padding:12px;border:none;border-radius:14px;background:#6366f1;color:#fff;font:700 .9rem system-ui,sans-serif" onclick="safeRollback()">Επαναφορά από το backup (good/)</button><button style="display:block;width:100%;margin-bottom:8px;padding:12px;border:none;border-radius:14px;background:#333a55;color:#fff;font:700 .9rem system-ui,sans-serif" onclick="safeRetryLatest()">Δοκίμασε ξανά τη ζωντανή έκδοση (έξοδος από το backup)</button><button style="display:block;width:100%;margin-bottom:8px;padding:12px;border:none;border-radius:14px;background:#333a55;color:#fff;font:700 .9rem system-ui,sans-serif" onclick="safeExport()">Εξαγωγή δεδομένων (backup)</button><button style="display:block;width:100%;padding:12px;border:none;border-radius:14px;background:#553333;color:#fff;font:700 .9rem system-ui,sans-serif" onclick="document.getElementById(\'safePanel\').remove()">Κλείσιμο</button></div>';
+p.innerHTML='<div style="width:100%;max-width:430px;background:#1e1e2e;color:#fff;border-radius:28px 28px 0 0;padding:18px 18px 26px;font-family:system-ui,sans-serif"><h3 style="margin:0 0 6px;font-size:1.1rem">Ασφαλής λειτουργία</h3><p style="margin:0 0 14px;font-size:.82rem;opacity:.75">Έκδοση αρχείου: '+v+'. Αυτός ο πίνακας λειτουργεί ακόμα κι αν η εφαρμογή έχει σπάσει.</p><p style="margin:0 0 14px;font-size:.82rem;font-weight:700;color:'+(on?'#fbbf24':'#34d399')+'">Τρέχει τώρα: '+(on?'ΑΝΤΙΓΡΑΦΟ ΑΣΦΑΛΕΙΑΣ (good/)':'ΖΩΝΤΑΝΗ ΕΚΔΟΣΗ (server)')+'</p><button style="display:block;width:100%;margin-bottom:8px;padding:12px;border:none;border-radius:14px;background:#6366f1;color:#fff;font:700 .9rem system-ui,sans-serif" onclick="safeRollback()">Επαναφορά από το backup (good/)</button><button style="display:block;width:100%;margin-bottom:8px;padding:12px;border:none;border-radius:14px;background:#333a55;color:#fff;font:700 .9rem system-ui,sans-serif" onclick="safeRetryLatest()">Δοκίμασε ξανά τη ζωντανή έκδοση (έξοδος από το backup)</button><button style="display:block;width:100%;padding:12px;border:none;border-radius:14px;background:#553333;color:#fff;font:700 .9rem system-ui,sans-serif" onclick="document.getElementById(\'safePanel\').remove()">Κλείσιμο</button></div>';
 p.onclick=function(e){if(e.target===p)p.remove();};document.body.appendChild(p);}
 window.safeSettings=safeSettings;
 (function(){var sw=safeCtl();if(sw){try{sw.postMessage({type:'get-force'});}catch(e){}}if(navigator.serviceWorker&&navigator.serviceWorker.addEventListener){navigator.serviceWorker.addEventListener('message',function(e){if(e.data&&e.data.type==='force-state'){window.__force=e.data.on;}});}})();
@@ -9295,7 +9295,7 @@ function rhPostRender(){
   rhPassBusy=true;
   var steps=[declutterMount,sleepExtrasMount,scheduleMount,nextSlotMount,
              rhDomPass,rhPass2,rhUxPass,rhPolishPass,rhV6Pass,
-             rhEmptyPass,rhHelpPass,rhFixPass];
+             rhEmptyPass,rhHelpPass,rhFixPass,rhCardLayoutPass];
   for(var i=0;i<steps.length;i++){
     try{steps[i]();}catch(e){}
   }
@@ -9956,6 +9956,142 @@ return html;
 rhStudyInit();
 saveState();
 /* ===== ΤΕΛΟΣ ΔΡΑΣΤΗΡΙΟΤΗΤΩΝ v2 ===== */
+</script>
+
+<script>
+/* ===== ΔΕΔΟΜΕΝΑ ΧΡΗΣΤΗ + ΔΙΑΤΑΞΗ ΚΑΡΤΩΝ ===== */
+(function(){
+var st=document.createElement('style');
+st.textContent='.card.activity{position:relative}'
++'.card.activity>.rh-del-x{position:absolute;top:9px;right:9px;width:30px;height:30px;border-radius:9px;border:1px solid var(--line);background:var(--soft);color:var(--muted);font:700 .85rem/1 system-ui,sans-serif;cursor:pointer;display:grid;place-items:center;z-index:6;padding:0;transition:.15s}'
++'.card.activity>.rh-del-x:hover{color:var(--danger);border-color:var(--danger)}'
++'.card.activity>.pill{position:absolute;bottom:12px;right:12px;margin:0;z-index:6}'
++'.card.activity .actions{padding-right:60px}'
++'.rh-inf-btn{flex:0 0 auto;min-width:44px;width:44px;padding:11px 0;font-size:1.2rem;line-height:1;font-weight:800}';
+document.head.appendChild(st);
+})();
+var RH_ICON_EXPORT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:block;margin:0 auto 5px"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z"/><path d="M17 21v-8H7v8"/><path d="M7 3v5h8"/></svg>';
+var RH_ICON_IMPORT='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:16px;height:16px;display:block;margin:0 auto 5px"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/><path d="M12 11v6"/><path d="M9 14l3 3 3-3"/></svg>';
+function rhDataExport(){
+try{
+var raw=localStorage.getItem(STORE_KEY);
+if(!raw){showToast('Δεν υπάρχουν δεδομένα για εξαγωγή.');return;}
+var blob=new Blob([raw],{type:'application/json'});
+var url=URL.createObjectURL(blob);
+var a=document.createElement('a');
+var d=new Date();
+a.href=url;a.download='rhythmos-backup-'+d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'.json';
+document.body.appendChild(a);a.click();a.remove();
+setTimeout(function(){URL.revokeObjectURL(url);},1500);
+showToast('Το αντίγραφο κατέβηκε.');
+}catch(e){showToast('Αποτυχία εξαγωγής.');}
+}
+function rhDataImport(){
+var inp=document.createElement('input');
+inp.type='file';inp.accept='.json,application/json';inp.style.display='none';
+document.body.appendChild(inp);
+inp.onchange=function(){
+var f=inp.files&&inp.files[0];
+inp.remove();
+if(!f)return;
+var r=new FileReader();
+r.onload=function(){
+var txt=r.result,j;
+try{j=JSON.parse(txt);}catch(e){showToast('Το αρχείο δεν είναι έγκυρο JSON.');return;}
+if(!j||typeof j!=='object'||!Array.isArray(j.logs)||!Array.isArray(j.fixedDefs)){
+showToast('Το αρχείο δεν φαίνεται για αντίγραφο του Ρυθμού.');return;
+}
+openModal({title:'Εισαγωγή δεδομένων',
+body:'<p>Θα αντικατασταθούν <b>ΟΛΑ</b> τα τωρινά δεδομένα με όσα περιέχει το αρχείο.</p><p class="note" style="margin-top:8px">Αρχείο: '+esc(f.name)+'</p>',
+buttons:[
+{text:'Άκυρο',class:'btn-ghost'},
+{text:'Εισαγωγή',class:'btn-primary',onClick:function(){
+try{localStorage.setItem(STORE_KEY,txt);}catch(e){showToast('Αποτυχία αποθήκευσης.');return;}
+location.reload();
+}}]});
+};
+r.onerror=function(){showToast('Αποτυχία ανάγνωσης του αρχείου.');};
+r.readAsText(f);
+};
+inp.click();
+}
+function rhDataPanelBuild(){
+var panel=document.getElementById('gearPanel');
+if(!panel||document.getElementById('gpData'))return;
+var sec=document.createElement('div');
+sec.className='gp-section';sec.id='gpData';
+sec.innerHTML='<button type="button" class="gp-head" onclick="gpToggleSection(\'gpDataBody\')">'
++'<span>Δεδομένα χρήστη</span><span class="gp-arrow">▾</span></button>'
++'<div class="gp-body" id="gpDataBody">'
++'<p class="gp-note">Φύλαξε τα δεδομένα σου σε αρχείο ή επανέφερε τα από αντίγραφο.</p>'
++'<div class="gp-grid">'
++'<button type="button" class="gp-choice" onclick="rhDataImport()">'+RH_ICON_IMPORT+'<strong>Εισαγωγή</strong><small>Από αντίγραφο</small></button>'
++'<button type="button" class="gp-choice" onclick="rhDataExport()">'+RH_ICON_EXPORT+'<strong>Εξαγωγή</strong><small>Λήψη αντιγράφου</small></button>'
++'</div></div>';
+var cfg=document.getElementById('bfCfg');
+if(cfg&&cfg.parentNode===panel)panel.insertBefore(sec,cfg);else panel.appendChild(sec);
+}
+function rhGetCardIds(card){
+var btns=card.querySelectorAll('.actions .btn');
+for(var i=0;i<btns.length;i++){
+var oc=btns[i].getAttribute('onclick')||'';
+var m;
+if((m=oc.match(/openFixedEditor\('([^']+)'\)/)))return {type:'fixed',id:m[1]};
+if((m=oc.match(/rhStudyEditor\('([^']+)'\)/)))return {type:'course',id:m[1]};
+}
+return null;
+}
+function rhForceStart(type,id){
+if(state.active)endSession(true);
+doStart(type,id);
+}
+function rhCardLayoutPass(){
+var main=document.querySelector('main');
+if(!main)return;
+Array.prototype.forEach.call(main.querySelectorAll('.card.activity'),function(card){
+var ids=rhGetCardIds(card);
+if(ids&&!card.querySelector('.rh-del-x')){
+var delOc=ids.type==='fixed'?"deleteFixed('"+ids.id+"')":"rhCourseDel('"+ids.id+"')";
+var delBtn=null;
+var allBtns=card.querySelectorAll('.actions .btn');
+for(var i=0;i<allBtns.length;i++){
+if((allBtns[i].getAttribute('onclick')||'')===delOc){delBtn=allBtns[i];break;}
+}
+if(delBtn){
+var x=document.createElement('button');
+x.className='rh-del-x';x.textContent='✕';
+x.setAttribute('aria-label','Διαγραφή');
+x.setAttribute('onclick',delOc);
+card.appendChild(x);
+delBtn.parentNode.removeChild(delBtn);
+}
+}
+var pill=card.querySelector('.activity-head .pill');
+if(pill)card.appendChild(pill);
+var isRunning=!!card.querySelector('.actions .btn[onclick*="stopActive"]');
+if(ids&&!isRunning&&!card.querySelector('.rh-inf-btn')){
+var acts=card.querySelector('.actions');
+if(acts){
+var inf=document.createElement('button');
+inf.className='btn btn-ghost rh-inf-btn';
+inf.textContent='∞';
+inf.title='Έναρξη χωρίς όριο';
+inf.setAttribute('aria-label','Έναρξη χωρίς όριο');
+inf.setAttribute('onclick',"rhForceStart('"+ids.type+"','"+ids.id+"')");
+var startBtn=null;
+var actsBtns=acts.querySelectorAll('.btn');
+for(var j=0;j<actsBtns.length;j++){
+var oc=actsBtns[j].getAttribute('onclick')||'';
+if(oc.indexOf('startFixed(')>=0||oc.indexOf('startCourse(')>=0){startBtn=actsBtns[j];break;}
+}
+if(startBtn)acts.insertBefore(inf,startBtn);else acts.appendChild(inf);
+}
+}
+});
+}
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(rhDataPanelBuild,60);});
+else setTimeout(rhDataPanelBuild,60);
+/* ===== ΤΕΛΟΣ ===== */
 </script>
   
 </body>
