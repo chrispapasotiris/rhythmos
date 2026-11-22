@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="2.2.82">
+<meta name="app-version" content="2.2.83">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -785,7 +785,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='2.2.82';
+var APP_VERSION='2.2.83';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -5874,38 +5874,6 @@ return '<article class="card activity '+(isActive?'running':'')+'" style="--acce
 +'<button class="btn btn-ghost-danger" onclick="rhCourseDel(\''+c.id+'\')">✕</button>'
 +'</div></article>';
 }
-function renderActivities(){
-+'<button class="btn btn-ghost" onclick="rhStudyEditor(null)">+ Νέο μάθημα</button></div>';
-if(!FIXED_DEFS.length&&!state.courses.length){
-html+='<div class="rh-empty">Καμία δραστηριότητα ακόμα. Φτιάξε μία και διάλεξε κατηγορία — τα μαθήματα πάνε στην κατηγορία «Μαθήματα».</div>';
-}
-ACT_CATS.forEach(function(cat){
-if(cat.id==='study')return;
-var list=FIXED_DEFS.filter(function(d){return (d.categoryId||'organize')===cat.id;});
-if(!list.length)return;
-html+='<div class="section-title" style="color:'+cat.color+'">'+cat.name+' <span class="muted" style="font-size:.78rem">· '+list.length+'</span></div>';
-html+=list.slice().sort(rhOrdCmp).map(function(d,i){return fixedCard(d,i);}).join('');
-});
-var core=state.courses.filter(function(c){return c.type!=='makeup';});
-var mk=state.courses.filter(function(c){return c.type==='makeup';});
-html+='<div class="rh-study-head"><span class="t" style="color:#4f46e5">Μαθήματα · '+core.length+'</span>'
-+'<div class="ops"><button class="rh-icon-btn" onclick="rhStudyEditor(null)" aria-label="Νέο μάθημα">+</button></div></div>';
-if(!core.length)html+='<div class="rh-empty">Δεν έχεις ορίσει μαθήματα. Πάτα + και όρισε εβδομαδιαίο και συνολικό στόχο.</div>';
-else html+=core.slice().sort(rhOrdCmp).map(function(c,i){return rhStudyCard(c,i);}).join('');
-html+='<div class="rh-study-head"><span class="t" style="color:#0ea5e9">Εμβόλιμες · '+mk.length+'</span>'
-+'<div class="ops"><button class="rh-icon-btn" onclick="rhMakeupTrim()" aria-label="Αφαίρεση κενής">−</button>'
-+'<button class="rh-icon-btn" onclick="rhMakeupAdd()" aria-label="Προσθήκη">+</button></div></div>';
-html+='<div class="rh-mk-bar"><div><strong>Εμφάνιση εμβόλιμων</strong><small>Δύο θέσεις από προεπιλογή. Πρόσθεσε όσες χρειάζεσαι.</small></div>'
-+'<button class="switch '+(state.settings.showMakeup?'on':'')+'" onclick="rhToggleMakeup()"></button></div>';
-if(state.settings.showMakeup){
-if(!mk.length)html+='<div class="rh-empty">Καμία εμβόλιμη θέση. Πάτα + για να προσθέσεις.</div>';
-else html+=mk.slice().sort(rhOrdCmp).map(function(c,i){return rhStudyCard(c,i);}).join('');
-}
-html+='<div class="rh-study-head"><span class="t" style="color:#f59e0b">Μηνιαίες επιλογές</span>'
-+'<div class="ops"><button class="rh-icon-btn" onclick="rhMonthlyEditor(null)" aria-label="Νέα μηνιαία">+</button></div></div>';
-html+='<div class="card" id="rh-monthly-card">'+rhMonthlyInner()+'</div>';
-return html;
-}
 function rhMonthlyInner(){
 ensureMonth();
 var h='';
@@ -10207,6 +10175,19 @@ d.el.classList.remove('rh-dragging');
 rhDrag2=null;
 }
 /* ===== ΤΕΛΟΣ ===== */
+</script>
+
+<script>
+function rhSlotOverlaps(day,st,en,skipId){
+var a=rhHMtoMin(st),b=rhHMtoMin(en),out=[];
+if(typeof scheduleGetDay!=='function')return out;
+scheduleGetDay(day).forEach(function(s){
+if(skipId&&s.id===skipId)return;
+var x=rhHMtoMin(s.start),y=rhHMtoMin(s.end);
+if(a<y&&b>x)out.push(s);
+});
+return out;
+}
 </script>
   
 </body>
