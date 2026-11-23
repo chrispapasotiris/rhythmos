@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="2.3.4">
+<meta name="app-version" content="2.3.5">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -785,7 +785,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='2.3.4';
+var APP_VERSION='2.3.5';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -10226,36 +10226,34 @@ return out;
 
 <!-- ===== TEMP: TOOL DRAWER + PDF SCAN v4 (cut this whole block to remove) ===== -->
 <style>
-/* ---- trigger: λεπτή μπάρα, ΣΤΑΘΕΡΑ χρώματα, πάνω από nav ---- */
-#ps-bar{position:fixed;left:8px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:998;
-  width:16px;height:112px;border-radius:999px;
-  background:#1a1f35;border:1.5px solid rgba(255,255,255,.28);
+/* ---- trigger: ευθυγραμμισμένο με το .app, φωτεινό ---- */
+#ps-bar{position:fixed;
+  left:max(10px, calc(50% - 205px));
+  bottom:calc(84px + env(safe-area-inset-bottom));z-index:998;
+  width:18px;height:120px;border-radius:999px;
+  background:linear-gradient(180deg,#6366f1,#8b5cf6);
+  border:0;
   display:grid;place-items:center;cursor:pointer;padding:0;
-  box-shadow:0 6px 20px rgba(0,0,0,.55),0 0 0 1px rgba(0,0,0,.3);
-  color:#a5b4fc;transition:background .18s,box-shadow .18s}
-#ps-bar:hover{background:#232a44;box-shadow:0 6px 22px rgba(0,0,0,.6),0 0 12px rgba(165,180,252,.35)}
-#ps-bar svg{width:13px;height:13px;display:block;transition:transform .22s cubic-bezier(.2,.8,.2,1);
-  filter:drop-shadow(0 1px 2px rgba(0,0,0,.6))}
+  box-shadow:0 0 0 2px rgba(99,102,241,.35),0 6px 24px rgba(99,102,241,.45);
+  color:#fff;transition:box-shadow .18s,transform .12s}
+#ps-bar:hover{box-shadow:0 0 0 3px rgba(139,92,246,.5),0 8px 28px rgba(99,102,241,.55)}
+#ps-bar:active{transform:scale(.94)}
+#ps-bar svg{width:14px;height:14px;display:block;
+  transition:transform .22s cubic-bezier(.2,.8,.2,1);
+  filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
 #ps-bar.open svg{transform:rotate(180deg)}
 
-/* ---- panel: ξεδιπλώνεται αριστερά→δεξιά, ΣΤΑΘΕΡΑ χρώματα ---- */
-#ps-panel{position:fixed;left:32px;bottom:calc(84px + env(safe-area-inset-bottom));z-index:998;
+/* ---- panel: ευθυγραμμισμένο με το .app ---- */
+#ps-panel{position:fixed;
+  left:max(34px, calc(50% - 181px));
+  bottom:calc(84px + env(safe-area-inset-bottom));z-index:998;
   clip-path:inset(0 100% 0 0);opacity:0;pointer-events:none;
   transition:clip-path .26s cubic-bezier(.2,.8,.2,1),opacity .18s}
 #ps-panel.open{clip-path:inset(0 0 0 0);opacity:1;pointer-events:auto}
 #ps-grid{display:grid;grid-template-columns:repeat(2,54px);grid-auto-rows:54px;gap:8px;
-  padding:10px;background:#1a1f35;
-  border:1.5px solid rgba(255,255,255,.22);border-radius:18px;
-  box-shadow:0 14px 36px rgba(0,0,0,.6),0 0 0 1px rgba(0,0,0,.35)}
-.ps-slot{width:54px;height:54px;border-radius:14px;
-  border:1.5px dashed rgba(255,255,255,.18);
-  background:rgba(255,255,255,.06);display:grid;place-items:center;padding:0}
-.ps-slot.tool{border-style:solid;border-color:rgba(255,255,255,.26);
-  background:#232a44;cursor:pointer;color:#a5b4fc;
-  transition:background .15s,transform .12s,box-shadow .15s}
-.ps-slot.tool:hover{background:#2c3554;box-shadow:0 0 12px rgba(165,180,252,.3)}
-.ps-slot.tool:active{transform:scale(.92)}
-.ps-slot svg{width:24px;height:24px;display:block;filter:drop-shadow(0 1px 2px rgba(0,0,0,.5))}
+  padding:10px;background:#1e2440;
+  border:1.5px solid rgba(255,255,255,.18);border-radius:18px;
+  box-shadow:0 14px 36px rgba(0,0,0,.55)}
 
 /* ---- fullscreen scanner (σταθερά, δεν εξαρτάται από theme) ---- */
 #ps-full{position:fixed;inset:0;z-index:9999;background:#000;display:none;
