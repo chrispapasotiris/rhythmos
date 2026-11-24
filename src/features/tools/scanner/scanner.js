@@ -1,3 +1,4 @@
+import './scanner.css';
 (function(){
 'use strict';
 if(window.__tdScan9)return;window.__tdScan9=1;
