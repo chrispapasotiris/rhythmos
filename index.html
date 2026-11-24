@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="2.3.61">
+<meta name="app-version" content="2.3.62">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -590,7 +590,7 @@ function renderDay(){
     <div class="plan-row"><span><span class="dot" style="background:#6366f1"></span>Δραστηριότητες</span><strong>${fmtHM(planned)}</strong></div>
     <div class="plan-row"><span><span class="dot" style="background:#10b981"></span>Ελεύθερος</span><strong class="${freeWeek<0?'text-danger':'text-success'}">${fmtHM(freeWeek)}</strong></div></div>
   <div class="card"><h3>Μηνιαίες επιλογές</h3><div class="summary-grid"><div class="stat-box"><span>Επιλεγμένες</span><strong>${fmtHM(selMonth)}</strong></div><div class="stat-box"><span>Διαθέσιμο</span><strong class="${monthFree<0?'text-danger':'text-success'}">${fmtHM(monthFree)}</strong></div></div>
-    <div class="choice-grid">${MONTHLY_DEFS.map(item=>{const checked=!!state.monthly.items[item.id];return `<button class="choice ${checked?'on':''}" onclick="toggleMonthly('${item.id}')"><span><strong>${item.name}</strong><small>${fmtHM(item.hours*60)}</small></span><span class="switch ${checked?'on':''}" style="pointer-events:none"></span></button>`;}).join('')}</div></div>
+    <div class="choice-grid">${MONTHLY_DEFS.map(item=>{const checked=!!state.monthly.items[item.id];return `<button class="choice ${checked?'on':''}" onclick="toggleMonthly('${item.id}')"><span><strong>${esc(item.name)}</strong><small>${fmtHM(item.hours*60)}</small></span><span class="switch ${checked?'on':''}" style="pointer-events:none"></span></button>`;}).join('')}</div></div>
   <div class="card"><h3>Μαθήματα σήμερα</h3>${activeToday.length?`<div class="stack" style="margin-top:12px">${activeToday.map(c=>{const info=courseInfo(c);const p2=info.todayTarget>0?clamp(info.dayMin/info.todayTarget*100,0,100):0;return `<div class="list-row"><div class="list-left"><strong>${esc(c.name)}</strong><div class="progress" style="--accent:${c.color};--accent2:${c.color2}"><span style="width:${p2}%"></span></div></div><div class="list-value">${fmtHM(Math.max(0,info.todayTarget-info.dayMin))} / ${fmtHM(info.todayTarget)}</div></div>`;}).join('')}</div>`:`<p class="muted" style="margin-top:10px">Κανένα μάθημα σήμερα.</p>`}${offToday.length?`<p class="note">Ρεπό: ${offToday.map(c=>esc(c.name)).join(', ')}</p>`:''}</div>
   <div class="card"><h3>Υπόλοιπα σταθερών</h3><div class="stack" style="margin-top:12px">${FIXED_DEFS.map(def=>{const info=fixedInfo(def.id);const p3=info.dailyCap?clamp(info.dayMin/info.dailyCap*100,0,100):0;const over=info.dayRemaining<0;const txt=over?`+${fmtHM(info.dayOver)}`:fmtHM(info.dayRemaining);return `<div class="list-row"><div class="list-left"><strong>${def.name}</strong><div class="progress ${over?'over':''}" style="--accent:${def.color};--accent2:${def.color2}"><span style="width:${p3}%"></span></div></div><div class="list-value ${over?'text-danger':''}">${txt}</div></div>`;}).join('')}</div></div>`;
   if(dueReminders.length){html+=`<div class="card overdue"><h3 class="text-danger">Εκπρόθεσμες υπενθυμίσεις</h3><div class="stack" style="margin-top:12px">${dueReminders.map(r=>{const dueMin=(r.intervalMin*60000-(Date.now()-r.lastDone))/60000;return `<div class="list-row"><div class="list-left"><strong>${esc(r.name)}</strong><span class="muted">${countdownText(dueMin)}</span></div><button class="btn btn-success" onclick="markReminderDone('${r.id}')">Έγινε</button></div>`;}).join('')}</div></div>`;}
@@ -642,7 +642,7 @@ function renderSettings(){
   <div class="section-title">Onboarding</div>
   <div class="card"><div class="setting-row"><div><strong>Εισαγωγικά screens</strong><span class="muted">Δείξε τα ξανά.</span></div><button class="btn btn-ghost" onclick="resetOnboarding()">Εμφάνιση</button></div></div>
   <div class="section-title">Μηνιαίες επιλογές</div>
-  <div class="card">${MONTHLY_DEFS.map(item=>{const checked=!!state.monthly.items[item.id];return `<div class="setting-row"><div><strong>${item.name}</strong><span class="muted">${fmtHM(item.hours*60)}</span></div><button class="switch ${checked?'on':''}" onclick="toggleMonthly('${item.id}')"></button></div>`;}).join('')}
+  <div class="card">${MONTHLY_DEFS.map(item=>{const checked=!!state.monthly.items[item.id];return `<div class="setting-row"><div><strong>${esc(item.name)}</strong><span class="muted">${fmtHM(item.hours*60)}</span></div><button class="switch ${checked?'on':''}" onclick="toggleMonthly('${item.id}')"></button></div>`;}).join('')}
     <div class="summary-grid"><div class="stat-box"><span>Επιλεγμένα</span><strong>${fmtHM(selectedMonthlyMin())}</strong></div><div class="stat-box"><span>Διαθέσιμο</span><strong class="${monthFree<0?'text-danger':'text-success'}">${fmtHM(monthFree)}</strong></div></div></div>
   <div class="section-title">Δραστηριότητες & όρια</div>
 <div class="card"><div class="stack">${FIXED_DEFS.map(d=>`<div class="list-row"><div class="list-left"><strong>${esc(d.name)}</strong><span class="muted">${fmtHM(d.daily)} / ημέρα · ${fmtHM(d.weekly)} / εβδομάδα${d.target?` · στόχος ${d.target}`:''}${d.hard?' · σκληρό':''}</span></div><button class="btn btn-ghost" onclick="openFixedEditor('${d.id}')">✎</button><button class="btn btn-ghost-danger" onclick="deleteFixed('${d.id}')">✕</button></div>`).join('')}</div>
@@ -774,7 +774,7 @@ function resetSemester(){confirmModal('Νέο εξάμηνο','Μηδενισμ�
 function clearWeekLogs(){confirmModal('Μηδενισμός εβδομάδας','Διαγραφή καταγραφών.',()=>{if(state.active)endSession(true);const ws=startOfWeek(),wn=startOfNextWeek();state.logs=state.logs.filter(l=>l.end<=ws||l.start>=wn);saveState();render();showToast('Μηδενίστηκε.');},'Μηδενισμός');}
 function clearAllData(){confirmModal('Επαναφορά','Διαγραφή όλων.',()=>{state=defaultState();saveState();applyUi();render();showToast('Επανήλθε.');},'Επαναφορά');}
 function checkRemindersDue(){let ch=false;state.reminders.forEach(r=>{const dueTs=r.lastDone+r.intervalMin*60000;if(Date.now()>=dueTs&&(!r.notifiedAt||r.notifiedAt<r.lastDone)){r.notifiedAt=Date.now();ch=true;pushAlert({title:'Υπενθύμιση',message:`${r.name}: ώρα να την κάνεις.`,buttons:[{text:'Έγινε',class:'btn-success',onClick:()=>markReminderDone(r.id)},{text:'Αργότερα',class:'btn-ghost'}]});}});if(ch)saveState();}
-function openModal(cfg){if(modalOpen){alertQueue.push(cfg);return;}modalOpen=true;const overlay=$('#modalOverlay');const sheet=document.createElement('div');sheet.className='sheet';sheet.innerHTML=`<div class="modal-handle"></div>${cfg.title?`<h3>${cfg.title}</h3>`:''}${cfg.message?`<p class="modal-message">${cfg.message}</p>`:''}${cfg.body||''}<div class="modal-actions"></div>`;overlay.innerHTML='';overlay.appendChild(sheet);overlay.classList.add('open');const actions=sheet.querySelector('.modal-actions');const buttons=cfg.buttons&&cfg.buttons.length?cfg.buttons:[{text:'Κλείσιμο'}];buttons.forEach(b=>{const btn=document.createElement('button');btn.className='btn '+(b.class||'btn-primary');btn.textContent=b.text;btn.onclick=()=>{if(b.onClick){const res=b.onClick();if(res===false)return;}if(b.close!==false)closeModal();};actions.appendChild(btn);});if(cfg.onMount)cfg.onMount(sheet);}
+function openModal(cfg){if(modalOpen){alertQueue.push(cfg);return;}modalOpen=true;const overlay=$('#modalOverlay');const sheet=document.createElement('div');sheet.className='sheet';sheet.innerHTML=`<div class="modal-handle"></div>${cfg.title?`<h3>${esc(cfg.title)}</h3>`:''}${cfg.message?`<p class="modal-message">${esc(cfg.message)}</p>`:''}${cfg.body||''}<div class="modal-actions"></div>`;overlay.innerHTML='';overlay.appendChild(sheet);overlay.classList.add('open');const actions=sheet.querySelector('.modal-actions');const buttons=cfg.buttons&&cfg.buttons.length?cfg.buttons:[{text:'Κλείσιμο'}];buttons.forEach(b=>{const btn=document.createElement('button');btn.className='btn '+(b.class||'btn-primary');btn.textContent=b.text;btn.onclick=()=>{if(b.onClick){const res=b.onClick();if(res===false)return;}if(b.close!==false)closeModal();};actions.appendChild(btn);});if(cfg.onMount)cfg.onMount(sheet);}
 function closeModal(){modalOpen=false;const overlay=$('#modalOverlay');overlay.classList.remove('open');overlay.innerHTML='';setTimeout(processAlertQueue,220);}
 function pushAlert(cfg){if(cfg&&!cfg.buttons){notifPush(cfg);return;}alertQueue.push(cfg);processAlertQueue();}
 function processAlertQueue(){if(modalOpen||!alertQueue.length)return;const cfg=alertQueue.shift();openModal(cfg);notify(cfg.title,cfg.message,cfg.sticky);}
@@ -785,7 +785,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='2.3.61';
+var APP_VERSION='2.3.62';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -923,7 +923,7 @@ function safeToast(m){var t=document.getElementById('safeToast');if(!t){t=docume
 function safeExport(){try{var raw=localStorage.getItem('rhythmos_time_app_v4');if(!raw){safeToast('Δεν βρέθηκαν δεδομένα.');return;}var b=new Blob([raw],{type:'application/json'});var u=URL.createObjectURL(b);var a=document.createElement('a');var d=new Date();a.href=u;a.download='rhythmos-backup-'+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},1500);safeToast('Το αντίγραφο κατέβηκε.');}catch(e){safeToast('Αποτυχία εξαγωγής.');}}
 function safeRollback(){var sw=safeCtl();if(!sw){safeToast('Χωρίς ενεργό service worker η επαναφορά δεν γίνεται: το sw.js είναι σπασμένο ή μη εγγεγραμμένο.');return;}safeSetForce(true,function(){location.reload();});}
 function safeRetryLatest(){safeSetForce(false,function(){location.reload();});}
-function safeSettings(){var old=document.getElementById('safePanel');if(old)old.remove();var v='άγνωστη';try{var m=document.documentElement.outerHTML.match(/name="app-version"\s+content="([^"]+)"/);if(m)v=m[1];}catch(e){}
+function safeSettings(){var old=document.getElementById('safePanel');if(old)old.remove();var v='άγνωστη';try{var m=document.documentElement.outerHTML.match(/name="app-version"\s+content="([^"]+)"/);if(m)v=esc(m[1]);}catch(e){}
 var on=window.__force===true;var p=document.createElement('div');p.id='safePanel';p.style.cssText='position:fixed;inset:0;z-index:390;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center';
 p.innerHTML='<div style="width:100%;max-width:430px;background:#1e1e2e;color:#fff;border-radius:28px 28px 0 0;padding:18px 18px 26px;font-family:system-ui,sans-serif"><h3 style="margin:0 0 6px;font-size:1.1rem">Ασφαλής λειτουργία</h3><p style="margin:0 0 14px;font-size:.82rem;opacity:.75">Έκδοση αρχείου: '+v+'. Αυτός ο πίνακας λειτουργεί ακόμα κι αν η εφαρμογή έχει σπάσει.</p><p style="margin:0 0 14px;font-size:.82rem;font-weight:700;color:'+(on?'#fbbf24':'#34d399')+'">Τρέχει τώρα: '+(on?'ΑΝΤΙΓΡΑΦΟ ΑΣΦΑΛΕΙΑΣ (good/)':'ΖΩΝΤΑΝΗ ΕΚΔΟΣΗ (server)')+'</p><button style="display:block;width:100%;margin-bottom:8px;padding:12px;border:none;border-radius:14px;background:#6366f1;color:#fff;font:700 .9rem system-ui,sans-serif" onclick="safeRollback()">Επαναφορά από το backup (good/)</button><button style="display:block;width:100%;margin-bottom:8px;padding:12px;border:none;border-radius:14px;background:#333a55;color:#fff;font:700 .9rem system-ui,sans-serif" onclick="safeRetryLatest()">Δοκίμασε ξανά τη ζωντανή έκδοση (έξοδος από το backup)</button><button style="display:block;width:100%;padding:12px;border:none;border-radius:14px;background:#553333;color:#fff;font:700 .9rem system-ui,sans-serif" onclick="document.getElementById(\'safePanel\').remove()">Κλείσιμο</button></div>';
 p.onclick=function(e){if(e.target===p)p.remove();};document.body.appendChild(p);}
@@ -10223,7 +10223,7 @@ return out;
 </script>
 
 
-<!-- ===== ΕΡΓΑΛΕΙΑ v8: ΣΥΡΤΑΡΙ + ΣΑΡΩΤΗΣ — σύρσιμο σελίδων με δείκτη δύο προσανατολισμών ===== -->
+<!-- ===== ΕΡΓΑΛΕΙΑ v9: ΣΥΡΤΑΡΙ + ΣΑΡΩΤΗΣ — διατάξεις λίστας/πλέγματος + δείκτες μίας κάρτας ===== -->
 <style>
 #tdWrap{position:fixed;left:0;top:50%;z-index:120;display:flex;align-items:center;transform:translate(var(--tdHide,-161px),-50%);transition:transform .32s cubic-bezier(.22,.8,.24,1);will-change:transform}
 #tdWrap.open{transform:translate(0,-50%)}
@@ -10282,21 +10282,38 @@ html.w3d-preview #tdWrap,html.bh-preview #tdWrap{visibility:hidden!important;poi
 #scPages::-webkit-scrollbar{width:8px}
 #scPages::-webkit-scrollbar-track{background:#11141f}
 #scPages::-webkit-scrollbar-thumb{background:#6366f1;border-radius:999px}
-#scPagesGrid{position:relative;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:auto;gap:10px}
-.sc-hint{grid-column:1/-1;font:600 .67rem/1.4 system-ui,sans-serif;color:#8f9ab8;padding:0 2px 2px}
+#scPagesBar{position:sticky;top:0;z-index:6;display:flex;align-items:center;gap:6px;padding:2px 0 8px;background:#0b0d14}
+#scPagesBar .sp{flex:1}
+.sc-lay{width:34px;height:30px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#8f9ab8;display:grid;place-items:center;cursor:pointer;padding:0}
+.sc-lay.on{background:var(--primary);color:#fff;border-color:transparent}
+.sc-lay svg{width:15px;height:15px;display:block}
+.sc-hint{font:600 .67rem/1.4 system-ui,sans-serif;color:#8f9ab8;padding:0 2px 8px}
+#scPagesGrid{position:relative;display:grid;grid-auto-rows:auto;gap:10px}
+#scPagesGrid.l2{grid-template-columns:repeat(2,minmax(0,1fr))}
+#scPagesGrid.l3{grid-template-columns:repeat(3,minmax(0,1fr))}
+#scPagesGrid.ll{grid-template-columns:1fr}
 .sc-pg{position:relative;display:flex;flex-direction:column;min-width:0;border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden;background:#11141f;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
 .sc-pg img{display:block;width:100%;height:150px;flex:0 0 auto;object-fit:contain;background:#000;pointer-events:none;-webkit-user-drag:none}
+.l3 .sc-pg img{height:104px}
+.sc-pginfo{display:none}
+.ll .sc-pg{flex-direction:row;align-items:center;gap:10px;padding:8px}
+.ll .sc-pg img{width:96px;height:72px;border-radius:8px}
+.ll .sc-pginfo{display:flex;flex-direction:column;flex:1;min-width:0;gap:2px}
+.ll .sc-pginfo b{font:700 .8rem system-ui;color:#eef1f8}
+.ll .sc-pginfo span{font:600 .68rem system-ui;color:#8f9ab8}
+.ll .sc-pgbar{flex:0 0 auto;flex-direction:column;gap:4px;padding:0;background:transparent}
+.ll .sc-mini{flex:0 0 auto;width:34px;min-height:24px;padding:3px 0}
+.sc-num{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.7);border-radius:8px;padding:2px 7px;font:700 .68rem system-ui;z-index:2}
+.sc-cut{position:absolute;top:6px;right:6px;background:rgba(99,102,241,.85);border-radius:8px;padding:2px 7px;font:700 .62rem system-ui;color:#fff;z-index:2}
+.ll .sc-cut{top:auto;bottom:6px;right:52px}
+.sc-pgbar{display:flex;gap:4px;padding:6px;flex:0 0 auto;background:#11141f}
+.sc-mini{flex:1;min-height:34px;padding:7px 0;border-radius:8px;border:1px solid rgba(99,102,241,.5);border-color:color-mix(in srgb,var(--primary) 55%,transparent);background:rgba(255,255,255,.04);color:var(--primary);font:700 .78rem system-ui;cursor:pointer}
+.l3 .sc-mini{min-height:28px;font-size:.68rem;padding:4px 0}
+.sc-mini:disabled{opacity:.28}
+.sc-mini.d{color:#ff8fa0;border-color:rgba(255,92,122,.45)}
 .sc-pg.sc-dragging{opacity:.28}
 .sc-ghost{position:fixed;z-index:39;pointer-events:none;margin:0;opacity:.96;transform:rotate(1.4deg) scale(1.03);box-shadow:0 20px 46px rgba(0,0,0,.62);border-color:var(--primary)}
 .sc-drop{position:absolute;display:none;background:var(--primary);border-radius:999px;pointer-events:none;z-index:6;box-shadow:0 0 12px color-mix(in srgb,var(--primary) 72%,transparent)}
-.sc-drop.v{width:4px}
-.sc-drop.h{height:4px}
-.sc-num{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.7);border-radius:8px;padding:2px 7px;font:700 .68rem system-ui;z-index:2}
-.sc-cut{position:absolute;top:6px;right:6px;background:rgba(99,102,241,.85);border-radius:8px;padding:2px 7px;font:700 .62rem system-ui;color:#fff;z-index:2}
-.sc-pgbar{display:flex;gap:4px;padding:6px;flex:0 0 auto;background:#11141f}
-.sc-mini{flex:1;min-height:34px;padding:7px 0;border-radius:8px;border:1px solid rgba(99,102,241,.5);border-color:color-mix(in srgb,var(--primary) 55%,transparent);background:rgba(255,255,255,.04);color:var(--primary);font:700 .78rem system-ui;cursor:pointer}
-.sc-mini:disabled{opacity:.28}
-.sc-mini.d{color:#ff8fa0;border-color:rgba(255,92,122,.45)}
 .sc-empty{grid-column:1/-1;padding:26px 14px;text-align:center;color:#8f9ab8;font-size:.84rem;line-height:1.5;border:1px dashed rgba(255,255,255,.16);border-radius:14px}
 #scMsg{position:absolute;left:16px;right:16px;top:50%;transform:translateY(-50%);display:none;text-align:center;color:#c8d0e6;font-size:.85rem;line-height:1.55;background:rgba(17,20,31,.94);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:16px;z-index:4}
 .sc-bar{flex:0 0 auto;display:none;align-items:center;gap:9px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:#11141f;border-top:1px solid rgba(255,255,255,.08)}
@@ -10332,11 +10349,13 @@ html.w3d-preview #tdWrap,html.bh-preview #tdWrap{visibility:hidden!important;poi
 <script>
 (function(){
 'use strict';
-if(window.__tdScan8)return;window.__tdScan8=1;
+if(window.__tdScan9)return;window.__tdScan9=1;
 var MAXSIDE=2200,PREV=1400,THUMB=460;
 var FULLQ=[{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}];
 var RATIOS=[{id:'full',n:'Πλήρης',r:0},{id:'9:16',n:'9:16',r:9/16},{id:'3:4',n:'3:4',r:3/4},{id:'1:1',n:'1:1',r:1}];
 var ratioId='full';
+var pgLayout='l2';
+try{var _pl=localStorage.getItem('rhythmos_scan_layout');if(_pl==='ll'||_pl==='l2'||_pl==='l3')pgLayout=_pl;}catch(e){}
 var S={pages:[],mode:'cam',idx:-1,stream:null,track:null,torch:false};
 var quad=FULLQ.map(function(p){return{x:p.x,y:p.y};}),camErr='',thumbUrls=[],lastPreview=null,clearArm=0,pgDrag=null;
 function $(i){return document.getElementById(i);}
@@ -10344,6 +10363,7 @@ function clamp(v,a,b){return v<a?a:v>b?b:v;}
 function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
 function lerp(a,b,t){return{x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t};}
 function gcd(a,b){while(b){var t=b;b=a%b;a=t;}return a||1;}
+function fmtSize(b){if(!b)return '—';if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(0)+' KB';return (b/1048576).toFixed(1)+' MB';}
 function isFull(q){return q&&q.length===4&&q[0].x<=0.001&&q[0].y<=0.001&&q[1].x>=0.999&&q[1].y<=0.001&&q[2].x>=0.999&&q[2].y>=0.999&&q[3].x<=0.001&&q[3].y>=0.999;}
 function toast(t){var e=$('scToast');if(!e)return;e.textContent=t;e.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(function(){e.classList.remove('show');},2600);}
 function busy(t){$('scBusy').classList.add('open');busyText(t);}
@@ -10431,12 +10451,8 @@ var w=Math.max(1,Math.round(o.w*sc)),h=Math.max(1,Math.round(o.h*sc));
 var cv=document.createElement('canvas');cv.width=w;cv.height=h;
 var cx=cv.getContext('2d',{willReadFrequently:true});
 cx.imageSmoothingEnabled=true;cx.imageSmoothingQuality='high';
-cx.save();
-cx.translate(w/2,h/2);
-cx.rotate(pg.rot*Math.PI/180);
-cx.scale(sc,sc);
-cx.drawImage(im,-im.width/2,-im.height/2);
-cx.restore();
+cx.save();cx.translate(w/2,h/2);cx.rotate(pg.rot*Math.PI/180);cx.scale(sc,sc);
+cx.drawImage(im,-im.width/2,-im.height/2);cx.restore();
 if(applyCrop&&!isFull(pg.quad))cv=warp(cv,pg.quad);
 if(pg.filter==='boost'){
 var ctx2=cv.getContext('2d',{willReadFrequently:true});
@@ -10630,22 +10646,29 @@ else{sub.textContent=n?n+(n===1?' σελίδα':' σελίδες'):'Κάμερα
 var c=$('scEditCount');if(c)c.textContent=(S.idx+1)+'/'+n;
 }
 function revokeThumbs(){thumbUrls.forEach(function(u){try{URL.revokeObjectURL(u);}catch(e){}});thumbUrls=[];}
+function setPgLayout(k){
+pgLayout=k;
+try{localStorage.setItem('rhythmos_scan_layout',k);}catch(e){}
+var g=$('scPagesGrid');if(g)g.className=k;
+Array.prototype.forEach.call(document.querySelectorAll('.sc-lay'),function(b){b.classList.toggle('on',b.dataset.l===k);});
+renderPages();
+}
 function renderPages(){
 revokeThumbs();
-var g=$('scPagesGrid');
+var g=$('scPagesGrid');if(!g)return;
+g.className=pgLayout;
 if(!S.pages.length){g.innerHTML='<div class="sc-empty">Καμία σελίδα ακόμα. Τράβηξε με την κάμερα ή φόρτωσε φωτογραφίες.</div>';return;}
-var hint=S.pages.length>1?'<div class="sc-hint">Κράτα πατημένη μια σελίδα μισό δευτερόλεπτο και σύρε. Η γραμμή δείχνει πού θα μπει: κάθετη ανάμεσα στις στήλες, οριζόντια ανάμεσα στις γραμμές.</div>':'';
-g.innerHTML=hint+S.pages.map(function(p,i){
+g.innerHTML=S.pages.map(function(p,i){
 var u=p.thumb?URL.createObjectURL(p.thumb):'';if(u)thumbUrls.push(u);
 return '<div class="sc-pg" data-i="'+i+'"><span class="sc-num">'+(i+1)+'</span>'+(isFull(p.quad)?'':'<span class="sc-cut">κοπή</span>')
 +'<img src="'+u+'" alt="Σελίδα '+(i+1)+'" draggable="false">'
++'<div class="sc-pginfo"><b>Σελίδα '+(i+1)+'</b><span>'+fmtSize(p.blob?p.blob.size:0)+'</span></div>'
 +'<div class="sc-pgbar">'
 +'<button class="sc-mini" data-a="edit" data-i="'+i+'" aria-label="Επεξεργασία">✎</button>'
 +'<button class="sc-mini" data-a="l" data-i="'+i+'"'+(i===0?' disabled':'')+' aria-label="Πριν">←</button>'
 +'<button class="sc-mini" data-a="r" data-i="'+i+'"'+(i===S.pages.length-1?' disabled':'')+' aria-label="Μετά">→</button>'
 +'<button class="sc-mini d" data-a="del" data-i="'+i+'" aria-label="Διαγραφή">✕</button>'
 +'</div></div>';}).join('');}
-/* ---------- σύρσιμο σελίδων ---------- */
 function pgCards(){var g=$('scPagesGrid');return g?Array.prototype.slice.call(g.querySelectorAll('.sc-pg')):[];}
 function pgDetach(d){
 clearTimeout(d.timer);
@@ -10655,10 +10678,12 @@ window.removeEventListener('pointerup',d.up);
 window.removeEventListener('pointercancel',d.cx);
 document.removeEventListener('touchmove',d.tm);
 }
+function pgHideInd(d){if(d.indH)d.indH.style.display='none';if(d.indV)d.indV.style.display='none';}
 function pgCancel(d){
 pgDetach(d);
 if(d.clone&&d.clone.parentNode)d.clone.parentNode.removeChild(d.clone);
-if(d.ind&&d.ind.parentNode)d.ind.parentNode.removeChild(d.ind);
+if(d.indH&&d.indH.parentNode)d.indH.parentNode.removeChild(d.indH);
+if(d.indV&&d.indV.parentNode)d.indV.parentNode.removeChild(d.indV);
 if(d.el)d.el.classList.remove('sc-dragging');
 if(pgDrag===d)pgDrag=null;
 }
@@ -10667,7 +10692,7 @@ if(pgDrag||S.pages.length<2)return;
 if(e.target.closest('button'))return;
 var card=e.target.closest('.sc-pg');if(!card)return;
 var d={el:card,x0:e.clientX,y0:e.clientY,lx:e.clientX,ly:e.clientY,
-started:false,from:pgCards().indexOf(card),k:null,clone:null,ind:null,
+started:false,from:pgCards().indexOf(card),k:null,clone:null,indH:null,indV:null,
 offX:0,offY:0,w:0,h:0,raf:0,timer:0};
 d.mv=function(ev){
 d.lx=ev.clientX;d.ly=ev.clientY;
@@ -10695,8 +10720,9 @@ c.style.width=r.width+'px';c.style.height=r.height+'px';
 c.style.left=r.left+'px';c.style.top=r.top+'px';
 $('scRoot').appendChild(c);d.clone=c;
 d.el.classList.add('sc-dragging');
-var ind=document.createElement('div');ind.className='sc-drop h';
-$('scPagesGrid').appendChild(ind);d.ind=ind;
+var g=$('scPagesGrid');
+d.indH=document.createElement('div');d.indH.className='sc-drop';g.appendChild(d.indH);
+d.indV=document.createElement('div');d.indV.className='sc-drop';g.appendChild(d.indV);
 try{if(navigator.vibrate)navigator.vibrate(12);}catch(e){}
 pgMove(d);
 var loop=function(){if(pgDrag!==d||!d.started)return;pgEdge(d);d.raf=requestAnimationFrame(loop);};
@@ -10710,43 +10736,39 @@ pgIndicator(d);
 }
 function pgIndicator(d){
 var grid=$('scPagesGrid'),cards=pgCards();
-if(!grid||cards.length<2){d.k=null;if(d.ind)d.ind.style.display='none';return;}
-var gr=grid.getBoundingClientRect(),x=d.lx,y=d.ly,gap=10,rows=[],i;
-for(i=0;i<cards.length;i+=2){
-var a=cards[i].getBoundingClientRect(),b=(i+1<cards.length)?cards[i+1].getBoundingClientRect():null;
-rows.push({i:i,a:a,b:b,top:a.top,bottom:Math.max(a.bottom,b?b.bottom:0)});
+if(!grid||cards.length<2){d.k=null;pgHideInd(d);return;}
+var gr=grid.getBoundingClientRect(),x=d.lx,y=d.ly;
+var sr=d.el.getBoundingClientRect(),cx=sr.left+sr.width/2,cy=sr.top+sr.height/2;
+var dx=x-cx,dy=y-cy;
+var hov=-1,best=1e9,i,r;
+for(i=0;i<cards.length;i++){
+r=cards[i].getBoundingClientRect();
+if(x>=r.left-6&&x<=r.right+6&&y>=r.top-6&&y<=r.bottom+6){hov=i;break;}
+var dd=Math.hypot(x-(r.left+r.width/2),y-(r.top+r.height/2));
+if(dd<best){best=dd;hov=i;}
 }
-var cands=[],r;
-for(r=0;r<=rows.length;r++){
-var k=Math.min(cards.length,r*2),yy;
-if(r===0)yy=rows[0].top-gap/2;
-else if(r===rows.length)yy=rows[rows.length-1].bottom+gap/2;
-else yy=(rows[r-1].bottom+rows[r].top)/2;
-cands.push({k:k,o:'h',x1:gr.left,x2:gr.right,y:yy});
-}
-rows.forEach(function(rw){
-if(!rw.b)return;
-cands.push({k:rw.i+1,o:'v',y1:rw.top,y2:rw.bottom,x:(rw.a.right+rw.b.left)/2});
-});
-var best=null,bd=1e9;
-cands.forEach(function(c){
-var dd;
-if(c.o==='h'){var dx=Math.max(c.x1-x,x-c.x2,0);dd=Math.hypot(dx,y-c.y);}
-else{var dy=Math.max(c.y1-y,y-c.y2,0);dd=Math.hypot(x-c.x,dy);}
-if(dd<bd){bd=dd;best=c;}
-});
-if(!best||best.k===d.from||best.k===d.from+1){d.k=null;d.ind.style.display='none';return;}
-d.k=best.k;
-var el=d.ind;
-el.className='sc-drop '+best.o;
-el.style.display='block';
-if(best.o==='h'){
-el.style.left='0px';el.style.width=gr.width+'px';
-el.style.top=(best.y-gr.top-2)+'px';el.style.height='4px';
-}else{
-el.style.top=(best.y1-gr.top)+'px';el.style.height=Math.max(8,best.y2-best.y1)+'px';
-el.style.left=(best.x-gr.left-2)+'px';el.style.width='4px';
-}
+if(hov<0||hov===d.from){d.k=null;pgHideInd(d);return;}
+d.k=hov;
+r=cards[hov].getBoundingClientRect();
+var isList=pgLayout==='ll';
+var sigX=Math.abs(dx)>18,sigY=Math.abs(dy)>18;
+var showH=isList?true:sigY;
+var showV=(!isList)&&sigX;
+if(!showH&&!showV)showH=true;
+if(showH){
+d.indH.style.display='block';
+d.indH.style.left=(r.left-gr.left)+'px';
+d.indH.style.width=r.width+'px';
+d.indH.style.height='4px';
+d.indH.style.top=((dy<0?r.top-6:r.bottom+2)-gr.top)+'px';
+}else d.indH.style.display='none';
+if(showV){
+d.indV.style.display='block';
+d.indV.style.top=(r.top-gr.top)+'px';
+d.indV.style.height=r.height+'px';
+d.indV.style.width='4px';
+d.indV.style.left=((dx<0?r.left-6:r.right+2)-gr.left)+'px';
+}else d.indV.style.display='none';
 }
 function pgEdge(d){
 var sc=$('scPages');if(!sc)return;
@@ -10758,16 +10780,16 @@ if(v){sc.scrollTop+=v;pgIndicator(d);}
 function pgUp(d){
 pgDetach(d);
 if(!d.started){if(pgDrag===d)pgDrag=null;return;}
-var from=d.from,k=d.k;
-if(k!=null&&from>=0&&k!==from&&k!==from+1){
-var to=k>from?k-1:k;
+var from=d.from,to=d.k;
+if(to!=null&&from>=0&&to!==from&&to<S.pages.length){
 var moved=S.pages.splice(from,1)[0];
 S.pages.splice(to,0,moved);
 S.pages.forEach(function(p,i){p.ts=i;DB.put(p);});
 toast('Η σειρά αποθηκεύτηκε.');
 }
 if(d.clone&&d.clone.parentNode)d.clone.parentNode.removeChild(d.clone);
-if(d.ind&&d.ind.parentNode)d.ind.parentNode.removeChild(d.ind);
+if(d.indH&&d.indH.parentNode)d.indH.parentNode.removeChild(d.indH);
+if(d.indV&&d.indV.parentNode)d.indV.parentNode.removeChild(d.indV);
 if(d.el)d.el.classList.remove('sc-dragging');
 pgDrag=null;
 renderPages();head();
@@ -10869,7 +10891,10 @@ torch:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="
 rot:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0115-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 01-15 6.7L3 16"/></svg>',
 prev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18"/></svg>',
 next:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>',
-scan:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 012-2h2"/><path d="M17 3h2a2 2 0 012 2v2"/><path d="M21 17v2a2 2 0 01-2 2h-2"/><path d="M7 21H5a2 2 0 01-2-2v-2"/><path d="M7 12h10"/></svg>'
+scan:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 012-2h2"/><path d="M17 3h2a2 2 0 012 2v2"/><path d="M21 17v2a2 2 0 01-2 2h-2"/><path d="M7 21H5a2 2 0 01-2-2v-2"/><path d="M7 12h10"/></svg>',
+layList:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+lay2:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>',
+lay3:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="10" y="3" width="5" height="5" rx="1"/><rect x="17" y="3" width="4" height="5" rx="1"/><rect x="3" y="10" width="5" height="5" rx="1"/><rect x="10" y="10" width="5" height="5" rx="1"/><rect x="17" y="10" width="4" height="5" rx="1"/><rect x="3" y="17" width="5" height="4" rx="1"/><rect x="10" y="17" width="5" height="4" rx="1"/><rect x="17" y="17" width="4" height="4" rx="1"/></svg>'
 };
 var built=false;
 function build(){
@@ -10890,7 +10915,13 @@ r.innerHTML=
 +'</svg>'
 +'<div class="sc-qh" id="scQhtl"></div><div class="sc-qh" id="scQhtr"></div><div class="sc-qh" id="scQhbr"></div><div class="sc-qh" id="scQhbl"></div>'
 +'</div>'
-+'<div id="scPages"><div id="scPagesGrid"></div></div><div id="scMsg"></div>'
++'<div id="scPages"><div id="scPagesBar"><span class="sp"></span>'
++'<button type="button" class="sc-lay" data-l="ll" aria-label="Λίστα">'+I.layList+'</button>'
++'<button type="button" class="sc-lay" data-l="l2" aria-label="Πλέγμα 2 στηλών">'+I.lay2+'</button>'
++'<button type="button" class="sc-lay" data-l="l3" aria-label="Πλέγμα 3 στηλών">'+I.lay3+'</button>'
++'</div>'
++'<div class="sc-hint">Κράτα πατημένη μια σελίδα και σύρε. Ευθεία μεταφορά: ένας δείκτης· λόξια: δύο, στις ακμές του στόχου.</div>'
++'<div id="scPagesGrid"></div></div><div id="scMsg"></div>'
 +'<div id="scMeta">—</div>'
 +'<div id="scRatioPop">'+RATIOS.map(function(x){return '<button type="button" data-r="'+x.id+'">'+x.n+'</button>';}).join('')+'</div></div>'
 +'<div class="sc-bar" id="scBarCam">'
@@ -10953,6 +10984,9 @@ setTimeout(function(){clearArm=0;b.textContent='Καθαρισμός';b.classLis
 clearArm=0;b.textContent='Καθαρισμός';b.classList.remove('warn');
 DB.clear().then(function(){S.pages=[];renderPages();head();toast('Άδειασε.');});};
 $('scChips').addEventListener('click',function(e){var b=e.target.closest('[data-f]');if(b)setFilter(b.dataset.f);});
+Array.prototype.forEach.call(document.querySelectorAll('.sc-lay'),function(b){
+b.onclick=function(){setPgLayout(b.dataset.l);};
+});
 $('scPages').addEventListener('pointerdown',pgDown);
 $('scPages').addEventListener('contextmenu',function(e){if(pgDrag&&pgDrag.started)e.preventDefault();});
 $('scPages').addEventListener('click',function(e){
@@ -10975,6 +11009,7 @@ b.classList.remove('sc-press');void b.offsetWidth;b.classList.add('sc-press');
 r.addEventListener('animationend',function(e){
 if(e.target.classList&&e.target.classList.contains('sc-press'))e.target.classList.remove('sc-press');});
 ratioSync();
+setPgLayout(pgLayout);
 }
 function attemptClose(){
 if(pgDrag)pgCancel(pgDrag);
@@ -11048,8 +11083,9 @@ tdClose();});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',buildDrawer);
 else buildDrawer();
 })();
-/* ===== ΤΕΛΟΣ ΕΡΓΑΛΕΙΩΝ v8 ===== */
+/* ===== ΤΕΛΟΣ ΕΡΓΑΛΕΙΩΝ v9 ===== */
 </script>
+
 
 
 
