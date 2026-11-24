@@ -306,7 +306,10 @@ html.compact .focus-overlay .fo-timer{font-size:3.4rem}
 <script>
 'use strict';
 window.__rhBooting=true;
-const STORE_KEY='rhythmos_time_app_v4';
+const RH_CHANNEL = typeof __RH_CHANNEL__ !== 'undefined' ? __RH_CHANNEL__ : 'stable';
+const STORE_KEY = RH_CHANNEL === 'dev' ? 'rh_dev_core' : 'rhythmos_time_app_v4';
+const SCAN_DB_NAME = RH_CHANNEL === 'dev' ? 'rhythmos-scan-dev' : 'rhythmos-scan-v1';
+const AUDIO_DB_NAME = RH_CHANNEL === 'dev' ? 'rhythmos-audio-dev' : 'rhythmos-audio';
 const DAY_SHORT=['Δε','Τρ','Τε','Πε','Πα','Σα','Κυ'];
 const DAY_FULL=['Δευτέρα','Τρίτη','Τετάρτη','Πέμπτη','Παρασκευή','Σάββατο','Κυριακή'];
 const MONTH_GEN=['Ιανουαρίου','Φεβρουαρίου','Μαρτίου','Απριλίου','Μαΐου','Ιουνίου','Ιουλίου','Αυγούστου','Σεπτεμβρίου','Οκτωβρίου','Νοεμβρίου','Δεκεμβρίου'];
@@ -848,7 +851,7 @@ setTimeout(function(){try{var m=document.querySelector('main');var ok=!!(m&&m.ch
 if(!state.audio)state.audio={categories:[],volume:.7,loop:true,curCat:null,curTrack:null,playing:false};
 var AUD_EL=new Audio();AUD_EL.loop=true;
 var AUD_DBP=null;
-function audDB(){if(AUD_DBP)return AUD_DBP;AUD_DBP=new Promise(function(res,rej){var r=indexedDB.open('rhythmos-audio',1);r.onupgradeneeded=function(){r.result.createObjectStore('blobs');};r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});return AUD_DBP;}
+function audDB(){if(AUD_DBP)return AUD_DBP;AUD_DBP=new Promise(function(res,rej){var r=indexedDB.open(AUDIO_DB_NAME,1);r.onupgradeneeded=function(){r.result.createObjectStore('blobs');};r.onsuccess=function(){res(r.result);};r.onerror=function(){rej(r.error);};});return AUD_DBP;}
 function audPut(k,b){return audDB().then(function(db){return new Promise(function(res,rej){var t=db.transaction('blobs','readwrite');t.objectStore('blobs').put(b,k);t.oncomplete=res;t.onerror=rej;});});}
 function audGet(k){return audDB().then(function(db){return new Promise(function(res,rej){var t=db.transaction('blobs','readonly');var q=t.objectStore('blobs').get(k);q.onsuccess=function(){res(q.result);};q.onerror=rej;});});}
 function audDel(k){return audDB().then(function(db){return new Promise(function(res,rej){var t=db.transaction('blobs','readwrite');t.objectStore('blobs').delete(k);t.oncomplete=res;t.onerror=rej;});});}
@@ -920,7 +923,7 @@ openModal({title:'Ήχοι & κατηγορίες',body:body,buttons:[{text:'Κ�
 function safeCtl(){return (navigator.serviceWorker&&navigator.serviceWorker.controller)?navigator.serviceWorker.controller:null;}
 function safeSetForce(on,then){var sw=safeCtl();if(!sw){safeToast('Χωρίς ενεργό service worker.');if(then)then();return;}var done=false;function onMsg(e){if(e.data&&e.data.type==='force-written'){done=true;navigator.serviceWorker.removeEventListener('message',onMsg);if(then)then();}}navigator.serviceWorker.addEventListener('message',onMsg);try{sw.postMessage({type:'set-force',on:!!on});}catch(e){}setTimeout(function(){if(!done){navigator.serviceWorker.removeEventListener('message',onMsg);if(then)then();}},1500);}
 function safeToast(m){var t=document.getElementById('safeToast');if(!t){t=document.createElement('div');t.id='safeToast';t.style.cssText='position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#202748;color:#fff;padding:10px 16px;border-radius:999px;font:700 .84rem system-ui,sans-serif;z-index:400;transition:opacity .3s';document.body.appendChild(t);}t.textContent=m;t.style.opacity='1';setTimeout(function(){t.style.opacity='0';},2200);}
-function safeExport(){try{var raw=localStorage.getItem('rhythmos_time_app_v4');if(!raw){safeToast('Δεν βρέθηκαν δεδομένα.');return;}var b=new Blob([raw],{type:'application/json'});var u=URL.createObjectURL(b);var a=document.createElement('a');var d=new Date();a.href=u;a.download='rhythmos-backup-'+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},1500);safeToast('Το αντίγραφο κατέβηκε.');}catch(e){safeToast('Αποτυχία εξαγωγής.');}}
+function safeExport(){try{var raw=localStorage.getItem(STORE_KEY);if(!raw){safeToast('Δεν βρέθηκαν δεδομένα.');return;}var b=new Blob([raw],{type:'application/json'});var u=URL.createObjectURL(b);var a=document.createElement('a');var d=new Date();a.href=u;a.download='rhythmos-backup-'+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},1500);safeToast('Το αντίγραφο κατέβηκε.');}catch(e){safeToast('Αποτυχία εξαγωγής.');}}
 function safeRollback(){var sw=safeCtl();if(!sw){safeToast('Χωρίς ενεργό service worker η επαναφορά δεν γίνεται: το sw.js είναι σπασμένο ή μη εγγεγραμμένο.');return;}safeSetForce(true,function(){location.reload();});}
 function safeRetryLatest(){safeSetForce(false,function(){location.reload();});}
 function safeSettings(){var old=document.getElementById('safePanel');if(old)old.remove();var v='άγνωστη';try{var m=document.documentElement.outerHTML.match(/name="app-version"\s+content="([^"]+)"/);if(m)v=esc(m[1]);}catch(e){}
@@ -10372,7 +10375,7 @@ function busyOff(){$('scBusy').classList.remove('open');}
 function stamp(){var d=new Date(),p=function(n){return(n<10?'0':'')+n;};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes());}
 function buf(b){return b.arrayBuffer?b.arrayBuffer():new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result);};r.onerror=rej;r.readAsArrayBuffer(b);});}
 var DB=(function(){
-var N='rhythmos_scan_v1',ST='pages',db=null;
+var N=SCAN_DB_NAME,ST='pages',db=null;
 function open(){return new Promise(function(res,rej){
 if(db)return res(db);
 if(!('indexedDB' in window))return rej(0);
