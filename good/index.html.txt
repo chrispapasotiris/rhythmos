@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="2.2.82">
+<meta name="app-version" content="2.3.62">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -590,7 +590,7 @@ function renderDay(){
     <div class="plan-row"><span><span class="dot" style="background:#6366f1"></span>Δραστηριότητες</span><strong>${fmtHM(planned)}</strong></div>
     <div class="plan-row"><span><span class="dot" style="background:#10b981"></span>Ελεύθερος</span><strong class="${freeWeek<0?'text-danger':'text-success'}">${fmtHM(freeWeek)}</strong></div></div>
   <div class="card"><h3>Μηνιαίες επιλογές</h3><div class="summary-grid"><div class="stat-box"><span>Επιλεγμένες</span><strong>${fmtHM(selMonth)}</strong></div><div class="stat-box"><span>Διαθέσιμο</span><strong class="${monthFree<0?'text-danger':'text-success'}">${fmtHM(monthFree)}</strong></div></div>
-    <div class="choice-grid">${MONTHLY_DEFS.map(item=>{const checked=!!state.monthly.items[item.id];return `<button class="choice ${checked?'on':''}" onclick="toggleMonthly('${item.id}')"><span><strong>${item.name}</strong><small>${fmtHM(item.hours*60)}</small></span><span class="switch ${checked?'on':''}" style="pointer-events:none"></span></button>`;}).join('')}</div></div>
+    <div class="choice-grid">${MONTHLY_DEFS.map(item=>{const checked=!!state.monthly.items[item.id];return `<button class="choice ${checked?'on':''}" onclick="toggleMonthly('${item.id}')"><span><strong>${esc(item.name)}</strong><small>${fmtHM(item.hours*60)}</small></span><span class="switch ${checked?'on':''}" style="pointer-events:none"></span></button>`;}).join('')}</div></div>
   <div class="card"><h3>Μαθήματα σήμερα</h3>${activeToday.length?`<div class="stack" style="margin-top:12px">${activeToday.map(c=>{const info=courseInfo(c);const p2=info.todayTarget>0?clamp(info.dayMin/info.todayTarget*100,0,100):0;return `<div class="list-row"><div class="list-left"><strong>${esc(c.name)}</strong><div class="progress" style="--accent:${c.color};--accent2:${c.color2}"><span style="width:${p2}%"></span></div></div><div class="list-value">${fmtHM(Math.max(0,info.todayTarget-info.dayMin))} / ${fmtHM(info.todayTarget)}</div></div>`;}).join('')}</div>`:`<p class="muted" style="margin-top:10px">Κανένα μάθημα σήμερα.</p>`}${offToday.length?`<p class="note">Ρεπό: ${offToday.map(c=>esc(c.name)).join(', ')}</p>`:''}</div>
   <div class="card"><h3>Υπόλοιπα σταθερών</h3><div class="stack" style="margin-top:12px">${FIXED_DEFS.map(def=>{const info=fixedInfo(def.id);const p3=info.dailyCap?clamp(info.dayMin/info.dailyCap*100,0,100):0;const over=info.dayRemaining<0;const txt=over?`+${fmtHM(info.dayOver)}`:fmtHM(info.dayRemaining);return `<div class="list-row"><div class="list-left"><strong>${def.name}</strong><div class="progress ${over?'over':''}" style="--accent:${def.color};--accent2:${def.color2}"><span style="width:${p3}%"></span></div></div><div class="list-value ${over?'text-danger':''}">${txt}</div></div>`;}).join('')}</div></div>`;
   if(dueReminders.length){html+=`<div class="card overdue"><h3 class="text-danger">Εκπρόθεσμες υπενθυμίσεις</h3><div class="stack" style="margin-top:12px">${dueReminders.map(r=>{const dueMin=(r.intervalMin*60000-(Date.now()-r.lastDone))/60000;return `<div class="list-row"><div class="list-left"><strong>${esc(r.name)}</strong><span class="muted">${countdownText(dueMin)}</span></div><button class="btn btn-success" onclick="markReminderDone('${r.id}')">Έγινε</button></div>`;}).join('')}</div></div>`;}
@@ -642,7 +642,7 @@ function renderSettings(){
   <div class="section-title">Onboarding</div>
   <div class="card"><div class="setting-row"><div><strong>Εισαγωγικά screens</strong><span class="muted">Δείξε τα ξανά.</span></div><button class="btn btn-ghost" onclick="resetOnboarding()">Εμφάνιση</button></div></div>
   <div class="section-title">Μηνιαίες επιλογές</div>
-  <div class="card">${MONTHLY_DEFS.map(item=>{const checked=!!state.monthly.items[item.id];return `<div class="setting-row"><div><strong>${item.name}</strong><span class="muted">${fmtHM(item.hours*60)}</span></div><button class="switch ${checked?'on':''}" onclick="toggleMonthly('${item.id}')"></button></div>`;}).join('')}
+  <div class="card">${MONTHLY_DEFS.map(item=>{const checked=!!state.monthly.items[item.id];return `<div class="setting-row"><div><strong>${esc(item.name)}</strong><span class="muted">${fmtHM(item.hours*60)}</span></div><button class="switch ${checked?'on':''}" onclick="toggleMonthly('${item.id}')"></button></div>`;}).join('')}
     <div class="summary-grid"><div class="stat-box"><span>Επιλεγμένα</span><strong>${fmtHM(selectedMonthlyMin())}</strong></div><div class="stat-box"><span>Διαθέσιμο</span><strong class="${monthFree<0?'text-danger':'text-success'}">${fmtHM(monthFree)}</strong></div></div></div>
   <div class="section-title">Δραστηριότητες & όρια</div>
 <div class="card"><div class="stack">${FIXED_DEFS.map(d=>`<div class="list-row"><div class="list-left"><strong>${esc(d.name)}</strong><span class="muted">${fmtHM(d.daily)} / ημέρα · ${fmtHM(d.weekly)} / εβδομάδα${d.target?` · στόχος ${d.target}`:''}${d.hard?' · σκληρό':''}</span></div><button class="btn btn-ghost" onclick="openFixedEditor('${d.id}')">✎</button><button class="btn btn-ghost-danger" onclick="deleteFixed('${d.id}')">✕</button></div>`).join('')}</div>
@@ -774,7 +774,7 @@ function resetSemester(){confirmModal('Νέο εξάμηνο','Μηδενισμ�
 function clearWeekLogs(){confirmModal('Μηδενισμός εβδομάδας','Διαγραφή καταγραφών.',()=>{if(state.active)endSession(true);const ws=startOfWeek(),wn=startOfNextWeek();state.logs=state.logs.filter(l=>l.end<=ws||l.start>=wn);saveState();render();showToast('Μηδενίστηκε.');},'Μηδενισμός');}
 function clearAllData(){confirmModal('Επαναφορά','Διαγραφή όλων.',()=>{state=defaultState();saveState();applyUi();render();showToast('Επανήλθε.');},'Επαναφορά');}
 function checkRemindersDue(){let ch=false;state.reminders.forEach(r=>{const dueTs=r.lastDone+r.intervalMin*60000;if(Date.now()>=dueTs&&(!r.notifiedAt||r.notifiedAt<r.lastDone)){r.notifiedAt=Date.now();ch=true;pushAlert({title:'Υπενθύμιση',message:`${r.name}: ώρα να την κάνεις.`,buttons:[{text:'Έγινε',class:'btn-success',onClick:()=>markReminderDone(r.id)},{text:'Αργότερα',class:'btn-ghost'}]});}});if(ch)saveState();}
-function openModal(cfg){if(modalOpen){alertQueue.push(cfg);return;}modalOpen=true;const overlay=$('#modalOverlay');const sheet=document.createElement('div');sheet.className='sheet';sheet.innerHTML=`<div class="modal-handle"></div>${cfg.title?`<h3>${cfg.title}</h3>`:''}${cfg.message?`<p class="modal-message">${cfg.message}</p>`:''}${cfg.body||''}<div class="modal-actions"></div>`;overlay.innerHTML='';overlay.appendChild(sheet);overlay.classList.add('open');const actions=sheet.querySelector('.modal-actions');const buttons=cfg.buttons&&cfg.buttons.length?cfg.buttons:[{text:'Κλείσιμο'}];buttons.forEach(b=>{const btn=document.createElement('button');btn.className='btn '+(b.class||'btn-primary');btn.textContent=b.text;btn.onclick=()=>{if(b.onClick){const res=b.onClick();if(res===false)return;}if(b.close!==false)closeModal();};actions.appendChild(btn);});if(cfg.onMount)cfg.onMount(sheet);}
+function openModal(cfg){if(modalOpen){alertQueue.push(cfg);return;}modalOpen=true;const overlay=$('#modalOverlay');const sheet=document.createElement('div');sheet.className='sheet';sheet.innerHTML=`<div class="modal-handle"></div>${cfg.title?`<h3>${esc(cfg.title)}</h3>`:''}${cfg.message?`<p class="modal-message">${esc(cfg.message)}</p>`:''}${cfg.body||''}<div class="modal-actions"></div>`;overlay.innerHTML='';overlay.appendChild(sheet);overlay.classList.add('open');const actions=sheet.querySelector('.modal-actions');const buttons=cfg.buttons&&cfg.buttons.length?cfg.buttons:[{text:'Κλείσιμο'}];buttons.forEach(b=>{const btn=document.createElement('button');btn.className='btn '+(b.class||'btn-primary');btn.textContent=b.text;btn.onclick=()=>{if(b.onClick){const res=b.onClick();if(res===false)return;}if(b.close!==false)closeModal();};actions.appendChild(btn);});if(cfg.onMount)cfg.onMount(sheet);}
 function closeModal(){modalOpen=false;const overlay=$('#modalOverlay');overlay.classList.remove('open');overlay.innerHTML='';setTimeout(processAlertQueue,220);}
 function pushAlert(cfg){if(cfg&&!cfg.buttons){notifPush(cfg);return;}alertQueue.push(cfg);processAlertQueue();}
 function processAlertQueue(){if(modalOpen||!alertQueue.length)return;const cfg=alertQueue.shift();openModal(cfg);notify(cfg.title,cfg.message,cfg.sticky);}
@@ -785,7 +785,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='2.2.82';
+var APP_VERSION='2.3.62';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -923,7 +923,7 @@ function safeToast(m){var t=document.getElementById('safeToast');if(!t){t=docume
 function safeExport(){try{var raw=localStorage.getItem('rhythmos_time_app_v4');if(!raw){safeToast('Δεν βρέθηκαν δεδομένα.');return;}var b=new Blob([raw],{type:'application/json'});var u=URL.createObjectURL(b);var a=document.createElement('a');var d=new Date();a.href=u;a.download='rhythmos-backup-'+d.getFullYear()+'-'+(d.getMonth()+1)+'-'+d.getDate()+'.json';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u);},1500);safeToast('Το αντίγραφο κατέβηκε.');}catch(e){safeToast('Αποτυχία εξαγωγής.');}}
 function safeRollback(){var sw=safeCtl();if(!sw){safeToast('Χωρίς ενεργό service worker η επαναφορά δεν γίνεται: το sw.js είναι σπασμένο ή μη εγγεγραμμένο.');return;}safeSetForce(true,function(){location.reload();});}
 function safeRetryLatest(){safeSetForce(false,function(){location.reload();});}
-function safeSettings(){var old=document.getElementById('safePanel');if(old)old.remove();var v='άγνωστη';try{var m=document.documentElement.outerHTML.match(/name="app-version"\s+content="([^"]+)"/);if(m)v=m[1];}catch(e){}
+function safeSettings(){var old=document.getElementById('safePanel');if(old)old.remove();var v='άγνωστη';try{var m=document.documentElement.outerHTML.match(/name="app-version"\s+content="([^"]+)"/);if(m)v=esc(m[1]);}catch(e){}
 var on=window.__force===true;var p=document.createElement('div');p.id='safePanel';p.style.cssText='position:fixed;inset:0;z-index:390;background:rgba(0,0,0,.7);display:flex;align-items:flex-end;justify-content:center';
 p.innerHTML='<div style="width:100%;max-width:430px;background:#1e1e2e;color:#fff;border-radius:28px 28px 0 0;padding:18px 18px 26px;font-family:system-ui,sans-serif"><h3 style="margin:0 0 6px;font-size:1.1rem">Ασφαλής λειτουργία</h3><p style="margin:0 0 14px;font-size:.82rem;opacity:.75">Έκδοση αρχείου: '+v+'. Αυτός ο πίνακας λειτουργεί ακόμα κι αν η εφαρμογή έχει σπάσει.</p><p style="margin:0 0 14px;font-size:.82rem;font-weight:700;color:'+(on?'#fbbf24':'#34d399')+'">Τρέχει τώρα: '+(on?'ΑΝΤΙΓΡΑΦΟ ΑΣΦΑΛΕΙΑΣ (good/)':'ΖΩΝΤΑΝΗ ΕΚΔΟΣΗ (server)')+'</p><button style="display:block;width:100%;margin-bottom:8px;padding:12px;border:none;border-radius:14px;background:#6366f1;color:#fff;font:700 .9rem system-ui,sans-serif" onclick="safeRollback()">Επαναφορά από το backup (good/)</button><button style="display:block;width:100%;margin-bottom:8px;padding:12px;border:none;border-radius:14px;background:#333a55;color:#fff;font:700 .9rem system-ui,sans-serif" onclick="safeRetryLatest()">Δοκίμασε ξανά τη ζωντανή έκδοση (έξοδος από το backup)</button><button style="display:block;width:100%;padding:12px;border:none;border-radius:14px;background:#553333;color:#fff;font:700 .9rem system-ui,sans-serif" onclick="document.getElementById(\'safePanel\').remove()">Κλείσιμο</button></div>';
 p.onclick=function(e){if(e.target===p)p.remove();};document.body.appendChild(p);}
@@ -10208,7 +10208,887 @@ rhDrag2=null;
 }
 /* ===== ΤΕΛΟΣ ===== */
 </script>
-  
+
+<script>
+function rhSlotOverlaps(day,st,en,skipId){
+var a=rhHMtoMin(st),b=rhHMtoMin(en),out=[];
+if(typeof scheduleGetDay!=='function')return out;
+scheduleGetDay(day).forEach(function(s){
+if(skipId&&s.id===skipId)return;
+var x=rhHMtoMin(s.start),y=rhHMtoMin(s.end);
+if(a<y&&b>x)out.push(s);
+});
+return out;
+}
+</script>
+
+
+<!-- ===== ΕΡΓΑΛΕΙΑ v9: ΣΥΡΤΑΡΙ + ΣΑΡΩΤΗΣ — διατάξεις λίστας/πλέγματος + δείκτες μίας κάρτας ===== -->
+<style>
+#tdWrap{position:fixed;left:0;top:50%;z-index:120;display:flex;align-items:center;transform:translate(var(--tdHide,-161px),-50%);transition:transform .32s cubic-bezier(.22,.8,.24,1);will-change:transform}
+#tdWrap.open{transform:translate(0,-50%)}
+#tdPanel{background:var(--card);border:1px solid var(--line);border-left:0;border-radius:0 var(--r-surface,20px) var(--r-surface,20px) 0;box-shadow:var(--shadow-float);padding:12px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+.td-cap{font:700 .6rem/1 'Roboto',system-ui,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 2px 9px}
+#tdGrid{display:grid;grid-template-columns:repeat(2,64px);grid-auto-rows:64px;gap:8px}
+.td-slot{width:64px;height:64px;border-radius:14px;border:1px solid var(--line);background:var(--soft);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--muted);font:600 .55rem/1.25 'Roboto',system-ui,sans-serif;text-align:center;padding:4px}
+button.td-slot{cursor:pointer;color:var(--primary);font-weight:700;transition:transform .14s,border-color .14s}
+button.td-slot:active{transform:scale(.92)}
+button.td-slot:hover{border-color:var(--primary)}
+.td-slot svg{width:22px;height:22px;display:block}
+.td-lbl{font-size:.6rem;line-height:1}
+.td-soon{opacity:.62;border-style:dashed}
+#tdHandle{width:22px;height:110px;flex:0 0 auto;margin-left:-1px;border:1px solid var(--line);border-left:0;border-radius:0 14px 14px 0;background:var(--card);color:var(--primary);display:grid;place-items:center;cursor:pointer;padding:0;box-shadow:var(--shadow-float);-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
+#tdHandle svg{width:14px;height:14px;display:block;transition:transform .32s cubic-bezier(.22,.8,.24,1)}
+#tdWrap.open #tdHandle svg{transform:rotate(180deg)}
+html.w3d-preview #tdWrap,html.bh-preview #tdWrap{visibility:hidden!important;pointer-events:none!important}
+@media(prefers-reduced-motion:reduce){#tdWrap,#tdHandle svg{transition:none}}
+#scRoot{position:fixed;inset:0;z-index:4000;display:none;flex-direction:column;background:#0b0d14;color:#eef1f8;font-family:'Roboto',system-ui,-apple-system,sans-serif;overscroll-behavior:contain}
+#scRoot.open{display:flex}
+#scRoot *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+#scRoot button{transition:transform .12s ease,background .15s,border-color .15s,filter .15s}
+#scRoot button:active{transform:scale(.92)}
+@keyframes scPress{0%{transform:scale(1)}45%{transform:scale(.86)}100%{transform:scale(1)}}
+.sc-press{animation:scPress .26s ease}
+.sc-top{flex:0 0 auto;display:flex;align-items:center;gap:9px;padding:calc(10px + env(safe-area-inset-top)) 12px 10px;background:#11141f;border-bottom:1px solid rgba(255,255,255,.08)}
+.sc-top h3{margin:0;font-size:.96rem;font-weight:700;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sc-sub{font-size:.7rem;color:#8f9ab8;font-weight:700;white-space:nowrap;background:none;border:0;padding:4px 6px;border-radius:8px;cursor:default;font-family:inherit}
+.sc-sub.link{cursor:pointer;color:var(--primary);border:1px solid rgba(99,102,241,.4);border-color:color-mix(in srgb,var(--primary) 45%,transparent)}
+.sc-ico{width:38px;height:38px;flex:0 0 auto;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#eef1f8;display:grid;place-items:center;cursor:pointer;padding:0}
+.sc-ico.on{background:var(--primary);border-color:transparent;color:#fff}
+.sc-ico svg{width:18px;height:18px;display:block}
+#scStage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#05070d}
+#scVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;background:#000}
+#scFrame{position:absolute;display:none;pointer-events:none;border:1.5px solid rgba(255,255,255,.9);box-shadow:0 0 0 9999px rgba(0,0,0,.45);z-index:2}
+#scFrame i{position:absolute;width:16px;height:16px;border:2.5px solid var(--primary);font-style:normal}
+#scFrame i.a{left:-2px;top:-2px;border-right:0;border-bottom:0}
+#scFrame i.b{right:-2px;top:-2px;border-left:0;border-bottom:0}
+#scFrame i.c{left:-2px;bottom:-2px;border-right:0;border-top:0}
+#scFrame i.d{right:-2px;bottom:-2px;border-left:0;border-top:0}
+#scFrame b{position:absolute;left:50%;bottom:6px;transform:translateX(-50%);font:700 .62rem system-ui;color:#fff;background:rgba(8,10,18,.6);padding:3px 9px;border-radius:999px;letter-spacing:.05em}
+#scMeta{position:absolute;top:10px;left:12px;z-index:3;display:none;padding:6px 11px;border-radius:999px;background:rgba(8,10,18,.66);border:1px solid rgba(255,255,255,.16);color:#dfe5f5;font:700 .64rem system-ui;font-variant-numeric:tabular-nums;pointer-events:none;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#scRatioPop{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);z-index:6;display:none;gap:6px;padding:7px;border-radius:14px;background:rgba(13,16,26,.94);border:1px solid rgba(255,255,255,.16);box-shadow:0 12px 32px rgba(0,0,0,.5);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+#scRatioPop.open{display:flex}
+#scRatioPop button{padding:9px 13px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#c8d0e6;font:700 .74rem system-ui;cursor:pointer;white-space:nowrap}
+#scRatioPop button.on{background:var(--primary);border-color:transparent;color:#fff}
+#scWrap{position:relative;display:none;flex:0 0 auto;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+#scCv{display:block;width:100%;height:100%;background:#000}
+#scQSvg{position:absolute;inset:0;width:100%;height:100%;display:block}
+#scQMask{pointer-events:none}
+#scQGrid line{pointer-events:none}
+#scQPoly{pointer-events:fill;cursor:move;touch-action:none}
+.sc-qh{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:var(--primary);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);touch-action:none;cursor:grab;z-index:3}
+.sc-qh:active{cursor:grabbing;transform:scale(1.15)}
+#scPages{position:absolute;inset:0;display:none;overflow-y:auto;overflow-x:hidden;padding:12px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#6366f1 #11141f}
+#scPages::-webkit-scrollbar{width:8px}
+#scPages::-webkit-scrollbar-track{background:#11141f}
+#scPages::-webkit-scrollbar-thumb{background:#6366f1;border-radius:999px}
+#scPagesBar{position:sticky;top:0;z-index:6;display:flex;align-items:center;gap:6px;padding:2px 0 8px;background:#0b0d14}
+#scPagesBar .sp{flex:1}
+.sc-lay{width:34px;height:30px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:#8f9ab8;display:grid;place-items:center;cursor:pointer;padding:0}
+.sc-lay.on{background:var(--primary);color:#fff;border-color:transparent}
+.sc-lay svg{width:15px;height:15px;display:block}
+.sc-hint{font:600 .67rem/1.4 system-ui,sans-serif;color:#8f9ab8;padding:0 2px 8px}
+#scPagesGrid{position:relative;display:grid;grid-auto-rows:auto;gap:10px}
+#scPagesGrid.l2{grid-template-columns:repeat(2,minmax(0,1fr))}
+#scPagesGrid.l3{grid-template-columns:repeat(3,minmax(0,1fr))}
+#scPagesGrid.ll{grid-template-columns:1fr}
+.sc-pg{position:relative;display:flex;flex-direction:column;min-width:0;border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden;background:#11141f;touch-action:pan-y;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.sc-pg img{display:block;width:100%;height:150px;flex:0 0 auto;object-fit:contain;background:#000;pointer-events:none;-webkit-user-drag:none}
+.l3 .sc-pg img{height:104px}
+.sc-pginfo{display:none}
+.ll .sc-pg{flex-direction:row;align-items:center;gap:10px;padding:8px}
+.ll .sc-pg img{width:96px;height:72px;border-radius:8px}
+.ll .sc-pginfo{display:flex;flex-direction:column;flex:1;min-width:0;gap:2px}
+.ll .sc-pginfo b{font:700 .8rem system-ui;color:#eef1f8}
+.ll .sc-pginfo span{font:600 .68rem system-ui;color:#8f9ab8}
+.ll .sc-pgbar{flex:0 0 auto;flex-direction:column;gap:4px;padding:0;background:transparent}
+.ll .sc-mini{flex:0 0 auto;width:34px;min-height:24px;padding:3px 0}
+.sc-num{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.7);border-radius:8px;padding:2px 7px;font:700 .68rem system-ui;z-index:2}
+.sc-cut{position:absolute;top:6px;right:6px;background:rgba(99,102,241,.85);border-radius:8px;padding:2px 7px;font:700 .62rem system-ui;color:#fff;z-index:2}
+.ll .sc-cut{top:auto;bottom:6px;right:52px}
+.sc-pgbar{display:flex;gap:4px;padding:6px;flex:0 0 auto;background:#11141f}
+.sc-mini{flex:1;min-height:34px;padding:7px 0;border-radius:8px;border:1px solid rgba(99,102,241,.5);border-color:color-mix(in srgb,var(--primary) 55%,transparent);background:rgba(255,255,255,.04);color:var(--primary);font:700 .78rem system-ui;cursor:pointer}
+.l3 .sc-mini{min-height:28px;font-size:.68rem;padding:4px 0}
+.sc-mini:disabled{opacity:.28}
+.sc-mini.d{color:#ff8fa0;border-color:rgba(255,92,122,.45)}
+.sc-pg.sc-dragging{opacity:.28}
+.sc-ghost{position:fixed;z-index:39;pointer-events:none;margin:0;opacity:.96;transform:rotate(1.4deg) scale(1.03);box-shadow:0 20px 46px rgba(0,0,0,.62);border-color:var(--primary)}
+.sc-drop{position:absolute;display:none;background:var(--primary);border-radius:999px;pointer-events:none;z-index:6;box-shadow:0 0 12px color-mix(in srgb,var(--primary) 72%,transparent)}
+.sc-empty{grid-column:1/-1;padding:26px 14px;text-align:center;color:#8f9ab8;font-size:.84rem;line-height:1.5;border:1px dashed rgba(255,255,255,.16);border-radius:14px}
+#scMsg{position:absolute;left:16px;right:16px;top:50%;transform:translateY(-50%);display:none;text-align:center;color:#c8d0e6;font-size:.85rem;line-height:1.55;background:rgba(17,20,31,.94);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:16px;z-index:4}
+.sc-bar{flex:0 0 auto;display:none;align-items:center;gap:9px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:#11141f;border-top:1px solid rgba(255,255,255,.08)}
+.sc-bar.col{flex-direction:column;align-items:stretch;gap:9px}
+.sc-row{display:flex;align-items:center;gap:9px}
+.sc-btn{flex:1;padding:12px 10px;border-radius:12px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.06);color:#eef1f8;font:700 .82rem system-ui;cursor:pointer}
+.sc-btn.pri{background:linear-gradient(135deg,var(--primary),var(--primary2,#8b5cf6));border-color:transparent;color:#fff}
+.sc-btn.warn{background:#5a2230;border-color:rgba(255,92,122,.4);color:#ffb3bf}
+.sc-fire{width:62px;height:62px;flex:0 0 auto;border-radius:50%;border:3px solid #fff;background:rgba(255,255,255,.12);color:#fff;display:grid;place-items:center;cursor:pointer;padding:0}
+.sc-fire svg{width:26px;height:26px}
+#scRatioBtn{width:auto;min-width:52px;padding:0 10px;font:800 .72rem system-ui;color:#fff;letter-spacing:.03em}
+.sc-chips{display:flex;align-items:center;gap:6px}
+.sc-chips button[data-f]{flex:0 0 auto;padding:8px 13px;border-radius:999px;border:1px solid rgba(255,255,255,.16);background:rgba(255,255,255,.05);color:#a9b3cd;font:700 .74rem system-ui;cursor:pointer}
+.sc-chips button[data-f].on{background:var(--primary);border-color:transparent;color:#fff}
+.sc-flex{flex:1}
+.sc-nav{width:34px;height:34px;flex:0 0 auto;border-radius:10px;border:1px solid rgba(99,102,241,.5);border-color:color-mix(in srgb,var(--primary) 55%,transparent);background:rgba(255,255,255,.04);color:var(--primary);display:grid;place-items:center;cursor:pointer;padding:0}
+.sc-nav svg{width:16px;height:16px;display:block}
+.sc-count{font:700 .72rem system-ui;color:#a9b3cd;min-width:36px;text-align:center;font-variant-numeric:tabular-nums}
+.sc-opts{display:flex;gap:9px}
+.sc-opts label{flex:1;font-size:.64rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#8f9ab8}
+.sc-opts select{width:100%;margin-top:4px;padding:8px;border-radius:9px;border:1px solid rgba(255,255,255,.16);background:#171b2a;color:#eef1f8;font:600 .76rem system-ui}
+#scToast{position:absolute;left:50%;bottom:130px;transform:translateX(-50%);max-width:88%;text-align:center;background:rgba(24,28,44,.97);border:1px solid rgba(255,255,255,.14);color:#eef1f8;padding:10px 16px;border-radius:12px;font:600 .8rem system-ui;z-index:30;opacity:0;pointer-events:none;transition:opacity .22s}
+#scToast.show{opacity:1}
+#scBusy{position:absolute;inset:0;z-index:40;background:rgba(5,7,13,.88);display:none;place-items:center;text-align:center}
+#scBusy.open{display:grid}
+#scBusy div{font:700 .86rem system-ui;color:#c8d0e6}
+#scBusy small{display:block;margin-top:6px;font:600 .74rem system-ui;color:#8f9ab8}
+#scConfirm{position:absolute;inset:0;z-index:50;background:rgba(5,7,13,.72);display:none;place-items:center}
+#scConfirm.open{display:grid}
+.sc-cbox{width:min(320px,86%);background:#151a29;border:1px solid rgba(255,255,255,.14);border-radius:16px;padding:16px;box-shadow:0 18px 44px rgba(0,0,0,.55)}
+.sc-cbox p{margin:0 0 14px;font-size:.85rem;line-height:1.5;color:#c8d0e6}
+</style>
+<script>
+(function(){
+'use strict';
+if(window.__tdScan9)return;window.__tdScan9=1;
+var MAXSIDE=2200,PREV=1400,THUMB=460;
+var FULLQ=[{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}];
+var RATIOS=[{id:'full',n:'Πλήρης',r:0},{id:'9:16',n:'9:16',r:9/16},{id:'3:4',n:'3:4',r:3/4},{id:'1:1',n:'1:1',r:1}];
+var ratioId='full';
+var pgLayout='l2';
+try{var _pl=localStorage.getItem('rhythmos_scan_layout');if(_pl==='ll'||_pl==='l2'||_pl==='l3')pgLayout=_pl;}catch(e){}
+var S={pages:[],mode:'cam',idx:-1,stream:null,track:null,torch:false};
+var quad=FULLQ.map(function(p){return{x:p.x,y:p.y};}),camErr='',thumbUrls=[],lastPreview=null,clearArm=0,pgDrag=null;
+function $(i){return document.getElementById(i);}
+function clamp(v,a,b){return v<a?a:v>b?b:v;}
+function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
+function lerp(a,b,t){return{x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t};}
+function gcd(a,b){while(b){var t=b;b=a%b;a=t;}return a||1;}
+function fmtSize(b){if(!b)return '—';if(b<1024)return b+' B';if(b<1048576)return (b/1024).toFixed(0)+' KB';return (b/1048576).toFixed(1)+' MB';}
+function isFull(q){return q&&q.length===4&&q[0].x<=0.001&&q[0].y<=0.001&&q[1].x>=0.999&&q[1].y<=0.001&&q[2].x>=0.999&&q[2].y>=0.999&&q[3].x<=0.001&&q[3].y>=0.999;}
+function toast(t){var e=$('scToast');if(!e)return;e.textContent=t;e.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(function(){e.classList.remove('show');},2600);}
+function busy(t){$('scBusy').classList.add('open');busyText(t);}
+function busyText(t){var e=$('scBusyTxt');if(e)e.textContent=t;}
+function busyOff(){$('scBusy').classList.remove('open');}
+function stamp(){var d=new Date(),p=function(n){return(n<10?'0':'')+n;};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes());}
+function buf(b){return b.arrayBuffer?b.arrayBuffer():new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result);};r.onerror=rej;r.readAsArrayBuffer(b);});}
+var DB=(function(){
+var N='rhythmos_scan_v1',ST='pages',db=null;
+function open(){return new Promise(function(res,rej){
+if(db)return res(db);
+if(!('indexedDB' in window))return rej(0);
+var r=indexedDB.open(N,1);
+r.onupgradeneeded=function(){if(!r.result.objectStoreNames.contains(ST))r.result.createObjectStore(ST,{keyPath:'id'});};
+r.onsuccess=function(){db=r.result;res(db);};
+r.onerror=function(){rej(r.error);};});}
+function st(m){return open().then(function(d){return d.transaction(ST,m).objectStore(ST);});}
+function req(q){return new Promise(function(res){q.onsuccess=function(){res(q.result);};q.onerror=function(){res(null);};});}
+return{
+all:function(){return st('readonly').then(function(s){return req(s.getAll());}).then(function(l){return l||[];}).catch(function(){return[];});},
+put:function(o){return st('readwrite').then(function(s){return req(s.put(o));}).catch(function(){});},
+del:function(i){return st('readwrite').then(function(s){return req(s.delete(i));}).catch(function(){});},
+clear:function(){return st('readwrite').then(function(s){return req(s.clear());}).catch(function(){});}
+};})();
+function loadImg(blob){return new Promise(function(res,rej){
+var u=URL.createObjectURL(blob),im=new Image();
+im.onload=function(){URL.revokeObjectURL(u);res(im);};
+im.onerror=function(){URL.revokeObjectURL(u);rej(new Error('μη αναγνώσιμη εικόνα'));};
+im.src=u;});}
+function toBlob(cv,q){return new Promise(function(res,rej){cv.toBlob(function(b){b?res(b):rej(new Error('αποτυχία κωδικοποίησης'));},'image/jpeg',q);});}
+function oriented(im,rot){var sw=(rot%180)!==0;return{w:sw?im.height:im.width,h:sw?im.width:im.height};}
+function pctile(hist,n,p){var a=0,t=n*p;for(var i=0;i<256;i++){a+=hist[i];if(a>=t)return i;}return 255;}
+function enhance(d,w,h,mode){
+if(mode!=='boost')return;
+var n=w*h,i,c;
+for(c=0;c<3;c++){
+var hh=new Uint32Array(256);
+for(i=0;i<n;i++)hh[d[i*4+c]]++;
+var a=pctile(hh,n,0.005),b=pctile(hh,n,0.995);
+if(b-a<12)continue;
+var s=255/(b-a);
+for(i=0;i<n;i++)d[i*4+c]=(d[i*4+c]-a)*s;
+}
+}
+function homography(q){
+var x0=q[0].x,y0=q[0].y,x1=q[1].x,y1=q[1].y,x2=q[2].x,y2=q[2].y,x3=q[3].x,y3=q[3].y;
+var dx1=x1-x2,dx2=x3-x2,dx3=x0-x1+x2-x3;
+var dy1=y1-y2,dy2=y3-y2,dy3=y0-y1+y2-y3;
+var den=dx1*dy2-dx2*dy1,g=0,h=0;
+if(Math.abs(den)>1e-9){g=(dx3*dy2-dx2*dy3)/den;h=(dx1*dy3-dx3*dy1)/den;}
+if(!isFinite(g)||!isFinite(h)){g=0;h=0;}
+return{a:x1-x0+g*x1,b:x3-x0+h*x3,c:x0,d:y1-y0+g*y1,e:y3-y0+h*y3,f:y0,g:g,h:h};
+}
+function warp(cv,q){
+var sw=cv.width,sh=cv.height;
+var p=q.map(function(pt){return{x:pt.x*sw,y:pt.y*sh};});
+var w=Math.max(8,Math.round(Math.max(dist(p[0],p[1]),dist(p[3],p[2]))));
+var h=Math.max(8,Math.round(Math.max(dist(p[0],p[3]),dist(p[1],p[2]))));
+var H=homography(p);
+var src=cv.getContext('2d',{willReadFrequently:true}).getImageData(0,0,sw,sh).data;
+var out=document.createElement('canvas');out.width=w;out.height=h;
+var octx=out.getContext('2d');var od=octx.createImageData(w,h);var dd=od.data;
+var a=H.a,b=H.b,c=H.c,d=H.d,e=H.e,f=H.f,g=H.g,hh=H.h;
+var iw=1/w,ih=1/h,sw1=sw-1,sh1=sh-1,k=0;
+for(var j=0;j<h;j++){var v=(j+.5)*ih;
+for(var i=0;i<w;i++){var u=(i+.5)*iw;
+var dn=g*u+hh*v+1;var sx=(a*u+b*v+c)/dn,sy=(d*u+e*v+f)/dn;
+if(sx<0)sx=0;else if(sx>sw1)sx=sw1;
+if(sy<0)sy=0;else if(sy>sh1)sy=sh1;
+var x0=sx|0,y0=sy|0,x1=x0<sw1?x0+1:x0,y1=y0<sh1?y0+1:y0;
+var fx=sx-x0,fy=sy-y0;
+var i00=(y0*sw+x0)*4,i10=(y0*sw+x1)*4,i01=(y1*sw+x0)*4,i11=(y1*sw+x1)*4;
+var w00=(1-fx)*(1-fy),w10=fx*(1-fy),w01=(1-fx)*fy,w11=fx*fy;
+dd[k]=src[i00]*w00+src[i10]*w10+src[i01]*w01+src[i11]*w11;
+dd[k+1]=src[i00+1]*w00+src[i10+1]*w10+src[i01+1]*w01+src[i11+1]*w11;
+dd[k+2]=src[i00+2]*w00+src[i10+2]*w10+src[i01+2]*w01+src[i11+2]*w11;
+dd[k+3]=255;k+=4;
+}}
+octx.putImageData(od,0,0);return out;
+}
+function renderPage(pg,maxSide,applyCrop){
+return loadImg(pg.blob).then(function(im){
+var o=oriented(im,pg.rot),sc=Math.min(1,maxSide/Math.max(o.w,o.h));
+var w=Math.max(1,Math.round(o.w*sc)),h=Math.max(1,Math.round(o.h*sc));
+var cv=document.createElement('canvas');cv.width=w;cv.height=h;
+var cx=cv.getContext('2d',{willReadFrequently:true});
+cx.imageSmoothingEnabled=true;cx.imageSmoothingQuality='high';
+cx.save();cx.translate(w/2,h/2);cx.rotate(pg.rot*Math.PI/180);cx.scale(sc,sc);
+cx.drawImage(im,-im.width/2,-im.height/2);cx.restore();
+if(applyCrop&&!isFull(pg.quad))cv=warp(cv,pg.quad);
+if(pg.filter==='boost'){
+var ctx2=cv.getContext('2d',{willReadFrequently:true});
+var id=ctx2.getImageData(0,0,cv.width,cv.height);enhance(id.data,cv.width,cv.height,'boost');ctx2.putImageData(id,0,0);
+}
+return cv;
+});}
+function jpegInfo(b){
+var i=2;
+while(i+3<b.length){
+if(b[i]!==0xFF){i++;continue;}
+var m=b[i+1];
+if(m===0xFF){i++;continue;}
+if(m===0xD8||m===0xD9||m===0x01||(m>=0xD0&&m<=0xD7)){i+=2;continue;}
+var L=(b[i+2]<<8)|b[i+3];
+if(m>=0xC0&&m<=0xCF&&m!==0xC4&&m!==0xC8&&m!==0xCC)
+return{h:(b[i+5]<<8)|b[i+6],w:(b[i+7]<<8)|b[i+8],comp:b[i+9]};
+i+=2+L;
+}
+return{w:0,h:0,comp:3};}
+function makePdf(imgs,sizeMode){
+var enc=new TextEncoder(),parts=[],len=0,off=[];
+function put(x){var b=(typeof x==='string')?enc.encode(x):x;parts.push(b);len+=b.length;}
+function num(v){return(Math.round(v*100)/100).toString();}
+var n=imgs.length,i,kids=[];
+for(i=0;i<n;i++)kids.push((3+i*3)+' 0 R');
+put('%PDF-1.4\n');put(new Uint8Array([37,226,227,207,211,10]));
+off[1]=len;put('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+off[2]=len;put('2 0 obj\n<< /Type /Pages /Kids ['+kids.join(' ')+'] /Count '+n+' >>\nendobj\n');
+for(i=0;i<n;i++){
+var it=imgs[i],inf=jpegInfo(it.b);
+var iw=inf.w||it.w,ih=inf.h||it.h,cs=inf.comp===1?'/DeviceGray':'/DeviceRGB';
+var PW,PH,dw,dh,dx,dy;
+if(sizeMode==='a4'){
+var land=iw>ih;PW=land?841.89:595.28;PH=land?595.28:841.89;
+var m=14,f=Math.min((PW-2*m)/iw,(PH-2*m)/ih);
+dw=iw*f;dh=ih*f;dx=(PW-dw)/2;dy=(PH-dh)/2;
+}else{PW=iw*72/150;PH=ih*72/150;dw=PW;dh=PH;dx=0;dy=0;}
+var pn=3+i*3,cn=pn+1,imn=pn+2;
+off[pn]=len;put(pn+' 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+num(PW)+' '+num(PH)+'] /Resources << /XObject << /Im0 '+imn+' 0 R >> >> /Contents '+cn+' 0 R >>\nendobj\n');
+var sb=enc.encode('q\n'+num(dw)+' 0 0 '+num(dh)+' '+num(dx)+' '+num(dy)+' cm\n/Im0 Do\nQ\n');
+off[cn]=len;put(cn+' 0 obj\n<< /Length '+sb.length+' >>\nstream\n');put(sb);put('endstream\nendobj\n');
+off[imn]=len;put(imn+' 0 obj\n<< /Type /XObject /Subtype /Image /Width '+iw+' /Height '+ih+' /ColorSpace '+cs+' /BitsPerComponent 8 /Filter /DCTDecode /Length '+it.b.length+' >>\nstream\n');
+put(it.b);put('\nendstream\nendobj\n');
+}
+var total=3*n+2,xref=len,s='xref\n0 '+(total+1)+'\n0000000000 65535 f \n';
+for(i=1;i<=total;i++)s+=('0000000000'+(off[i]||0)).slice(-10)+' 00000 n \n';
+s+='trailer\n<< /Size '+(total+1)+' /Root 1 0 R >>\nstartxref\n'+xref+'\n%%EOF\n';
+put(s);
+var out=new Uint8Array(len),p=0;
+for(i=0;i<parts.length;i++){out.set(parts[i],p);p+=parts[i].length;}
+return out;}
+function buildBlob(){
+var size=$('scSize').value,q=parseFloat($('scQ').value)||0.85,imgs=[],chain=Promise.resolve();
+S.pages.forEach(function(pg,i){
+chain=chain.then(function(){
+busyText('Σελίδα '+(i+1)+' / '+S.pages.length);
+return renderPage(pg,MAXSIDE,true).then(function(cv){
+return toBlob(cv,q).then(buf).then(function(ab){imgs.push({b:new Uint8Array(ab),w:cv.width,h:cv.height});});
+});
+});
+});
+return chain.then(function(){return new Blob([makePdf(imgs,size)],{type:'application/pdf'});});}
+function download(blob,name){
+var u=URL.createObjectURL(blob),a=document.createElement('a');
+a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
+setTimeout(function(){URL.revokeObjectURL(u);},5000);}
+function doExport(share){
+if(!S.pages.length){toast('Δεν υπάρχουν σελίδες.');return;}
+busy('Δημιουργία PDF…');
+buildBlob().then(function(blob){
+var name='scan-'+stamp()+'.pdf';
+if(share&&navigator.canShare&&window.File){
+var f=new File([blob],name,{type:'application/pdf'});
+if(navigator.canShare({files:[f]})){
+return navigator.share({files:[f],title:'Σάρωση'}).then(busyOff).catch(busyOff);
+}
+}
+download(blob,name);busyOff();toast('Το PDF αποθηκεύτηκε ('+S.pages.length+' σελ.).');
+}).catch(function(e){busyOff();toast('Αποτυχία: '+(e&&e.message||e));});}
+function curRatio(){for(var i=0;i<RATIOS.length;i++)if(RATIOS[i].id===ratioId)return RATIOS[i];return RATIOS[0];}
+function layoutFrame(){
+var f=$('scFrame'),st=$('scStage');
+if(!f||!st||S.mode!=='cam')return;
+var r=st.getBoundingClientRect(),R=curRatio(),fw,fh;
+if(!R.r){fw=r.width;fh=r.height;}
+else{var aw=r.width-28,ah=r.height-28;fh=Math.min(ah,aw/R.r);fw=fh*R.r;}
+f.style.width=Math.round(fw)+'px';f.style.height=Math.round(fh)+'px';
+f.style.left=Math.round((r.width-fw)/2)+'px';f.style.top=Math.round((r.height-fh)/2)+'px';
+var lb=f.querySelector('b');if(lb)lb.textContent=R.n;
+}
+function ratioSync(){
+var b=$('scRatioBtn');if(b)b.textContent=curRatio().n;
+var pop=$('scRatioPop');
+if(pop)Array.prototype.forEach.call(pop.children,function(x){x.classList.toggle('on',x.dataset.r===ratioId);});
+layoutFrame();
+}
+function ratioToggle(){var p=$('scRatioPop');if(p)p.classList.toggle('open');}
+function ratioSet(id){
+ratioId=id;
+var p=$('scRatioPop');if(p)p.classList.remove('open');
+ratioSync();
+toast('Αναλογία λήψης: '+curRatio().n+'. Το πλαίσιο δείχνει ακριβώς τι θα ληφθεί.');
+}
+function captureRect(){
+var v=$('scVideo'),st=$('scStage').getBoundingClientRect(),fr=$('scFrame').getBoundingClientRect();
+var vw=v.videoWidth,vh=v.videoHeight;
+var scale=Math.max(st.width/vw,st.height/vh);
+var ox=(vw*scale-st.width)/2,oy=(vh*scale-st.height)/2;
+var sx=(fr.left-st.left+ox)/scale,sy=(fr.top-st.top+oy)/scale;
+var sw=fr.width/scale,sh=fr.height/scale;
+sx=clamp(sx,0,vw-1);sy=clamp(sy,0,vh-1);
+sw=clamp(sw,1,vw-sx);sh=clamp(sh,1,vh-sy);
+return{sx:sx,sy:sy,sw:sw,sh:sh};
+}
+function camHud(on){
+var m=$('scMeta'),f=$('scFrame');
+if(m)m.style.display=on?'block':'none';
+if(f)f.style.display=on?'block':'none';
+if(!on){var p=$('scRatioPop');if(p)p.classList.remove('open');}
+if(on)layoutFrame();
+}
+function camMeta(){
+var v=$('scVideo'),m=$('scMeta');
+if(!v||!m||!v.videoWidth)return;
+var w=v.videoWidth,h=v.videoHeight,g=gcd(w,h);
+m.textContent=w+'×'+h+' · '+(w/g)+':'+(h/g);
+layoutFrame();
+}
+function camFail(m){
+camErr=m;camHud(false);var e=$('scMsg');
+e.innerHTML=m+'<div class="sc-row" style="margin-top:12px"><button class="sc-btn" id="scRetry">Ξανά</button><button class="sc-btn pri" id="scMsgImp">Από αρχεία</button></div>';
+e.style.display='block';
+$('scRetry').onclick=camStart;
+$('scMsgImp').onclick=function(){$('scFile').click();};}
+function camStart(){
+camErr='';$('scMsg').style.display='none';
+if(!window.isSecureContext){camFail('Η κάμερα απαιτεί https ή localhost. Τράβηξε με την κάμερα του κινητού και φόρτωσε τις φωτογραφίες.');return;}
+if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){camFail('Δεν υπάρχει πρόσβαση σε κάμερα από αυτό το περιβάλλον.');return;}
+navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:2592},height:{ideal:1944}},audio:false})
+.catch(function(e){
+if(e&&e.name==='OverconstrainedError')return navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+throw e;
+})
+.then(function(st){S.stream=st;S.track=st.getVideoTracks()[0];$('scVideo').srcObject=st;return $('scVideo').play();})
+.then(function(){
+camHud(true);camMeta();
+var ok=false;try{var c=S.track.getCapabilities?S.track.getCapabilities():null;ok=!!(c&&c.torch);}catch(e){}
+$('scTorch').style.display=ok?'grid':'none';
+}).catch(function(e){
+var map={NotAllowedError:'Δεν δόθηκε άδεια κάμερας.',NotFoundError:'Δεν βρέθηκε κάμερα.',NotReadableError:'Η κάμερα χρησιμοποιείται αλλού.',SecurityError:'Το περιβάλλον δεν επιτρέπει κάμερα.'};
+camFail((map[e&&e.name]||('Σφάλμα κάμερας: '+(e&&e.name||'άγνωστο')))+' Εναλλακτικά φόρτωσε φωτογραφίες.');
+});}
+function camStop(){
+if(S.stream){S.stream.getTracks().forEach(function(t){t.stop();});S.stream=null;}
+S.track=null;S.torch=false;
+var v=$('scVideo');if(v)v.srcObject=null;
+var b=$('scTorch');if(b){b.classList.remove('on');b.style.display='none';}
+camHud(false);}
+function torch(){
+if(!S.track)return;
+var next=!S.torch;
+S.track.applyConstraints({advanced:[{torch:next}]}).then(function(){S.torch=next;$('scTorch').classList.toggle('on',next);})
+.catch(function(){toast('Ο φακός δεν υποστηρίζεται εδώ.');});}
+function shoot(){
+var v=$('scVideo');
+if(!v.videoWidth){toast('Η κάμερα δεν είναι έτοιμη.');return;}
+layoutFrame();
+var r=captureRect();
+var sc=Math.min(1,MAXSIDE/Math.max(r.sw,r.sh));
+var cv=document.createElement('canvas');
+cv.width=Math.max(1,Math.round(r.sw*sc));cv.height=Math.max(1,Math.round(r.sh*sc));
+var cx=cv.getContext('2d');cx.imageSmoothingEnabled=true;cx.imageSmoothingQuality='high';
+cx.drawImage(v,r.sx,r.sy,r.sw,r.sh,0,0,cv.width,cv.height);
+toBlob(cv,0.92).then(addPage).then(function(ok){toast(ok?'Προστέθηκε σελίδα '+S.pages.length+'.':'Αποτυχία λήψης.');});}
+function makeThumb(pg){return renderPage(pg,THUMB,false).then(function(cv){return toBlob(cv,0.72);}).then(function(b){pg.thumb=b;});}
+function addPage(blob){
+var pg={id:'p'+Date.now()+'_'+Math.random().toString(36).slice(2,7),blob:blob,rot:0,quad:FULLQ.map(function(p){return{x:p.x,y:p.y};}),filter:'orig',ts:Date.now()};
+return makeThumb(pg).then(function(){S.pages.push(pg);return DB.put(pg);}).then(function(){head();return true;}).catch(function(){return false;});}
+function importFiles(files){
+var arr=[].slice.call(files||[]).filter(function(f){return /^image\//.test(f.type);});
+if(!arr.length){toast('Δεν βρέθηκαν εικόνες.');return;}
+busy('Φόρτωση…');
+var ok=0,chain=Promise.resolve();
+arr.forEach(function(f,i){chain=chain.then(function(){busyText((i+1)+' / '+arr.length);return addPage(f).then(function(r){if(r)ok++;});});});
+chain.then(function(){busyOff();setMode('pages');toast(ok+' σελίδες προστέθηκαν'+(ok<arr.length?', '+(arr.length-ok)+' δεν διαβάστηκαν':'')+'.');});}
+function head(){
+var n=S.pages.length,sub=$('scSub');
+if(S.mode==='edit'){sub.textContent=(S.idx+1)+' / '+n;sub.classList.add('link');}
+else{sub.textContent=n?n+(n===1?' σελίδα':' σελίδες'):'Κάμερα';sub.classList.remove('link');}
+var c=$('scEditCount');if(c)c.textContent=(S.idx+1)+'/'+n;
+}
+function revokeThumbs(){thumbUrls.forEach(function(u){try{URL.revokeObjectURL(u);}catch(e){}});thumbUrls=[];}
+function setPgLayout(k){
+pgLayout=k;
+try{localStorage.setItem('rhythmos_scan_layout',k);}catch(e){}
+var g=$('scPagesGrid');if(g)g.className=k;
+Array.prototype.forEach.call(document.querySelectorAll('.sc-lay'),function(b){b.classList.toggle('on',b.dataset.l===k);});
+renderPages();
+}
+function renderPages(){
+revokeThumbs();
+var g=$('scPagesGrid');if(!g)return;
+g.className=pgLayout;
+if(!S.pages.length){g.innerHTML='<div class="sc-empty">Καμία σελίδα ακόμα. Τράβηξε με την κάμερα ή φόρτωσε φωτογραφίες.</div>';return;}
+g.innerHTML=S.pages.map(function(p,i){
+var u=p.thumb?URL.createObjectURL(p.thumb):'';if(u)thumbUrls.push(u);
+return '<div class="sc-pg" data-i="'+i+'"><span class="sc-num">'+(i+1)+'</span>'+(isFull(p.quad)?'':'<span class="sc-cut">κοπή</span>')
++'<img src="'+u+'" alt="Σελίδα '+(i+1)+'" draggable="false">'
++'<div class="sc-pginfo"><b>Σελίδα '+(i+1)+'</b><span>'+fmtSize(p.blob?p.blob.size:0)+'</span></div>'
++'<div class="sc-pgbar">'
++'<button class="sc-mini" data-a="edit" data-i="'+i+'" aria-label="Επεξεργασία">✎</button>'
++'<button class="sc-mini" data-a="l" data-i="'+i+'"'+(i===0?' disabled':'')+' aria-label="Πριν">←</button>'
++'<button class="sc-mini" data-a="r" data-i="'+i+'"'+(i===S.pages.length-1?' disabled':'')+' aria-label="Μετά">→</button>'
++'<button class="sc-mini d" data-a="del" data-i="'+i+'" aria-label="Διαγραφή">✕</button>'
++'</div></div>';}).join('');}
+function pgCards(){var g=$('scPagesGrid');return g?Array.prototype.slice.call(g.querySelectorAll('.sc-pg')):[];}
+function pgDetach(d){
+clearTimeout(d.timer);
+if(d.raf)cancelAnimationFrame(d.raf);
+window.removeEventListener('pointermove',d.mv);
+window.removeEventListener('pointerup',d.up);
+window.removeEventListener('pointercancel',d.cx);
+document.removeEventListener('touchmove',d.tm);
+}
+function pgHideInd(d){if(d.indH)d.indH.style.display='none';if(d.indV)d.indV.style.display='none';}
+function pgCancel(d){
+pgDetach(d);
+if(d.clone&&d.clone.parentNode)d.clone.parentNode.removeChild(d.clone);
+if(d.indH&&d.indH.parentNode)d.indH.parentNode.removeChild(d.indH);
+if(d.indV&&d.indV.parentNode)d.indV.parentNode.removeChild(d.indV);
+if(d.el)d.el.classList.remove('sc-dragging');
+if(pgDrag===d)pgDrag=null;
+}
+function pgDown(e){
+if(pgDrag||S.pages.length<2)return;
+if(e.target.closest('button'))return;
+var card=e.target.closest('.sc-pg');if(!card)return;
+var d={el:card,x0:e.clientX,y0:e.clientY,lx:e.clientX,ly:e.clientY,
+started:false,from:pgCards().indexOf(card),k:null,clone:null,indH:null,indV:null,
+offX:0,offY:0,w:0,h:0,raf:0,timer:0};
+d.mv=function(ev){
+d.lx=ev.clientX;d.ly=ev.clientY;
+if(!d.started){if(Math.abs(ev.clientX-d.x0)+Math.abs(ev.clientY-d.y0)>12)pgCancel(d);}
+else pgMove(d);
+};
+d.up=function(){pgUp(d);};
+d.cx=function(){if(d.started)pgUp(d);else pgCancel(d);};
+d.tm=function(ev){if(d.started&&ev.cancelable)ev.preventDefault();};
+d.timer=setTimeout(function(){pgStart(d);},280);
+window.addEventListener('pointermove',d.mv);
+window.addEventListener('pointerup',d.up);
+window.addEventListener('pointercancel',d.cx);
+document.addEventListener('touchmove',d.tm,{passive:false});
+pgDrag=d;
+}
+function pgStart(d){
+if(pgDrag!==d||!d.el.parentNode)return;
+d.started=true;
+var r=d.el.getBoundingClientRect();
+d.offX=d.lx-r.left;d.offY=d.ly-r.top;d.w=r.width;d.h=r.height;
+var c=d.el.cloneNode(true);
+c.className='sc-pg sc-ghost';
+c.style.width=r.width+'px';c.style.height=r.height+'px';
+c.style.left=r.left+'px';c.style.top=r.top+'px';
+$('scRoot').appendChild(c);d.clone=c;
+d.el.classList.add('sc-dragging');
+var g=$('scPagesGrid');
+d.indH=document.createElement('div');d.indH.className='sc-drop';g.appendChild(d.indH);
+d.indV=document.createElement('div');d.indV.className='sc-drop';g.appendChild(d.indV);
+try{if(navigator.vibrate)navigator.vibrate(12);}catch(e){}
+pgMove(d);
+var loop=function(){if(pgDrag!==d||!d.started)return;pgEdge(d);d.raf=requestAnimationFrame(loop);};
+d.raf=requestAnimationFrame(loop);
+}
+function pgMove(d){
+if(!d.started||!d.clone)return;
+d.clone.style.left=Math.max(4,Math.min(window.innerWidth-d.w-4,d.lx-d.offX))+'px';
+d.clone.style.top=Math.max(4,Math.min(window.innerHeight-d.h-4,d.ly-d.offY))+'px';
+pgIndicator(d);
+}
+function pgIndicator(d){
+var grid=$('scPagesGrid'),cards=pgCards();
+if(!grid||cards.length<2){d.k=null;pgHideInd(d);return;}
+var gr=grid.getBoundingClientRect(),x=d.lx,y=d.ly;
+var sr=d.el.getBoundingClientRect(),cx=sr.left+sr.width/2,cy=sr.top+sr.height/2;
+var dx=x-cx,dy=y-cy;
+var hov=-1,best=1e9,i,r;
+for(i=0;i<cards.length;i++){
+r=cards[i].getBoundingClientRect();
+if(x>=r.left-6&&x<=r.right+6&&y>=r.top-6&&y<=r.bottom+6){hov=i;break;}
+var dd=Math.hypot(x-(r.left+r.width/2),y-(r.top+r.height/2));
+if(dd<best){best=dd;hov=i;}
+}
+if(hov<0||hov===d.from){d.k=null;pgHideInd(d);return;}
+d.k=hov;
+r=cards[hov].getBoundingClientRect();
+var isList=pgLayout==='ll';
+var sigX=Math.abs(dx)>18,sigY=Math.abs(dy)>18;
+var showH=isList?true:sigY;
+var showV=(!isList)&&sigX;
+if(!showH&&!showV)showH=true;
+if(showH){
+d.indH.style.display='block';
+d.indH.style.left=(r.left-gr.left)+'px';
+d.indH.style.width=r.width+'px';
+d.indH.style.height='4px';
+d.indH.style.top=((dy<0?r.top-6:r.bottom+2)-gr.top)+'px';
+}else d.indH.style.display='none';
+if(showV){
+d.indV.style.display='block';
+d.indV.style.top=(r.top-gr.top)+'px';
+d.indV.style.height=r.height+'px';
+d.indV.style.width='4px';
+d.indV.style.left=((dx<0?r.left-6:r.right+2)-gr.left)+'px';
+}else d.indV.style.display='none';
+}
+function pgEdge(d){
+var sc=$('scPages');if(!sc)return;
+var r=sc.getBoundingClientRect(),zone=64,v=0;
+if(d.ly<r.top+zone)v=-Math.min(14,Math.ceil((r.top+zone-d.ly)/zone*14));
+else if(d.ly>r.bottom-zone)v=Math.min(14,Math.ceil((d.ly-(r.bottom-zone))/zone*14));
+if(v){sc.scrollTop+=v;pgIndicator(d);}
+}
+function pgUp(d){
+pgDetach(d);
+if(!d.started){if(pgDrag===d)pgDrag=null;return;}
+var from=d.from,to=d.k;
+if(to!=null&&from>=0&&to!==from&&to<S.pages.length){
+var moved=S.pages.splice(from,1)[0];
+S.pages.splice(to,0,moved);
+S.pages.forEach(function(p,i){p.ts=i;DB.put(p);});
+toast('Η σειρά αποθηκεύτηκε.');
+}
+if(d.clone&&d.clone.parentNode)d.clone.parentNode.removeChild(d.clone);
+if(d.indH&&d.indH.parentNode)d.indH.parentNode.removeChild(d.indH);
+if(d.indV&&d.indV.parentNode)d.indV.parentNode.removeChild(d.indV);
+if(d.el)d.el.classList.remove('sc-dragging');
+pgDrag=null;
+renderPages();head();
+}
+function setMode(m){
+if(pgDrag)pgCancel(pgDrag);
+S.mode=m;
+$('scVideo').style.display=m==='cam'?'block':'none';
+$('scWrap').style.display=m==='edit'?'block':'none';
+$('scPages').style.display=m==='pages'?'block':'none';
+$('scBarCam').style.display=m==='cam'?'flex':'none';
+$('scBarEdit').style.display=m==='edit'?'flex':'none';
+$('scBarPages').style.display=m==='pages'?'flex':'none';
+$('scMsg').style.display=(m==='cam'&&camErr)?'block':'none';
+if(m==='cam'){if(!S.stream)camStart();else camHud(true);}else camStop();
+if(m==='pages'){renderPages();$('scPages').scrollTop=0;}
+head();}
+function fitPreview(cv){
+var r=$('scStage').getBoundingClientRect(),pad=16;
+var sc=Math.min((r.width-pad*2)/cv.width,(r.height-pad*2)/cv.height);
+var w=Math.max(1,Math.round(cv.width*sc)),h=Math.max(1,Math.round(cv.height*sc));
+var wr=$('scWrap');wr.style.width=w+'px';wr.style.height=h+'px';
+var C=$('scCv');C.width=cv.width;C.height=cv.height;
+C.getContext('2d').drawImage(cv,0,0);}
+function layoutQuad(){
+var pts=quad.map(function(p){return(p.x*100).toFixed(2)+' '+(p.y*100).toFixed(2);});
+$('scQPoly').setAttribute('points',pts.join(' '));
+$('scQMask').setAttribute('d','M0 0H100V100H0Z M'+pts.join(' L')+' Z');
+var g=$('scQGrid');
+for(var t=0;t<2;t++){
+var f=(t+1)/3;
+var a=lerp(quad[0],quad[3],f),b=lerp(quad[1],quad[2],f);
+var c=lerp(quad[0],quad[1],f),d=lerp(quad[3],quad[2],f);
+g.children[t].setAttribute('x1',a.x*100);g.children[t].setAttribute('y1',a.y*100);
+g.children[t].setAttribute('x2',b.x*100);g.children[t].setAttribute('y2',b.y*100);
+g.children[2+t].setAttribute('x1',c.x*100);g.children[2+t].setAttribute('y1',c.y*100);
+g.children[2+t].setAttribute('x2',d.x*100);g.children[2+t].setAttribute('y2',d.y*100);
+}
+['tl','tr','br','bl'].forEach(function(k,i){
+var h=$('scQh'+k);h.style.left=(quad[i].x*100)+'%';h.style.top=(quad[i].y*100)+'%';});
+}
+function commitEdit(){
+var pg=S.pages[S.idx];if(!pg)return;
+pg.quad=quad.map(function(p){return{x:p.x,y:p.y};});
+DB.put(pg);
+}
+function openEdit(i){
+var pg=S.pages[i];if(!pg)return;
+S.idx=i;setMode('edit');
+quad=pg.quad.map(function(p){return{x:p.x,y:p.y};});
+chips();layoutQuad();
+renderPage(pg,PREV,false).then(function(cv){
+lastPreview=cv;
+requestAnimationFrame(function(){fitPreview(cv);layoutQuad();});
+}).catch(function(){toast('Η εικόνα δεν διαβάζεται.');setMode('pages');});}
+function navEdit(d){
+var n=S.pages.length;if(n<2)return;
+commitEdit();
+openEdit((S.idx+d+n)%n);
+}
+function chips(){
+var pg=S.pages[S.idx];if(!pg)return;
+Array.prototype.forEach.call($('scChips').querySelectorAll('[data-f]'),function(b){b.classList.toggle('on',b.dataset.f===pg.filter);});}
+function setFilter(f){
+var pg=S.pages[S.idx];if(!pg)return;
+pg.filter=f;chips();DB.put(pg);
+renderPage(pg,PREV,false).then(function(cv){lastPreview=cv;fitPreview(cv);});}
+function rotate(){
+var pg=S.pages[S.idx];if(!pg)return;
+pg.rot=(pg.rot+90)%360;
+var r=function(p){return{x:1-p.y,y:p.x};};
+quad=[r(quad[3]),r(quad[0]),r(quad[1]),r(quad[2])];
+layoutQuad();
+renderPage(pg,PREV,false).then(function(cv){lastPreview=cv;fitPreview(cv);layoutQuad();});}
+function pt(e){var r=$('scWrap').getBoundingClientRect();return{x:clamp((e.clientX-r.left)/r.width,0,1),y:clamp((e.clientY-r.top)/r.height,0,1)};}
+function dragCorner(k,e){
+e.preventDefault();e.stopPropagation();
+function mv(ev){quad[k]=pt(ev);layoutQuad();}
+function up(){document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);}
+document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);}
+function dragAll(e){
+e.preventDefault();
+var s=pt(e),q0=quad.map(function(p){return{x:p.x,y:p.y};});
+var minX=Math.min.apply(null,q0.map(function(p){return p.x;})),maxX=Math.max.apply(null,q0.map(function(p){return p.x;}));
+var minY=Math.min.apply(null,q0.map(function(p){return p.y;})),maxY=Math.max.apply(null,q0.map(function(p){return p.y;}));
+function mv(ev){
+var p=pt(ev);
+var dx=clamp(p.x-s.x,-minX,1-maxX),dy=clamp(p.y-s.y,-minY,1-maxY);
+quad=q0.map(function(q){return{x:q.x+dx,y:q.y+dy};});
+layoutQuad();}
+function up(){document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);}
+document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);}
+var I={
+back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>',
+x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
+shut:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4" fill="currentColor"/></svg>',
+folder:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 01-2 2H4a2 2 0 01-2-2V5a2 2 0 012-2h5l2 3h9a2 2 0 012 2z"/></svg>',
+torch:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6v5l-2 3v12h-2V10L9 7z"/></svg>',
+rot:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6"/><path d="M3 12a9 9 0 0115-6.7L21 8"/><path d="M3 22v-6h6"/><path d="M21 12a9 9 0 01-15 6.7L3 16"/></svg>',
+prev:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 6 9 12 15 18"/></svg>',
+next:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg>',
+scan:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 012-2h2"/><path d="M17 3h2a2 2 0 012 2v2"/><path d="M21 17v2a2 2 0 01-2 2h-2"/><path d="M7 21H5a2 2 0 01-2-2v-2"/><path d="M7 12h10"/></svg>',
+layList:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13"/><path d="M3 6h.01M3 12h.01M3 18h.01"/></svg>',
+lay2:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="1"/><rect x="13" y="3" width="8" height="8" rx="1"/><rect x="3" y="13" width="8" height="8" rx="1"/><rect x="13" y="13" width="8" height="8" rx="1"/></svg>',
+lay3:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="5" height="5" rx="1"/><rect x="10" y="3" width="5" height="5" rx="1"/><rect x="17" y="3" width="4" height="5" rx="1"/><rect x="3" y="10" width="5" height="5" rx="1"/><rect x="10" y="10" width="5" height="5" rx="1"/><rect x="17" y="10" width="4" height="5" rx="1"/><rect x="3" y="17" width="5" height="4" rx="1"/><rect x="10" y="17" width="5" height="4" rx="1"/><rect x="17" y="17" width="4" height="4" rx="1"/></svg>'
+};
+var built=false;
+function build(){
+if(built)return;built=true;
+var r=document.createElement('div');r.id='scRoot';
+r.innerHTML=
+'<div class="sc-top"><button class="sc-ico" id="scBack" aria-label="Πίσω">'+I.back+'</button>'
++'<h3>Σαρωτής PDF</h3><button class="sc-sub" id="scSub" aria-label="Λίστα σελίδων"></button>'
++'<button class="sc-ico" id="scClose" aria-label="Κλείσιμο">'+I.x+'</button></div>'
++'<div id="scStage"><video id="scVideo" playsinline muted autoplay></video>'
++'<div id="scFrame"><i class="a"></i><i class="b"></i><i class="c"></i><i class="d"></i><b>Πλήρης</b></div>'
++'<div id="scWrap"><canvas id="scCv"></canvas>'
++'<svg id="scQSvg" viewBox="0 0 100 100" preserveAspectRatio="none">'
++'<path id="scQMask" fill="rgba(0,0,0,.5)" fill-rule="evenodd" d=""/>'
++'<g id="scQGrid" stroke="rgba(255,255,255,.28)" stroke-width="1">'
++'<line vector-effect="non-scaling-stroke"/><line vector-effect="non-scaling-stroke"/><line vector-effect="non-scaling-stroke"/><line vector-effect="non-scaling-stroke"/></g>'
++'<polygon id="scQPoly" fill="rgba(0,0,0,0)" stroke="#fff" stroke-width="1.6" vector-effect="non-scaling-stroke" points=""/>'
++'</svg>'
++'<div class="sc-qh" id="scQhtl"></div><div class="sc-qh" id="scQhtr"></div><div class="sc-qh" id="scQhbr"></div><div class="sc-qh" id="scQhbl"></div>'
++'</div>'
++'<div id="scPages"><div id="scPagesBar"><span class="sp"></span>'
++'<button type="button" class="sc-lay" data-l="ll" aria-label="Λίστα">'+I.layList+'</button>'
++'<button type="button" class="sc-lay" data-l="l2" aria-label="Πλέγμα 2 στηλών">'+I.lay2+'</button>'
++'<button type="button" class="sc-lay" data-l="l3" aria-label="Πλέγμα 3 στηλών">'+I.lay3+'</button>'
++'</div>'
++'<div class="sc-hint">Κράτα πατημένη μια σελίδα και σύρε. Ευθεία μεταφορά: ένας δείκτης· λόξια: δύο, στις ακμές του στόχου.</div>'
++'<div id="scPagesGrid"></div></div><div id="scMsg"></div>'
++'<div id="scMeta">—</div>'
++'<div id="scRatioPop">'+RATIOS.map(function(x){return '<button type="button" data-r="'+x.id+'">'+x.n+'</button>';}).join('')+'</div></div>'
++'<div class="sc-bar" id="scBarCam">'
++'<button class="sc-ico" id="scImp" aria-label="Από αρχεία">'+I.folder+'</button>'
++'<button class="sc-ico" id="scRatioBtn" aria-label="Αναλογία λήψης">Πλήρης</button>'
++'<button class="sc-fire" id="scShut" aria-label="Λήψη">'+I.shut+'</button>'
++'<button class="sc-ico" id="scTorch" style="display:none" aria-label="Φακός">'+I.torch+'</button>'
++'<button class="sc-btn" id="scToList">Σελίδες</button></div>'
++'<div class="sc-bar col" id="scBarEdit">'
++'<div class="sc-chips" id="scChips">'
++'<button data-f="orig">Αρχικό</button><button data-f="boost">Ενίσχυση</button>'
++'<span class="sc-flex"></span>'
++'<button class="sc-nav" id="scPrev" aria-label="Προηγούμενη σελίδα">'+I.prev+'</button>'
++'<span class="sc-count" id="scEditCount">1/1</span>'
++'<button class="sc-nav" id="scNext" aria-label="Επόμενη σελίδα">'+I.next+'</button></div>'
++'<div class="sc-row"><button class="sc-ico" id="scRot" aria-label="Περιστροφή">'+I.rot+'</button>'
++'<button class="sc-btn" id="scFull">Πλήρες κάδρο</button>'
++'<button class="sc-btn pri" id="scDone">Τέλος</button></div></div>'
++'<div class="sc-bar col" id="scBarPages">'
++'<div class="sc-opts"><label>Μέγεθος<select id="scSize"><option value="a4">A4</option><option value="auto">Ίδιο με την εικόνα</option></select></label>'
++'<label>Ποιότητα<select id="scQ"><option value="0.7">Ελαφριά</option><option value="0.85" selected>Κανονική</option><option value="0.95">Υψηλή</option></select></label></div>'
++'<div class="sc-row"><button class="sc-btn" id="scMore">+ Σελίδα</button>'
++'<button class="sc-btn" id="scClear">Καθαρισμός</button>'
++(navigator.canShare?'<button class="sc-btn" id="scShare">Αποστολή</button>':'')
++'<button class="sc-btn pri" id="scExp">PDF</button></div></div>'
++'<div id="scToast"></div><div id="scBusy"><div><span id="scBusyTxt">…</span><small>Μην κλείσεις την οθόνη</small></div></div>'
++'<div id="scConfirm"><div class="sc-cbox"><p>Κλείσιμο σαρωτή; Οι σελίδες μένουν αποθηκευμένες στη συσκευή και θα τις βρεις όπως τις άφησες.</p>'
++'<div class="sc-row"><button class="sc-btn" id="scCNo">Συνέχεια</button><button class="sc-btn warn" id="scCYes">Κλείσιμο</button></div></div></div>'
++'<input type="file" id="scFile" accept="image/*" multiple style="display:none">';
+document.body.appendChild(r);
+$('scClose').onclick=attemptClose;
+$('scCNo').onclick=function(){$('scConfirm').classList.remove('open');};
+$('scCYes').onclick=function(){$('scConfirm').classList.remove('open');doClose();};
+$('scBack').onclick=function(){
+if(S.mode==='edit'){commitEdit();setMode('cam');}
+else if(S.mode==='pages')setMode('cam');
+else{if(S.pages.length)setMode('pages');else attemptClose();}
+};
+$('scSub').onclick=function(){if(S.mode==='edit'){commitEdit();setMode('pages');}};
+$('scImp').onclick=function(){$('scFile').click();};
+$('scFile').onchange=function(){importFiles(this.files);this.value='';};
+$('scRatioBtn').onclick=ratioToggle;
+$('scRatioPop').addEventListener('click',function(e){var b=e.target.closest('button');if(b)ratioSet(b.dataset.r);});
+$('scShut').onclick=shoot;
+$('scTorch').onclick=torch;
+$('scVideo').addEventListener('loadedmetadata',camMeta);
+$('scToList').onclick=function(){setMode('pages');};
+$('scRot').onclick=rotate;
+$('scFull').onclick=function(){quad=FULLQ.map(function(p){return{x:p.x,y:p.y};});layoutQuad();};
+$('scDone').onclick=function(){commitEdit();setMode('pages');};
+$('scPrev').onclick=function(){navEdit(-1);};
+$('scNext').onclick=function(){navEdit(1);};
+$('scMore').onclick=function(){setMode('cam');};
+$('scExp').onclick=function(){doExport(false);};
+if($('scShare'))$('scShare').onclick=function(){doExport(true);};
+$('scClear').onclick=function(){
+var b=$('scClear');
+if(!clearArm){clearArm=1;b.textContent='Σίγουρα;';b.classList.add('warn');
+setTimeout(function(){clearArm=0;b.textContent='Καθαρισμός';b.classList.remove('warn');},3000);return;}
+clearArm=0;b.textContent='Καθαρισμός';b.classList.remove('warn');
+DB.clear().then(function(){S.pages=[];renderPages();head();toast('Άδειασε.');});};
+$('scChips').addEventListener('click',function(e){var b=e.target.closest('[data-f]');if(b)setFilter(b.dataset.f);});
+Array.prototype.forEach.call(document.querySelectorAll('.sc-lay'),function(b){
+b.onclick=function(){setPgLayout(b.dataset.l);};
+});
+$('scPages').addEventListener('pointerdown',pgDown);
+$('scPages').addEventListener('contextmenu',function(e){if(pgDrag&&pgDrag.started)e.preventDefault();});
+$('scPages').addEventListener('click',function(e){
+var b=e.target.closest('.sc-mini');if(!b||b.disabled)return;
+var i=parseInt(b.dataset.i,10),a=b.dataset.a;
+if(a==='edit')return openEdit(i);
+if(a==='del'){var pg=S.pages.splice(i,1)[0];DB.del(pg.id);S.pages.forEach(function(p,k){p.ts=k;DB.put(p);});renderPages();head();return;}
+var j=a==='l'?i-1:i+1;
+if(j<0||j>=S.pages.length)return;
+var t=S.pages[i];S.pages[i]=S.pages[j];S.pages[j]=t;
+S.pages.forEach(function(p,k){p.ts=k;DB.put(p);});
+renderPages();});
+$('scQPoly').addEventListener('pointerdown',dragAll);
+['tl','tr','br','bl'].forEach(function(k,i){
+$('scQh'+k).addEventListener('pointerdown',function(e){dragCorner(i,e);});});
+r.addEventListener('pointerdown',function(e){
+var b=e.target.closest('button');if(!b)return;
+b.classList.remove('sc-press');void b.offsetWidth;b.classList.add('sc-press');
+});
+r.addEventListener('animationend',function(e){
+if(e.target.classList&&e.target.classList.contains('sc-press'))e.target.classList.remove('sc-press');});
+ratioSync();
+setPgLayout(pgLayout);
+}
+function attemptClose(){
+if(pgDrag)pgCancel(pgDrag);
+if(S.mode==='edit')commitEdit();
+if(S.pages.length)$('scConfirm').classList.add('open');
+else doClose();
+}
+function doClose(){
+if(pgDrag)pgCancel(pgDrag);
+camStop();revokeThumbs();
+$('scRoot').classList.remove('open');
+document.body.style.overflow='';
+if(S.pages.length)toast('Οι σελίδες μένουν αποθηκευμένες.');}
+function scanOpen(){
+build();
+tdClose();
+document.body.style.overflow='hidden';
+$('scRoot').classList.add('open');
+DB.all().then(function(l){
+S.pages=(l||[]).sort(function(a,b){return a.ts-b.ts;});
+var chain=Promise.resolve();
+S.pages.forEach(function(p){
+if(!Array.isArray(p.quad)||p.quad.length!==4)p.quad=FULLQ.map(function(q){return{x:q.x,y:q.y};});
+if(p.crop)delete p.crop;
+if(p.filter!=='orig'&&p.filter!=='boost')p.filter='orig';
+if(!p.rot)p.rot=0;
+chain=chain.then(function(){return makeThumb(p).catch(function(){});});
+});
+chain.then(function(){setMode(S.pages.length?'pages':'cam');});});}
+var tdWrap=null;
+function tdHide(){
+if(!tdWrap)return;
+var p=$('tdPanel');
+if(p)tdWrap.style.setProperty('--tdHide',(-p.offsetWidth)+'px');}
+function tdClose(){if(tdWrap)tdWrap.classList.remove('open');var h=$('tdHandle');if(h)h.setAttribute('aria-expanded','false');}
+function tdToggle(){
+if(!tdWrap)return;
+var on=tdWrap.classList.toggle('open');
+$('tdHandle').setAttribute('aria-expanded',on?'true':'false');}
+function buildDrawer(){
+if(tdWrap)return;
+tdWrap=document.createElement('div');tdWrap.id='tdWrap';
+var slots='';
+for(var i=0;i<10;i++){
+if(i===0)slots+='<button type="button" class="td-slot" id="tdScan" aria-label="Σάρωση PDF">'+I.scan+'<span class="td-lbl">Σάρωση</span></button>';
+else slots+='<div class="td-slot td-soon" aria-disabled="true">coming soon</div>';
+}
+tdWrap.innerHTML='<div id="tdPanel"><div class="td-cap">Εργαλεία</div><div id="tdGrid">'+slots+'</div></div>'
++'<button type="button" id="tdHandle" aria-label="Εργαλεία" aria-expanded="false">'
++'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg></button>';
+document.body.appendChild(tdWrap);
+$('tdHandle').onclick=tdToggle;
+$('tdScan').onclick=scanOpen;
+tdHide();
+document.addEventListener('click',function(e){
+if(tdWrap.classList.contains('open')&&!tdWrap.contains(e.target))tdClose();});
+}
+window.addEventListener('resize',function(){
+tdHide();
+if(pgDrag)pgCancel(pgDrag);
+if(!built||!$('scRoot').classList.contains('open'))return;
+if(S.mode==='cam')layoutFrame();
+if(S.mode==='edit'&&lastPreview){fitPreview(lastPreview);layoutQuad();}});
+document.addEventListener('keydown',function(e){
+if(e.key!=='Escape')return;
+if(pgDrag){pgCancel(pgDrag);renderPages();return;}
+if(built&&$('scRoot').classList.contains('open')){
+if($('scConfirm').classList.contains('open')){$('scConfirm').classList.remove('open');return;}
+attemptClose();return;}
+tdClose();});
+if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',buildDrawer);
+else buildDrawer();
+})();
+/* ===== ΤΕΛΟΣ ΕΡΓΑΛΕΙΩΝ v9 ===== */
+</script>
+
+
+
+
 </body>
 
 </html>
