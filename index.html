@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="2.3.54">
+<meta name="app-version" content="2.3.55">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -785,7 +785,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='2.3.54';
+var APP_VERSION='2.3.55';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -10224,110 +10224,8 @@ return out;
 
 
 
-<!-- ===== TEMP: TOOL DRAWER + PDF SCAN v4 (cut this whole block to remove) ===== -->
+<!-- ===== ΕΡΓΑΛΕΙΑ v2: ΑΡΙΣΤΕΡΟ ΣΥΡΤΑΡΙ + ΣΑΡΩΤΗΣ PDF — αυτόνομο, offline ===== -->
 <style>
-/* ---- trigger: ευθυγραμμισμένο με το .app, φωτεινό ---- */
-#ps-bar{position:fixed;
-  left:max(10px, calc(50% - 120px));
-  bottom:calc(84px + env(safe-area-inset-bottom));z-index:998;
-  width:18px;height:120px;border-radius:999px;
-  background:linear-gradient(180deg,#6366f1,#8b5cf6);
-  border:0;
-  display:grid;place-items:center;cursor:pointer;padding:0;
-  box-shadow:0 0 0 2px rgba(99,102,241,.35),0 6px 24px rgba(99,102,241,.45);
-  color:#fff;transition:box-shadow .18s,transform .12s}
-#ps-bar:hover{box-shadow:0 0 0 3px rgba(139,92,246,.5),0 8px 28px rgba(99,102,241,.55)}
-#ps-bar:active{transform:scale(.94)}
-#ps-bar svg{width:14px;height:14px;display:block;
-  transition:transform .22s cubic-bezier(.2,.8,.2,1);
-  filter:drop-shadow(0 1px 3px rgba(0,0,0,.5))}
-#ps-bar.open svg{transform:rotate(180deg)}
-
-/* ---- panel: ευθυγραμμισμένο με το .app ---- */
-#ps-panel{position:fixed;
-  left:max(34px, calc(50% - 100px));
-  bottom:calc(84px + env(safe-area-inset-bottom));z-index:998;
-  clip-path:inset(0 100% 0 0);opacity:0;pointer-events:none;
-  transition:clip-path .26s cubic-bezier(.2,.8,.2,1),opacity .18s}
-#ps-panel.open{clip-path:inset(0 0 0 0);opacity:1;pointer-events:auto}
-#ps-grid{display:grid;grid-template-columns:repeat(2,54px);grid-auto-rows:54px;gap:8px;
-  padding:10px;background:#1e2440;
-  border:1.5px solid rgba(255,255,255,.18);border-radius:18px;
-  box-shadow:0 14px 36px rgba(0,0,0,.55)}
-
-/* ---- fullscreen scanner (σταθερά, δεν εξαρτάται από theme) ---- */
-#ps-full{position:fixed;inset:0;z-index:9999;background:#000;display:none;
-  flex-direction:column;overflow:hidden;font-family:system-ui,-apple-system,sans-serif;color:#fff}
-#ps-full.open{display:flex}
-#ps-vid{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:0}
-#ps-editcv{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;z-index:0;background:#000;display:none}
-
-.ps-cam-bar{position:absolute;bottom:0;left:0;right:0;z-index:5;
-  display:flex;align-items:center;justify-content:center;gap:14px;
-  padding:18px 16px calc(18px + env(safe-area-inset-bottom));
-  background:linear-gradient(transparent,rgba(0,0,0,.7))}
-.ps-fire{width:58px;height:58px;border-radius:50%;border:3px solid #fff;background:transparent;
-  cursor:pointer;display:grid;place-items:center;padding:0;transition:transform .12s}
-.ps-fire:active{transform:scale(.9)}
-.ps-fire svg{width:24px;height:24px}
-.ps-multi{position:absolute;bottom:86px;left:50%;transform:translateX(-50%);z-index:5;
-  display:flex;align-items:center;gap:8px;font:600 .74rem system-ui;color:rgba(255,255,255,.85)}
-.ps-multi input{accent-color:#6366f1;width:17px;height:17px}
-.ps-ok{position:absolute;bottom:26px;right:20px;z-index:6;
-  padding:13px 22px;border-radius:14px;border:0;background:#10b981;color:#04241a;
-  font:800 .84rem system-ui;cursor:pointer;display:none;
-  box-shadow:0 4px 16px rgba(16,185,129,.4)}
-.ps-ok.show{display:block}
-.ps-count{position:absolute;top:16px;right:16px;z-index:5;
-  background:rgba(0,0,0,.55);padding:6px 12px;border-radius:20px;font:700 .76rem system-ui;color:#fff;display:none}
-.ps-x{position:absolute;top:14px;left:14px;z-index:6;width:40px;height:40px;border-radius:12px;
-  border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.4);color:#fff;cursor:pointer;
-  display:grid;place-items:center;padding:0;font-size:1.1rem}
-
-.ps-edit{position:absolute;inset:0;z-index:4;display:none}
-.ps-edit.open{display:block}
-.ps-rot{position:absolute;top:14px;left:64px;z-index:6;width:40px;height:40px;border-radius:12px;
-  border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.4);color:#fff;cursor:pointer;
-  display:grid;place-items:center;padding:0}
-.ps-rot svg{width:18px;height:18px}
-.ps-elbl{position:absolute;top:22px;left:50%;transform:translateX(-50%);z-index:6;
-  font:700 .78rem system-ui;color:rgba(255,255,255,.75)}
-.ps-back{position:absolute;bottom:26px;left:20px;z-index:6;width:48px;height:48px;border-radius:14px;
-  border:1px solid rgba(255,255,255,.2);background:rgba(0,0,0,.45);color:#fff;cursor:pointer;
-  display:grid;place-items:center;padding:0}
-.ps-back svg{width:20px;height:20px}
-.ps-save{position:absolute;bottom:26px;right:20px;z-index:6;
-  padding:13px 20px;border-radius:14px;border:0;background:#10b981;color:#04241a;
-  font:800 .84rem system-ui;cursor:pointer;display:flex;align-items:center;gap:7px;
-  box-shadow:0 4px 16px rgba(16,185,129,.4)}
-.ps-save svg{width:16px;height:16px}
-
-.ps-crop{position:absolute;z-index:3;border:2px dashed rgba(255,255,255,.55);
-  box-shadow:0 0 0 9999px rgba(0,0,0,.45);pointer-events:auto;touch-action:none;cursor:move}
-.ps-dot{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;
-  background:#6366f1;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.45);
-  pointer-events:auto;touch-action:none;z-index:4}
-.ps-dot.tl{cursor:nwse-resize}.ps-dot.tr{cursor:nesw-resize}
-.ps-dot.bl{cursor:nesw-resize}.ps-dot.br{cursor:nwse-resize}
-.ps-ln{position:absolute;background:transparent;pointer-events:none;z-index:3}
-.ps-ln.h{height:0;border-top:2px dashed rgba(255,255,255,.4)}
-.ps-ln.v{width:0;border-left:2px dashed rgba(255,255,255,.4)}
-
-.ps-toast{position:fixed;left:50%;bottom:110px;transform:translateX(-50%);
-  background:rgba(22,26,43,.95);color:#e9edff;padding:10px 18px;border-radius:12px;
-  font:600 .8rem system-ui;z-index:10001;opacity:0;transition:.25s;pointer-events:none;
-  box-shadow:0 6px 20px rgba(0,0,0,.4)}
-.ps-toast.show{opacity:1}
-</style>
-
-<script src="https://unpkg.com/pdf-lib@1.17.1/dist/pdf-lib.min.js"></script>
-
-<script>
-
-  
-<!-- ===== ΕΡΓΑΛΕΙΑ: ΑΡΙΣΤΕΡΟ ΣΥΡΤΑΡΙ + ΣΑΡΩΤΗΣ PDF v1 — mobile-first, χωρίς εξωτερικές βιβλιοθήκες ===== -->
-<style>
-/* ---- συρτάρι: λαβή + πλαίσιο ως ένα συγκρότημα, αγκυρωμένο στην αριστερή ακμή ---- */
 #tdWrap{position:fixed;left:0;top:50%;z-index:120;display:flex;align-items:center;transform:translate(var(--tdHide,-161px),-50%);transition:transform .32s cubic-bezier(.22,.8,.24,1);will-change:transform}
 #tdWrap.open{transform:translate(0,-50%)}
 #tdPanel{background:var(--card);border:1px solid var(--line);border-left:0;border-radius:0 var(--r-surface,20px) var(--r-surface,20px) 0;box-shadow:var(--shadow-float);padding:12px;-webkit-backdrop-filter:blur(14px);backdrop-filter:blur(14px)}
@@ -10345,7 +10243,6 @@ button.td-slot:hover{border-color:var(--primary)}
 #tdWrap.open #tdHandle svg{transform:rotate(180deg)}
 html.w3d-preview #tdWrap,html.bh-preview #tdWrap{visibility:hidden!important;pointer-events:none!important}
 @media(prefers-reduced-motion:reduce){#tdWrap,#tdHandle svg{transition:none}}
-/* ---- σαρωτής: πλήρης οθόνη, σταθερό σκούρο περιβάλλον κάμερας ---- */
 #scRoot{position:fixed;inset:0;z-index:4000;display:none;flex-direction:column;background:#0b0d14;color:#eef1f8;font-family:'Roboto',system-ui,-apple-system,sans-serif;overscroll-behavior:contain}
 #scRoot.open{display:flex}
 #scRoot *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -10401,13 +10298,11 @@ html.w3d-preview #tdWrap,html.bh-preview #tdWrap{visibility:hidden!important;poi
 <script>
 (function(){
 'use strict';
-if(window.__tdScan1)return;window.__tdScan1=1;
+if(window.__tdScan2)return;window.__tdScan2=1;
 try{indexedDB.deleteDatabase('rhythmos_pdfscan');}catch(e){}
-
 var MAXSIDE=2200,PREV=1100,THUMB=420;
 var S={pages:[],mode:'cam',idx:-1,stream:null,track:null,torch:false};
 var crop={x:0,y:0,w:1,h:1},camErr='',thumbUrls=[],lastPreview=null,clearArm=0;
-
 function $(i){return document.getElementById(i);}
 function clamp(v,a,b){return v<a?a:v>b?b:v;}
 function toast(t){var e=$('scToast');if(!e)return;e.textContent=t;e.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(function(){e.classList.remove('show');},2600);}
@@ -10416,27 +10311,23 @@ function busyText(t){var e=$('scBusyTxt');if(e)e.textContent=t;}
 function busyOff(){$('scBusy').classList.remove('open');}
 function stamp(){var d=new Date(),p=function(n){return(n<10?'0':'')+n;};return d.getFullYear()+'-'+p(d.getMonth()+1)+'-'+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes());}
 function buf(b){return b.arrayBuffer?b.arrayBuffer():new Promise(function(res,rej){var r=new FileReader();r.onload=function(){res(r.result);};r.onerror=rej;r.readAsArrayBuffer(b);});}
-
-/* ---------- αποθήκευση ---------- */
 var DB=(function(){
 var N='rhythmos_scan_v1',ST='pages',db=null;
 function open(){return new Promise(function(res,rej){
- if(db)return res(db);
- if(!('indexedDB' in window))return rej(0);
- var r=indexedDB.open(N,1);
- r.onupgradeneeded=function(){if(!r.result.objectStoreNames.contains(ST))r.result.createObjectStore(ST,{keyPath:'id'});};
- r.onsuccess=function(){db=r.result;res(db);};
- r.onerror=function(){rej(r.error);};});}
+if(db)return res(db);
+if(!('indexedDB' in window))return rej(0);
+var r=indexedDB.open(N,1);
+r.onupgradeneeded=function(){if(!r.result.objectStoreNames.contains(ST))r.result.createObjectStore(ST,{keyPath:'id'});};
+r.onsuccess=function(){db=r.result;res(db);};
+r.onerror=function(){rej(r.error);};});}
 function st(m){return open().then(function(d){return d.transaction(ST,m).objectStore(ST);});}
 function req(q){return new Promise(function(res){q.onsuccess=function(){res(q.result);};q.onerror=function(){res(null);};});}
 return{
- all:function(){return st('readonly').then(function(s){return req(s.getAll());}).then(function(l){return l||[];}).catch(function(){return[];});},
- put:function(o){return st('readwrite').then(function(s){return req(s.put(o));}).catch(function(){});},
- del:function(i){return st('readwrite').then(function(s){return req(s.delete(i));}).catch(function(){});},
- clear:function(){return st('readwrite').then(function(s){return req(s.clear());}).catch(function(){});}
+all:function(){return st('readonly').then(function(s){return req(s.getAll());}).then(function(l){return l||[];}).catch(function(){return[];});},
+put:function(o){return st('readwrite').then(function(s){return req(s.put(o));}).catch(function(){});},
+del:function(i){return st('readwrite').then(function(s){return req(s.delete(i));}).catch(function(){});},
+clear:function(){return st('readwrite').then(function(s){return req(s.clear());}).catch(function(){});}
 };})();
-
-/* ---------- εικόνα ---------- */
 function loadImg(blob){return new Promise(function(res,rej){
 var u=URL.createObjectURL(blob),im=new Image();
 im.onload=function(){URL.revokeObjectURL(u);res(im);};
@@ -10457,15 +10348,15 @@ function enhance(d,w,h,mode){
 if(!mode||mode==='orig')return;
 var n=w*h,i,c;
 if(mode==='boost'){
- for(c=0;c<3;c++){
-  var hh=new Uint32Array(256);
-  for(i=0;i<n;i++)hh[d[i*4+c]]++;
-  var a=pctile(hh,n,0.005),b=pctile(hh,n,0.995);
-  if(b-a<12)continue;
-  var s=255/(b-a);
-  for(i=0;i<n;i++)d[i*4+c]=(d[i*4+c]-a)*s;
- }
- return;
+for(c=0;c<3;c++){
+var hh=new Uint32Array(256);
+for(i=0;i<n;i++)hh[d[i*4+c]]++;
+var a=pctile(hh,n,0.005),b=pctile(hh,n,0.995);
+if(b-a<12)continue;
+var s=255/(b-a);
+for(i=0;i<n;i++)d[i*4+c]=(d[i*4+c]-a)*s;
+}
+return;
 }
 var lum=new Uint8Array(n),hist=new Uint32Array(256);
 for(i=0;i<n;i++){var p=i*4;var l=(d[p]*77+d[p+1]*151+d[p+2]*28)>>8;lum[i]=l;hist[l]++;}
@@ -10478,37 +10369,35 @@ else{for(i=0;i<n;i++){d[i*4]=d[i*4+1]=d[i*4+2]=g[i];}}
 }
 function renderPage(pg,maxSide,applyCrop){
 return loadImg(pg.blob).then(function(im){
- var o=oriented(im,pg.rot),sc=Math.min(1,maxSide/Math.max(o.w,o.h));
- var w=Math.max(1,Math.round(o.w*sc)),h=Math.max(1,Math.round(o.h*sc));
- var cv=document.createElement('canvas');cv.width=w;cv.height=h;
- var cx=cv.getContext('2d',{willReadFrequently:true});
- cx.save();cx.translate(w/2,h/2);cx.rotate(pg.rot*Math.PI/180);
- cx.drawImage(im,-im.width/2,-im.height/2);cx.restore();
- if(applyCrop){
-  var c=pg.crop,sx=Math.round(c.x*w),sy=Math.round(c.y*h);
-  var sw=Math.min(Math.max(1,Math.round(c.w*w)),w-sx),sh=Math.min(Math.max(1,Math.round(c.h*h)),h-sy);
-  var out=document.createElement('canvas');out.width=sw;out.height=sh;
-  out.getContext('2d',{willReadFrequently:true}).drawImage(cv,sx,sy,sw,sh,0,0,sw,sh);
-  cv=out;cx=cv.getContext('2d',{willReadFrequently:true});w=sw;h=sh;
- }
- if(pg.filter&&pg.filter!=='orig'){
-  var id=cx.getImageData(0,0,w,h);enhance(id.data,w,h,pg.filter);cx.putImageData(id,0,0);
- }
- return cv;
+var o=oriented(im,pg.rot),sc=Math.min(1,maxSide/Math.max(o.w,o.h));
+var w=Math.max(1,Math.round(o.w*sc)),h=Math.max(1,Math.round(o.h*sc));
+var cv=document.createElement('canvas');cv.width=w;cv.height=h;
+var cx=cv.getContext('2d',{willReadFrequently:true});
+cx.save();cx.translate(w/2,h/2);cx.rotate(pg.rot*Math.PI/180);
+cx.drawImage(im,-im.width/2,-im.height/2);cx.restore();
+if(applyCrop){
+var c=pg.crop,sx=Math.round(c.x*w),sy=Math.round(c.y*h);
+var sw=Math.min(Math.max(1,Math.round(c.w*w)),w-sx),sh=Math.min(Math.max(1,Math.round(c.h*h)),h-sy);
+var out=document.createElement('canvas');out.width=sw;out.height=sh;
+out.getContext('2d',{willReadFrequently:true}).drawImage(cv,sx,sy,sw,sh,0,0,sw,sh);
+cv=out;cx=cv.getContext('2d',{willReadFrequently:true});w=sw;h=sh;
+}
+if(pg.filter&&pg.filter!=='orig'){
+var id=cx.getImageData(0,0,w,h);enhance(id.data,w,h,pg.filter);cx.putImageData(id,0,0);
+}
+return cv;
 });}
-
-/* ---------- PDF γραμμένο στο χέρι ---------- */
 function jpegInfo(b){
 var i=2;
 while(i+3<b.length){
- if(b[i]!==0xFF){i++;continue;}
- var m=b[i+1];
- if(m===0xFF){i++;continue;}
- if(m===0xD8||m===0xD9||m===0x01||(m>=0xD0&&m<=0xD7)){i+=2;continue;}
- var L=(b[i+2]<<8)|b[i+3];
- if(m>=0xC0&&m<=0xCF&&m!==0xC4&&m!==0xC8&&m!==0xCC)
-  return{h:(b[i+5]<<8)|b[i+6],w:(b[i+7]<<8)|b[i+8],comp:b[i+9]};
- i+=2+L;
+if(b[i]!==0xFF){i++;continue;}
+var m=b[i+1];
+if(m===0xFF){i++;continue;}
+if(m===0xD8||m===0xD9||m===0x01||(m>=0xD0&&m<=0xD7)){i+=2;continue;}
+var L=(b[i+2]<<8)|b[i+3];
+if(m>=0xC0&&m<=0xCF&&m!==0xC4&&m!==0xC8&&m!==0xCC)
+return{h:(b[i+5]<<8)|b[i+6],w:(b[i+7]<<8)|b[i+8],comp:b[i+9]};
+i+=2+L;
 }
 return{w:0,h:0,comp:3};}
 function makePdf(imgs,sizeMode){
@@ -10521,20 +10410,20 @@ put('%PDF-1.4\n');put(new Uint8Array([37,226,227,207,211,10]));
 off[1]=len;put('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
 off[2]=len;put('2 0 obj\n<< /Type /Pages /Kids ['+kids.join(' ')+'] /Count '+n+' >>\nendobj\n');
 for(i=0;i<n;i++){
- var it=imgs[i],inf=jpegInfo(it.b);
- var iw=inf.w||it.w,ih=inf.h||it.h,cs=inf.comp===1?'/DeviceGray':'/DeviceRGB';
- var PW,PH,dw,dh,dx,dy;
- if(sizeMode==='a4'){
-  var land=iw>ih;PW=land?841.89:595.28;PH=land?595.28:841.89;
-  var m=14,f=Math.min((PW-2*m)/iw,(PH-2*m)/ih);
-  dw=iw*f;dh=ih*f;dx=(PW-dw)/2;dy=(PH-dh)/2;
- }else{PW=iw*72/150;PH=ih*72/150;dw=PW;dh=PH;dx=0;dy=0;}
- var pn=3+i*3,cn=pn+1,imn=pn+2;
- off[pn]=len;put(pn+' 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+num(PW)+' '+num(PH)+'] /Resources << /XObject << /Im0 '+imn+' 0 R >> >> /Contents '+cn+' 0 R >>\nendobj\n');
- var sb=enc.encode('q\n'+num(dw)+' 0 0 '+num(dh)+' '+num(dx)+' '+num(dy)+' cm\n/Im0 Do\nQ\n');
- off[cn]=len;put(cn+' 0 obj\n<< /Length '+sb.length+' >>\nstream\n');put(sb);put('endstream\nendobj\n');
- off[imn]=len;put(imn+' 0 obj\n<< /Type /XObject /Subtype /Image /Width '+iw+' /Height '+ih+' /ColorSpace '+cs+' /BitsPerComponent 8 /Filter /DCTDecode /Length '+it.b.length+' >>\nstream\n');
- put(it.b);put('\nendstream\nendobj\n');
+var it=imgs[i],inf=jpegInfo(it.b);
+var iw=inf.w||it.w,ih=inf.h||it.h,cs=inf.comp===1?'/DeviceGray':'/DeviceRGB';
+var PW,PH,dw,dh,dx,dy;
+if(sizeMode==='a4'){
+var land=iw>ih;PW=land?841.89:595.28;PH=land?595.28:841.89;
+var m=14,f=Math.min((PW-2*m)/iw,(PH-2*m)/ih);
+dw=iw*f;dh=ih*f;dx=(PW-dw)/2;dy=(PH-dh)/2;
+}else{PW=iw*72/150;PH=ih*72/150;dw=PW;dh=PH;dx=0;dy=0;}
+var pn=3+i*3,cn=pn+1,imn=pn+2;
+off[pn]=len;put(pn+' 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 '+num(PW)+' '+num(PH)+'] /Resources << /XObject << /Im0 '+imn+' 0 R >> >> /Contents '+cn+' 0 R >>\nendobj\n');
+var sb=enc.encode('q\n'+num(dw)+' 0 0 '+num(dh)+' '+num(dx)+' '+num(dy)+' cm\n/Im0 Do\nQ\n');
+off[cn]=len;put(cn+' 0 obj\n<< /Length '+sb.length+' >>\nstream\n');put(sb);put('endstream\nendobj\n');
+off[imn]=len;put(imn+' 0 obj\n<< /Type /XObject /Subtype /Image /Width '+iw+' /Height '+ih+' /ColorSpace '+cs+' /BitsPerComponent 8 /Filter /DCTDecode /Length '+it.b.length+' >>\nstream\n');
+put(it.b);put('\nendstream\nendobj\n');
 }
 var total=3*n+2,xref=len,s='xref\n0 '+(total+1)+'\n0000000000 65535 f \n';
 for(i=1;i<=total;i++)s+=('0000000000'+(off[i]||0)).slice(-10)+' 00000 n \n';
@@ -10546,12 +10435,12 @@ return out;}
 function buildBlob(){
 var size=$('scSize').value,q=parseFloat($('scQ').value)||0.85,imgs=[],chain=Promise.resolve();
 S.pages.forEach(function(pg,i){
- chain=chain.then(function(){
-  busyText('Σελίδα '+(i+1)+' / '+S.pages.length);
-  return renderPage(pg,MAXSIDE,true).then(function(cv){
-   return toBlob(cv,q).then(buf).then(function(ab){imgs.push({b:new Uint8Array(ab),w:cv.width,h:cv.height});});
-  });
- });
+chain=chain.then(function(){
+busyText('Σελίδα '+(i+1)+' / '+S.pages.length);
+return renderPage(pg,MAXSIDE,true).then(function(cv){
+return toBlob(cv,q).then(buf).then(function(ab){imgs.push({b:new Uint8Array(ab),w:cv.width,h:cv.height});});
+});
+});
 });
 return chain.then(function(){return new Blob([makePdf(imgs,size)],{type:'application/pdf'});});}
 function download(blob,name){
@@ -10562,17 +10451,15 @@ function doExport(share){
 if(!S.pages.length){toast('Δεν υπάρχουν σελίδες.');return;}
 busy('Δημιουργία PDF…');
 buildBlob().then(function(blob){
- var name='scan-'+stamp()+'.pdf';
- if(share&&navigator.canShare&&window.File){
-  var f=new File([blob],name,{type:'application/pdf'});
-  if(navigator.canShare({files:[f]})){
-   return navigator.share({files:[f],title:'Σάρωση'}).then(busyOff).catch(busyOff);
-  }
- }
- download(blob,name);busyOff();toast('Το PDF αποθηκεύτηκε ('+S.pages.length+' σελ.).');
+var name='scan-'+stamp()+'.pdf';
+if(share&&navigator.canShare&&window.File){
+var f=new File([blob],name,{type:'application/pdf'});
+if(navigator.canShare({files:[f]})){
+return navigator.share({files:[f],title:'Σάρωση'}).then(busyOff).catch(busyOff);
+}
+}
+download(blob,name);busyOff();toast('Το PDF αποθηκεύτηκε ('+S.pages.length+' σελ.).');
 }).catch(function(e){busyOff();toast('Αποτυχία: '+(e&&e.message||e));});}
-
-/* ---------- κάμερα ---------- */
 function camFail(m){
 camErr=m;var e=$('scMsg');
 e.innerHTML=m+'<div class="sc-row" style="margin-top:12px"><button class="sc-btn" id="scRetry">Ξανά</button><button class="sc-btn pri" id="scMsgImp">Από αρχεία</button></div>';
@@ -10586,11 +10473,11 @@ if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){camFail('Δε�
 navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}},audio:false})
 .then(function(st){S.stream=st;S.track=st.getVideoTracks()[0];$('scVideo').srcObject=st;return $('scVideo').play();})
 .then(function(){
- var ok=false;try{var c=S.track.getCapabilities?S.track.getCapabilities():null;ok=!!(c&&c.torch);}catch(e){}
- $('scTorch').style.display=ok?'grid':'none';
+var ok=false;try{var c=S.track.getCapabilities?S.track.getCapabilities():null;ok=!!(c&&c.torch);}catch(e){}
+$('scTorch').style.display=ok?'grid':'none';
 }).catch(function(e){
- var map={NotAllowedError:'Δεν δόθηκε άδεια κάμερας.',NotFoundError:'Δεν βρέθηκε κάμερα.',NotReadableError:'Η κάμερα χρησιμοποιείται αλλού.',SecurityError:'Το περιβάλλον δεν επιτρέπει κάμερα.'};
- camFail((map[e&&e.name]||('Σφάλμα κάμερας: '+(e&&e.name||'άγνωστο')))+' Εναλλακτικά φόρτωσε φωτογραφίες.');
+var map={NotAllowedError:'Δεν δόθηκε άδεια κάμερας.',NotFoundError:'Δεν βρέθηκε κάμερα.',NotReadableError:'Η κάμερα χρησιμοποιείται αλλού.',SecurityError:'Το περιβάλλον δεν επιτρέπει κάμερα.'};
+camFail((map[e&&e.name]||('Σφάλμα κάμερας: '+(e&&e.name||'άγνωστο')))+' Εναλλακτικά φόρτωσε φωτογραφίες.');
 });}
 function camStop(){
 if(S.stream){S.stream.getTracks().forEach(function(t){t.stop();});S.stream=null;}
@@ -10621,8 +10508,6 @@ busy('Φόρτωση…');
 var ok=0,chain=Promise.resolve();
 arr.forEach(function(f,i){chain=chain.then(function(){busyText((i+1)+' / '+arr.length);return addPage(f).then(function(r){if(r)ok++;});});});
 chain.then(function(){busyOff();setMode('pages');toast(ok+' σελίδες προστέθηκαν'+(ok<arr.length?', '+(arr.length-ok)+' δεν διαβάστηκαν':'')+'.');});}
-
-/* ---------- καταστάσεις ---------- */
 function head(){
 var n=S.pages.length;
 $('scSub').textContent=S.mode==='edit'?('Σελίδα '+(S.idx+1)+' / '+n):(n?n+(n===1?' σελίδα':' σελίδες'):'Κάμερα');}
@@ -10705,8 +10590,6 @@ crop.w=Math.min(crop.w,1-crop.x);crop.h=Math.min(crop.h,1-crop.y);}
 layoutCrop();}
 function up(){document.removeEventListener('pointermove',mv);document.removeEventListener('pointerup',up);document.removeEventListener('pointercancel',up);}
 document.addEventListener('pointermove',mv);document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);}
-
-/* ---------- DOM σαρωτή ---------- */
 var I={
 back:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>',
 x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>',
@@ -10766,7 +10649,7 @@ if($('scShare'))$('scShare').onclick=function(){doExport(true);};
 $('scClear').onclick=function(){
 var b=$('scClear');
 if(!clearArm){clearArm=1;b.textContent='Σίγουρα;';b.classList.add('warn');
- setTimeout(function(){clearArm=0;b.textContent='Καθαρισμός';b.classList.remove('warn');},3000);return;}
+setTimeout(function(){clearArm=0;b.textContent='Καθαρισμός';b.classList.remove('warn');},3000);return;}
 clearArm=0;b.textContent='Καθαρισμός';b.classList.remove('warn');
 DB.clear().then(function(){S.pages=[];renderPages();head();toast('Άδειασε.');});};
 $('scChips').addEventListener('click',function(e){var b=e.target.closest('button');if(b)setFilter(b.dataset.f);});
@@ -10798,8 +10681,6 @@ DB.all().then(function(l){
 S.pages=(l||[]).sort(function(a,b){return a.ts-b.ts;});
 S.pages.forEach(function(p){if(!p.crop)p.crop={x:0,y:0,w:1,h:1};if(!p.filter)p.filter='orig';if(!p.rot)p.rot=0;});
 setMode(S.pages.length?'pages':'cam');});}
-
-/* ---------- αριστερό συρτάρι ---------- */
 var tdWrap=null;
 function tdHide(){
 if(!tdWrap)return;
@@ -10839,7 +10720,9 @@ if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',
 else buildDrawer();
 })();
 /* ===== ΤΕΛΟΣ ΕΡΓΑΛΕΙΩΝ ===== */
-
+</script>
+</body>
+</html>
   
   
 </body>
