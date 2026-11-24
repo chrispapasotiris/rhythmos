@@ -8,7 +8,7 @@
 <link rel="icon" type="image/svg+xml" href="icon.svg">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="theme-color" content="#6366f1">
-<meta name="app-version" content="2.3.56">
+<meta name="app-version" content="2.3.57">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-400.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-500.css">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fontsource/roboto@5/greek-700.css">
@@ -785,7 +785,7 @@ function showToast(msg){const t=$('#toast');t.textContent=msg;t.classList.add('s
 function showOnboarding(){if(state.onboardingComplete)return;const steps=[{icon:'⏱',title:'Καλώς ήρθες στον Ρυθμό',text:'Χρονοδιαχείριση για φοιτητές: όρια, στόχοι, pomodoro και στατιστικά, όλα σε ένα μέρος.'},{icon:'🧭',title:'Πέντε καρτέλες',text:'Ημέρα: overview, πλάνο, προτάσεις. Δραστηριότητες: χρονόμετρα και μαθήματα. Πρόγραμμα: timeline και φορτίο. Ανάλυση: στατιστικά. Ρυθμίσεις.'},{icon:'🍅',title:'Pomodoro με καταγραφή',text:'Ξεκίνα κύκλο, διάλεξε μάθημα, και ο χρόνος καταγράφεται αυτόματα εκεί. Ρύθμισε focus και διάλειμμα όπως θες.'}];let cur=0;const ov=document.createElement('div');ov.className='onboarding-overlay';function rs(){const s=steps[cur];ov.innerHTML=`<div class="onboarding-step"><div class="onboarding-icon">${s.icon}</div><h2>${s.title}</h2><p>${s.text}</p><div class="onboarding-dots">${steps.map((_,i)=>`<div class="onboarding-dot ${i===cur?'active':''}"></div>`).join('')}</div><div class="onboarding-actions">${cur>0?`<button class="btn btn-ghost" onclick="prevOb()">Πίσω</button>`:`<button class="btn btn-ghost" onclick="skipOb()">Παράλειψη</button>`}<button class="btn btn-primary" onclick="${cur===steps.length-1?'doneOb()':'nextOb()'}">${cur===steps.length-1?'Ξεκίνα':'Συνέχεια'}</button></div>`;}window.nextOb=()=>{cur++;rs();};window.prevOb=()=>{cur--;rs();};window.skipOb=()=>doneOb();window.doneOb=()=>{state.onboardingComplete=true;saveState();ov.remove();showToast('Καλώς ήρθες!');};document.body.appendChild(ov);rs();}
 function resetOnboarding(){state.onboardingComplete=false;saveState();showOnboarding();}
 
-var APP_VERSION='2.3.56';
+var APP_VERSION='2.3.57';
 var netGranted=false;
 function checkForUpdate(){
   if(netGranted)return;
@@ -10225,7 +10225,7 @@ return out;
 
 
 
-<!-- ===== ΕΡΓΑΛΕΙΑ v3: ΣΥΡΤΑΡΙ + ΣΑΡΩΤΗΣ — πλήρες κάδρο, τετράπλευρο crop, πλοήγηση edit ===== -->
+<!-- ===== ΕΡΓΑΛΕΙΑ v5: ΣΥΡΤΑΡΙ + ΣΑΡΩΤΗΣ — λίστα σελίδων με πραγματική κύλιση ===== -->
 <style>
 #tdWrap{position:fixed;left:0;top:50%;z-index:120;display:flex;align-items:center;transform:translate(var(--tdHide,-161px),-50%);transition:transform .32s cubic-bezier(.22,.8,.24,1);will-change:transform}
 #tdWrap.open{transform:translate(0,-50%)}
@@ -10235,6 +10235,7 @@ return out;
 .td-slot{width:64px;height:64px;border-radius:14px;border:1px solid var(--line);background:var(--soft);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;color:var(--muted);font:600 .55rem/1.25 'Roboto',system-ui,sans-serif;text-align:center;padding:4px}
 button.td-slot{cursor:pointer;color:var(--primary);font-weight:700;transition:transform .14s,border-color .14s}
 button.td-slot:active{transform:scale(.92)}
+button.td-slot:hover{border-color:var(--primary)}
 .td-slot svg{width:22px;height:22px;display:block}
 .td-lbl{font-size:.6rem;line-height:1}
 .td-soon{opacity:.62;border-style:dashed}
@@ -10258,7 +10259,11 @@ html.w3d-preview #tdWrap,html.bh-preview #tdWrap{visibility:hidden!important;poi
 .sc-ico.on{background:var(--primary);border-color:transparent;color:#fff}
 .sc-ico svg{width:18px;height:18px;display:block}
 #scStage{flex:1;min-height:0;position:relative;display:flex;align-items:center;justify-content:center;overflow:hidden;background:#05070d}
-#scVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;display:none;background:#000}
+#scVideo{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;background:#000}
+.sc-hud{position:absolute;top:10px;z-index:3;display:none;align-items:center;padding:6px 11px;border-radius:999px;background:rgba(8,10,18,.66);border:1px solid rgba(255,255,255,.16);color:#dfe5f5;font:700 .64rem system-ui,sans-serif;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+#scMeta{left:12px;pointer-events:none;font-variant-numeric:tabular-nums}
+#scCapMode{right:12px;cursor:pointer;color:#fff}
+#scCapMode.on{background:var(--primary);border-color:transparent}
 #scWrap{position:relative;display:none;box-shadow:0 10px 40px rgba(0,0,0,.6)}
 #scCv{display:block;width:100%;height:100%;background:#000}
 #scQSvg{position:absolute;inset:0;width:100%;height:100%;display:block}
@@ -10267,19 +10272,21 @@ html.w3d-preview #tdWrap,html.bh-preview #tdWrap{visibility:hidden!important;poi
 #scQPoly{pointer-events:fill;cursor:move;touch-action:none}
 .sc-qh{position:absolute;width:26px;height:26px;margin:-13px 0 0 -13px;border-radius:50%;background:var(--primary);border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.5);touch-action:none;cursor:grab;z-index:3}
 .sc-qh:active{cursor:grabbing;transform:scale(1.15)}
-#scPages{position:absolute;inset:0;overflow-y:auto;padding:12px;display:none;grid-template-columns:repeat(2,1fr);gap:10px;align-content:start;scrollbar-width:thin;scrollbar-color:var(--primary) #11141f}
+/* ---- λίστα σελίδων: block που κυλάει, πλέγμα μέσα του ---- */
+#scPages{position:absolute;inset:0;display:none;overflow-y:auto;overflow-x:hidden;padding:12px;overscroll-behavior:contain;-webkit-overflow-scrolling:touch;scrollbar-width:thin;scrollbar-color:#6366f1 #11141f}
 #scPages::-webkit-scrollbar{width:8px}
 #scPages::-webkit-scrollbar-track{background:#11141f}
-#scPages::-webkit-scrollbar-thumb{background:var(--primary);border-radius:999px}
-.sc-pg{position:relative;border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden;background:#11141f}
-.sc-pg img{display:block;width:100%;height:148px;object-fit:contain;background:#000}
-.sc-num{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.7);border-radius:8px;padding:2px 7px;font:700 .68rem system-ui}
-.sc-pgbar{display:flex;gap:4px;padding:6px}
-.sc-mini{flex:1;padding:7px 0;border-radius:8px;border:1px solid rgba(99,102,241,.5);border-color:color-mix(in srgb,var(--primary) 55%,transparent);background:rgba(255,255,255,.04);color:var(--primary);font:700 .78rem system-ui;cursor:pointer}
+#scPages::-webkit-scrollbar-thumb{background:#6366f1;border-radius:999px}
+#scPagesGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:auto;gap:10px}
+.sc-pg{position:relative;display:flex;flex-direction:column;min-width:0;border:1px solid rgba(255,255,255,.12);border-radius:12px;overflow:hidden;background:#11141f}
+.sc-pg img{display:block;width:100%;height:150px;flex:0 0 auto;object-fit:contain;background:#000}
+.sc-num{position:absolute;top:6px;left:6px;background:rgba(0,0,0,.7);border-radius:8px;padding:2px 7px;font:700 .68rem system-ui;z-index:2}
+.sc-pgbar{display:flex;gap:4px;padding:6px;flex:0 0 auto;background:#11141f}
+.sc-mini{flex:1;min-height:34px;padding:7px 0;border-radius:8px;border:1px solid rgba(99,102,241,.5);border-color:color-mix(in srgb,var(--primary) 55%,transparent);background:rgba(255,255,255,.04);color:var(--primary);font:700 .78rem system-ui;cursor:pointer}
 .sc-mini:disabled{opacity:.28}
 .sc-mini.d{color:#ff8fa0;border-color:rgba(255,92,122,.45)}
 .sc-empty{grid-column:1/-1;padding:26px 14px;text-align:center;color:#8f9ab8;font-size:.84rem;line-height:1.5;border:1px dashed rgba(255,255,255,.16);border-radius:14px}
-#scMsg{position:absolute;left:16px;right:16px;top:50%;transform:translateY(-50%);display:none;text-align:center;color:#c8d0e6;font-size:.85rem;line-height:1.55;background:rgba(17,20,31,.94);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:16px}
+#scMsg{position:absolute;left:16px;right:16px;top:50%;transform:translateY(-50%);display:none;text-align:center;color:#c8d0e6;font-size:.85rem;line-height:1.55;background:rgba(17,20,31,.94);border:1px solid rgba(255,255,255,.12);border-radius:14px;padding:16px;z-index:4}
 .sc-bar{flex:0 0 auto;display:none;align-items:center;gap:10px;padding:12px 14px calc(12px + env(safe-area-inset-bottom));background:#11141f;border-top:1px solid rgba(255,255,255,.08)}
 .sc-bar.col{flex-direction:column;align-items:stretch;gap:9px}
 .sc-row{display:flex;align-items:center;gap:9px}
@@ -10312,15 +10319,16 @@ html.w3d-preview #tdWrap,html.bh-preview #tdWrap{visibility:hidden!important;poi
 <script>
 (function(){
 'use strict';
-if(window.__tdScan3)return;window.__tdScan3=1;
+if(window.__tdScan5)return;window.__tdScan5=1;
 var MAXSIDE=2200,PREV=1100,THUMB=420;
 var FULLQ=[{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}];
 var S={pages:[],mode:'cam',idx:-1,stream:null,track:null,torch:false};
-var quad=FULLQ.map(function(p){return{x:p.x,y:p.y};}),camErr='',thumbUrls=[],lastPreview=null,clearArm=0;
+var quad=FULLQ.map(function(p){return{x:p.x,y:p.y};}),camErr='',thumbUrls=[],lastPreview=null,clearArm=0,capMode='full';
 function $(i){return document.getElementById(i);}
 function clamp(v,a,b){return v<a?a:v>b?b:v;}
 function dist(a,b){return Math.hypot(a.x-b.x,a.y-b.y);}
 function lerp(a,b,t){return{x:a.x+(b.x-a.x)*t,y:a.y+(b.y-a.y)*t};}
+function gcd(a,b){while(b){var t=b;b=a%b;a=t;}return a||1;}
 function toast(t){var e=$('scToast');if(!e)return;e.textContent=t;e.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(function(){e.classList.remove('show');},2600);}
 function busy(t){$('scBusy').classList.add('open');busyText(t);}
 function busyText(t){var e=$('scBusyTxt');if(e)e.textContent=t;}
@@ -10488,8 +10496,26 @@ return navigator.share({files:[f],title:'Σάρωση'}).then(busyOff).catch(bus
 }
 download(blob,name);busyOff();toast('Το PDF αποθηκεύτηκε ('+S.pages.length+' σελ.).');
 }).catch(function(e){busyOff();toast('Αποτυχία: '+(e&&e.message||e));});}
+function camHud(on){
+var a=$('scMeta'),b=$('scCapMode');
+if(a)a.style.display=on?'flex':'none';
+if(b)b.style.display=on?'flex':'none';
+}
+function camMeta(){
+var v=$('scVideo'),m=$('scMeta');
+if(!v||!m||!v.videoWidth)return;
+var w=v.videoWidth,h=v.videoHeight,g=gcd(w,h);
+m.textContent=w+'×'+h+' · '+(w/g)+':'+(h/g);
+}
+function capToggle(){
+capMode=capMode==='full'?'screen':'full';
+var b=$('scCapMode');
+b.textContent=capMode==='full'?'Λήψη: πλήρες κάδρο':'Λήψη: ό,τι φαίνεται';
+b.classList.toggle('on',capMode==='screen');
+toast(capMode==='full'?'Η λήψη παίρνει όλο το κάδρο της κάμερας, όχι μόνο την οθόνη.':'Η λήψη παίρνει ακριβώς ό,τι φαίνεται στην οθόνη.');
+}
 function camFail(m){
-camErr=m;var e=$('scMsg');
+camErr=m;camHud(false);var e=$('scMsg');
 e.innerHTML=m+'<div class="sc-row" style="margin-top:12px"><button class="sc-btn" id="scRetry">Ξανά</button><button class="sc-btn pri" id="scMsgImp">Από αρχεία</button></div>';
 e.style.display='block';
 $('scRetry').onclick=camStart;
@@ -10498,9 +10524,14 @@ function camStart(){
 camErr='';$('scMsg').style.display='none';
 if(!window.isSecureContext){camFail('Η κάμερα απαιτεί https ή localhost. Τράβηξε με την κάμερα του κινητού και φόρτωσε τις φωτογραφίες.');return;}
 if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){camFail('Δεν υπάρχει πρόσβαση σε κάμερα από αυτό το περιβάλλον.');return;}
-navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:3264},height:{ideal:2448},resizeMode:'none'},audio:false})
+navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:2592},height:{ideal:1944}},audio:false})
+.catch(function(e){
+if(e&&e.name==='OverconstrainedError')return navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:false});
+throw e;
+})
 .then(function(st){S.stream=st;S.track=st.getVideoTracks()[0];$('scVideo').srcObject=st;return $('scVideo').play();})
 .then(function(){
+camHud(true);camMeta();
 var ok=false;try{var c=S.track.getCapabilities?S.track.getCapabilities():null;ok=!!(c&&c.torch);}catch(e){}
 $('scTorch').style.display=ok?'grid':'none';
 }).catch(function(e){
@@ -10511,7 +10542,8 @@ function camStop(){
 if(S.stream){S.stream.getTracks().forEach(function(t){t.stop();});S.stream=null;}
 S.track=null;S.torch=false;
 var v=$('scVideo');if(v)v.srcObject=null;
-var b=$('scTorch');if(b){b.classList.remove('on');b.style.display='none';}}
+var b=$('scTorch');if(b){b.classList.remove('on');b.style.display='none';}
+camHud(false);}
 function torch(){
 if(!S.track)return;
 var next=!S.torch;
@@ -10520,10 +10552,19 @@ S.track.applyConstraints({advanced:[{torch:next}]}).then(function(){S.torch=next
 function shoot(){
 var v=$('scVideo');
 if(!v.videoWidth){toast('Η κάμερα δεν είναι έτοιμη.');return;}
-var sc=Math.min(1,MAXSIDE/Math.max(v.videoWidth,v.videoHeight));
+var vw=v.videoWidth,vh=v.videoHeight,sx=0,sy=0,sw=vw,sh=vh;
+if(capMode==='screen'){
+var r=$('scStage').getBoundingClientRect();
+if(r.width>0&&r.height>0){
+var scale=Math.max(r.width/vw,r.height/vh);
+sw=Math.min(vw,r.width/scale);sh=Math.min(vh,r.height/scale);
+sx=(vw-sw)/2;sy=(vh-sh)/2;
+}
+}
+var sc=Math.min(1,MAXSIDE/Math.max(sw,sh));
 var cv=document.createElement('canvas');
-cv.width=Math.round(v.videoWidth*sc);cv.height=Math.round(v.videoHeight*sc);
-cv.getContext('2d').drawImage(v,0,0,cv.width,cv.height);
+cv.width=Math.max(1,Math.round(sw*sc));cv.height=Math.max(1,Math.round(sh*sc));
+cv.getContext('2d').drawImage(v,sx,sy,sw,sh,0,0,cv.width,cv.height);
 toBlob(cv,0.92).then(addPage).then(function(ok){toast(ok?'Προστέθηκε σελίδα '+S.pages.length+'.':'Αποτυχία λήψης.');});}
 function makeThumb(pg){return renderPage(pg,THUMB,true).then(function(cv){return toBlob(cv,0.7);}).then(function(b){pg.thumb=b;});}
 function addPage(blob){
@@ -10545,7 +10586,7 @@ var c=$('scEditCount');if(c)c.textContent=(S.idx+1)+'/'+n;
 function revokeThumbs(){thumbUrls.forEach(function(u){try{URL.revokeObjectURL(u);}catch(e){}});thumbUrls=[];}
 function renderPages(){
 revokeThumbs();
-var g=$('scPages');
+var g=$('scPagesGrid');
 if(!S.pages.length){g.innerHTML='<div class="sc-empty">Καμία σελίδα ακόμα. Τράβηξε με την κάμερα ή φόρτωσε φωτογραφίες.</div>';return;}
 g.innerHTML=S.pages.map(function(p,i){
 var u=p.thumb?URL.createObjectURL(p.thumb):'';if(u)thumbUrls.push(u);
@@ -10560,13 +10601,13 @@ function setMode(m){
 S.mode=m;
 $('scVideo').style.display=m==='cam'?'block':'none';
 $('scWrap').style.display=m==='edit'?'block':'none';
-$('scPages').style.display=m==='pages'?'grid':'none';
+$('scPages').style.display=m==='pages'?'block':'none';
 $('scBarCam').style.display=m==='cam'?'flex':'none';
 $('scBarEdit').style.display=m==='edit'?'flex':'none';
 $('scBarPages').style.display=m==='pages'?'flex':'none';
 $('scMsg').style.display=(m==='cam'&&camErr)?'block':'none';
-if(m==='cam'){if(!S.stream)camStart();}else camStop();
-if(m==='pages')renderPages();
+if(m==='cam'){if(!S.stream)camStart();else camHud(true);}else camStop();
+if(m==='pages'){renderPages();$('scPages').scrollTop=0;}
 head();}
 function fitPreview(cv){
 var r=$('scStage').getBoundingClientRect(),pad=14;
@@ -10672,7 +10713,9 @@ r.innerHTML=
 +'</svg>'
 +'<div class="sc-qh" id="scQhtl"></div><div class="sc-qh" id="scQhtr"></div><div class="sc-qh" id="scQhbr"></div><div class="sc-qh" id="scQhbl"></div>'
 +'</div>'
-+'<div id="scPages"></div><div id="scMsg"></div></div>'
++'<div id="scPages"><div id="scPagesGrid"></div></div><div id="scMsg"></div>'
++'<div class="sc-hud" id="scMeta">—</div>'
++'<button type="button" class="sc-hud" id="scCapMode" aria-pressed="false">Λήψη: πλήρες κάδρο</button></div>'
 +'<div class="sc-bar" id="scBarCam">'
 +'<button class="sc-ico" id="scImp" aria-label="Από αρχεία">'+I.folder+'</button>'
 +'<button class="sc-fire" id="scShut" aria-label="Λήψη">'+I.shut+'</button>'
@@ -10713,6 +10756,8 @@ $('scImp').onclick=function(){$('scFile').click();};
 $('scFile').onchange=function(){importFiles(this.files);this.value='';};
 $('scShut').onclick=shoot;
 $('scTorch').onclick=torch;
+$('scCapMode').onclick=capToggle;
+$('scVideo').addEventListener('loadedmetadata',camMeta);
 $('scToList').onclick=function(){setMode('pages');};
 $('scRot').onclick=rotate;
 $('scFull').onclick=function(){quad=FULLQ.map(function(p){return{x:p.x,y:p.y};});layoutQuad();};
@@ -10814,17 +10859,10 @@ tdClose();});
 if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',buildDrawer);
 else buildDrawer();
 })();
-/* ===== ΤΕΛΟΣ ΕΡΓΑΛΕΙΩΝ v3 ===== */
+/* ===== ΤΕΛΟΣ ΕΡΓΑΛΕΙΩΝ v5 ===== */
 </script>
-</body>
-</html>
-  
 
 
-  
-</body>
-</html>
-  
   
 </body>
 
