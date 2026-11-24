@@ -1,0 +1,24 @@
+{
+  "name": "rhythmos",
+  "version": "1.0.0",
+  "description": "",
+  "main": "sw.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chrispapasotiris/rhythmos.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/chrispapasotiris/rhythmos/issues"
+  },
+  "homepage": "https://github.com/chrispapasotiris/rhythmos#readme",
+  "devDependencies": {
+    "@vitejs/plugin-basic-ssl": "^2.3.0",
+    "vite": "^8.3.8"
+  }
+}
