@@ -17,3 +17,6 @@ export function countdownText(min){if(min<=0)return `Εκπρόθεσμη κατ
 export function formatDate(ts){const d=new Date(ts);return `${DAY_FULL[mondayIndex(ts)]}, ${d.getDate()} ${MONTH_GEN[d.getMonth()]}`;}
 export function shortDate(ts){const d=new Date(ts);return `${d.getDate()}/${d.getMonth()+1}`;}
 export function weekRangeText(now){const s=startOfWeek(now);const d=new Date(s);d.setDate(d.getDate()+6);return `${shortDate(s)} – ${shortDate(d.getTime())}`;}
+
+export function pad(n){return (n<10?'0':'')+n;}
+export function getDailyPlanKey(ts){const d=new Date(ts);return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}

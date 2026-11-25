@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { clamp, overlap, fmtHM, mondayIndex, startOfWeek, startOfNextDay, daysInMonth, formatDate, shortDate } from '../src/core/time.js';
+import { clamp, overlap, fmtHM, mondayIndex, startOfWeek, startOfNextDay, daysInMonth, formatDate, shortDate, pad, getDailyPlanKey } from '../src/core/time.js';
 
 describe('clamp', () => {
   it('in-range', () => expect(clamp(5,0,10)).toBe(5));
@@ -58,4 +58,20 @@ describe('formatDate / shortDate', () => {
     expect(formatDate(new Date(2026,0,5,12,0,0,0).getTime())).toBe('Δευτέρα, 5 Ιανουαρίου'));
   it('shortDate', () =>
     expect(shortDate(new Date(2026,0,5).getTime())).toBe('5/1'));
+});
+
+describe('pad', () => {
+  it('single digit', () => expect(pad(5)).toBe('05'));
+  it('double digit', () => expect(pad(12)).toBe('12'));
+});
+
+describe('getDailyPlanKey', () => {
+  it('YYYY-MM-DD format', () => {
+    const ts = new Date(2026, 0, 5, 14, 30, 0, 0).getTime();
+    expect(getDailyPlanKey(ts)).toBe('2026-01-05');
+  });
+  it('pads month and day', () => {
+    const ts = new Date(2026, 10, 3, 0, 0, 0, 0).getTime();
+    expect(getDailyPlanKey(ts)).toBe('2026-11-03');
+  });
 });
