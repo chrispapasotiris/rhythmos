@@ -7,7 +7,7 @@ var FULLQ=[{x:0,y:0},{x:1,y:0},{x:1,y:1},{x:0,y:1}];
 var RATIOS=[{id:'full',n:'Πλήρης',r:0},{id:'9:16',n:'9:16',r:9/16},{id:'3:4',n:'3:4',r:3/4},{id:'1:1',n:'1:1',r:1}];
 var ratioId='full';
 var pgLayout='l2';
-try{var _pl=localStorage.getItem('rhythmos_scan_layout');if(_pl==='ll'||_pl==='l2'||_pl==='l3')pgLayout=_pl;}catch(e){}
+try{var _pl=localStorage.getItem((typeof RH_CHANNEL!=='undefined'?RH_CHANNEL:'stable')+'_scan_layout');if(_pl==='ll'||_pl==='l2'||_pl==='l3')pgLayout=_pl;}catch(e){}
 var S={pages:[],mode:'cam',idx:-1,stream:null,track:null,torch:false};
 var quad=FULLQ.map(function(p){return{x:p.x,y:p.y};}),camErr='',thumbUrls=[],lastPreview=null,clearArm=0,pgDrag=null;
 function $(i){return document.getElementById(i);}
@@ -300,7 +300,7 @@ var c=$('scEditCount');if(c)c.textContent=(S.idx+1)+'/'+n;
 function revokeThumbs(){thumbUrls.forEach(function(u){try{URL.revokeObjectURL(u);}catch(e){}});thumbUrls=[];}
 function setPgLayout(k){
 pgLayout=k;
-try{localStorage.setItem('rhythmos_scan_layout',k);}catch(e){}
+try{localStorage.setItem((typeof RH_CHANNEL!=='undefined'?RH_CHANNEL:'stable')+'_scan_layout',k);}catch(e){}
 var g=$('scPagesGrid');if(g)g.className=k;
 Array.prototype.forEach.call(document.querySelectorAll('.sc-lay'),function(b){b.classList.toggle('on',b.dataset.l===k);});
 renderPages();
